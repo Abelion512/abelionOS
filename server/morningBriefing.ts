@@ -32,6 +32,7 @@ export type MorningBriefing = {
 };
 
 type WorkspaceReader = (connection: GoogleConnection, window: { from: Date; until: Date }) => Promise<WorkspaceBriefing>;
+type GoogleCalendarEvent = { id?: string; summary?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string } };
 
 const REQUIRED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events.readonly",
@@ -47,6 +48,18 @@ function providerFailureMessage(error: unknown) {
 function hasRequiredScopes(connection: GoogleConnection) {
   const granted = new Set(connection.grantedScopes.split(" ").filter(Boolean));
   return REQUIRED_GOOGLE_SCOPES.every((scope) => granted.has(scope));
+}
+
+function normalizeCalendarEvents(items: GoogleCalendarEvent[], window: { from: Date; until: Date }): CalendarBriefingEvent[] {
+  return items.flatMap((event) => {
+    const start = event.start?.dateTime || event.start?.date;
+    const end = event.end?.dateTime || event.end?.date;
+    if (!event.id || !start || !end) return [];
+    const startAt = Date.parse(start);
+    const endAt = Date.parse(end);
+    if (!Number.isFinite(startAt) || !Number.isFinite(endAt) || endAt <= window.from.getTime() || startAt >= window.until.getTime()) return [];
+    return [{ id: event.id, summary: event.summary || "Untitled event", start, end }];
+  });
 }
 
 async function refreshGoogleAccessToken(connection: GoogleConnection) {
@@ -90,7 +103,7 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
     const [calendarResult, inboxResult] = await Promise.allSettled([
       fetch(calendarUrl, { headers: auth }).then(async (response) => {
         if (!response.ok) throw new Error(`Calendar request failed (${response.status})`);
-        return response.json() as Promise<{ items?: Array<{ id?: string; summary?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string } }> }>;
+        return response.json() as Promise<{ items?: GoogleCalendarEvent[] }>;
       }),
       fetch(inboxUrl, { headers: auth }).then(async (response) => {
         if (!response.ok) throw new Error(`Gmail request failed (${response.status})`);
@@ -99,7 +112,7 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
     ]);
 
     const calendarEvents = calendarResult.status === "fulfilled"
-      ? (calendarResult.value.items ?? []).flatMap((event) => event.id && event.start && event.end ? [{ id: event.id, summary: event.summary || "Untitled event", start: event.start.dateTime || event.start.date || "", end: event.end.dateTime || event.end.date || "" }] : [])
+      ? normalizeCalendarEvents(calendarResult.value.items ?? [], window)
       : null;
     const unreadInboxCount = inboxResult.status === "fulfilled" ? inboxResult.value.resultSizeEstimate ?? 0 : null;
 
@@ -154,3 +167,5 @@ export async function buildMorningBriefing(
 
   return { generatedAt: now, window, workspace, activity, files };
 }
+
+export const __morningBriefingInternals = { normalizeCalendarEvents };

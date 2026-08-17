@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { GoogleConnection } from "../drizzle/schema";
-import { buildMorningBriefing } from "./morningBriefing";
+import { __morningBriefingInternals, buildMorningBriefing } from "./morningBriefing";
 
 const now = new Date("2026-08-17T01:00:00.000Z");
 
@@ -64,5 +64,16 @@ describe("Morning Briefing aggregation", () => {
 
     expect(briefings.map((briefing) => briefing.activity.events[0]?.action)).toEqual(["user.1.refresh", "user.2.refresh", "user.3.refresh", "user.4.refresh", "user.5.refresh"]);
     expect(briefings.every((briefing) => briefing.workspace.source.status === "unavailable")).toBe(true);
+  });
+
+  it("filters provider Calendar events outside the briefing window", () => {
+    const events = __morningBriefingInternals.normalizeCalendarEvents([
+      { id: "past", summary: "Past event", start: { dateTime: "2026-07-13T10:00:00.000Z" }, end: { dateTime: "2026-07-13T11:00:00.000Z" } },
+      { id: "current", summary: "Current event", start: { dateTime: "2026-08-17T02:00:00.000Z" }, end: { dateTime: "2026-08-17T02:30:00.000Z" } },
+      { id: "overlap", summary: "Overlapping event", start: { dateTime: "2026-08-17T00:30:00.000Z" }, end: { dateTime: "2026-08-17T01:30:00.000Z" } },
+      { id: "future", summary: "Future event", start: { dateTime: "2026-08-18T01:00:00.000Z" }, end: { dateTime: "2026-08-18T02:00:00.000Z" } },
+    ], { from: now, until: new Date("2026-08-18T01:00:00.000Z") });
+
+    expect(events.map((event) => event.id)).toEqual(["current", "overlap"]);
   });
 });
