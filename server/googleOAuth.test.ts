@@ -20,6 +20,10 @@ describe("Google OAuth security helpers", () => {
     expect(__googleOAuthInternals.decryptSecret(encrypted)).toBe("refresh-token-value");
   });
 
+  it("requests the restricted compose scope required for draft lifecycle operations", () => {
+    expect(__googleOAuthInternals.googleScopes).toContain("https://www.googleapis.com/auth/gmail.compose");
+  });
+
   it("uses the public forwarded host for the callback when running behind the deployment gateway", () => {
     const request = {
       protocol: "http",

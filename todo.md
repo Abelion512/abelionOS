@@ -89,3 +89,19 @@
 - [x] Tambahkan test data-presentation dan component untuk layout 5W1H, partial source, dan field yang unavailable.
 - [x] Implementasikan blok 5W1H, empty/partial/error state yang ringkas, dan visual grouping yang konsisten.
 - [x] Tambahkan test presentation dan component, lalu lakukan visual smoke check desktop/mobile. Validasi release lulus: 17 test files dan 40 tests, typecheck, serta production build; checkpoint siap disimpan.
+
+# Gmail Drafts Backend Capability
+
+- [x] Telaah Gmail Drafts API, scope OAuth minimal, dan batas data yang aman untuk Mintdesk.
+- [x] Tetapkan kontrak tRPC server-side untuk daftar, baca metadata, buat, update, dan hapus draft dengan audit trail. Endpoint send sengaja tidak dibuat.
+- [x] Tambahkan scope OAuth yang diperlukan dan jalur reconnect yang eksplisit tanpa mengekspos token. Token lama memerlukan re-consent untuk `gmail.compose`.
+- [x] Normalisasi recipient header Gmail untuk round-trip create/update yang menerima format display-name nyata tanpa mengizinkan header injection.
+- [x] Tambahkan test service untuk round-trip draft dengan display-name recipient serta scope compose yang hilang.
+- [x] Tambahkan component test dasar `/drafts` untuk edit dan delete yang dibatalkan.
+- [x] Tambahkan test tRPC/router untuk list, get, create, update, dan delete termasuk error ketika `gmail.compose` belum granted.
+- [x] Tambahkan component test `/drafts` untuk load error, create/update confirmation=true, delete confirmation=true, dan pesan error mutation.
+- [ ] Perbarui runbook, validasi end-to-end dengan akun pengguna, dan simpan checkpoint.
+
+## Approved Scope Boundary
+
+- [x] Pengguna menyetujui scope restricted `gmail.compose` untuk lifecycle draft. Rilis awal mengekspos list, get, create, update, dan delete; `send` tidak diimplementasikan atau diekspos.

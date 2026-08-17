@@ -127,22 +127,24 @@ http://localhost:3000/api/google/callback
 
 URI HTTPS pertama dipakai deployment production. URI `localhost` kedua hanya dipakai saat `pnpm run dev` berjalan pada port 3000; Google mengizinkan HTTP hanya untuk localhost. Aplikasi memakai `GOOGLE_OAUTH_REDIRECT_URI` sebagai callback production kanonik dan tetap membentuk callback localhost secara dinamis untuk development.
 
-5. Mulai dari scope read-only paling sempit:
+5. Mintdesk meminta scope berikut sesuai kemampuan yang Anda aktifkan:
 
 | Fitur MVP | Scope |
 |---|---|
 | Daftar kalender | `https://www.googleapis.com/auth/calendar.calendarlist.readonly` |
 | Event kalender | `https://www.googleapis.com/auth/calendar.events.readonly` |
 | Metadata Gmail | `https://www.googleapis.com/auth/gmail.metadata` |
+| Lifecycle Gmail Draft | `https://www.googleapis.com/auth/gmail.compose` |
 
-Google merekomendasikan meminta scope sekecil mungkin dan memverifikasi scope yang benar-benar diberikan token sebelum mengaktifkan fitur [1] [2].
+Scope `gmail.compose` adalah **restricted scope**. Ia diperlukan Google untuk list, get, create, update, dan delete draft, serta secara teknis juga memberi kemampuan mengirim. Mintdesk rilis awal tidak mengekspos endpoint atau UI send. Review persyaratan OAuth verification dan security assessment Google sebelum aplikasi dipublikasikan kepada pengguna di luar daftar test. [3]
 
 ### 3.3 Jalankan consent dan verifikasi
 
 1. Pastikan `GOOGLE_OAUTH_CLIENT_ID` dan `GOOGLE_OAUTH_CLIENT_SECRET` di deployment cocok dengan OAuth client Web application dan redirect URI pada langkah 3.2.
-2. Buka `/connections` sebagai user yang sudah sign-in, lalu klik **Connect Google Workspace**. Consent terjadi di Google, bukan di Manus connector.
-3. Kembali ke `/briefing` dan klik **Refresh**. Periksa badge source untuk Calendar dan Gmail metadata.
-4. Bila consent ditolak, scope kurang, atau refresh token invalid, sumber terkait wajib tampil `unavailable` atau `error`, bukan angka contoh.
+2. Buka `/connections` sebagai user yang sudah sign-in, lalu klik **Connect Google Workspace** atau **Reconnect for Gmail Drafts**. Consent terjadi di Google, bukan di Manus connector. Existing token metadata-only harus diberi consent ulang untuk scope compose.
+3. Buka `/drafts`. Pastikan daftar draft nyata muncul atau state error menjelaskan bahwa scope atau API belum tersedia. Buat satu draft disposable, ubah, lalu hapus melalui confirmation dialog. Jangan kirim pesan; Mintdesk tidak menyediakan operasi send.
+4. Kembali ke `/briefing` dan klik **Refresh**. Periksa badge source untuk Calendar dan Gmail metadata.
+5. Bila consent ditolak, scope kurang, atau refresh token invalid, sumber terkait wajib tampil `unavailable` atau `error`, bukan angka contoh.
 
 Lakukan satu verifikasi Calendar read-only dan satu query Gmail metadata pada akun yang diizinkan. Calendar scope tidak memberi akses Gmail secara otomatis [1].
 
@@ -152,9 +154,10 @@ Lakukan satu verifikasi Calendar read-only dan satu query Gmail metadata pada ak
 |---|---|
 | Linux companion | `/health`, `/metrics`, `/processes`, dan `/audit` memberi data nyata; satu test `node` dihentikan melalui `SIGTERM` |
 | File Storage | File uji kurang dari 8 MB tercantum di Files dan tautan `/manus-storage/…` dapat dibuka setelah login |
-| Google OAuth | Callback tersedia, token tersimpan server-side, scope diverifikasi, dan Morning Briefing memberi data nyata atau source state yang benar setelah consent |
+| Google OAuth + Drafts | Callback tersedia, token tersimpan server-side, scope diverifikasi, Morning Briefing memberi data nyata atau source state yang benar, dan satu draft disposable dibuat/diubah/dihapus dengan event audit tanpa body tersimpan |
 
 ## References
 
 [1]: https://developers.google.com/identity/protocols/oauth2 "Using OAuth 2.0 to Access Google APIs"
 [2]: https://developers.google.com/identity/protocols/oauth2/scopes "OAuth 2.0 Scopes for Google APIs"
+[3]: https://developers.google.com/workspace/gmail/api/auth/scopes "Choose Gmail API scopes"
