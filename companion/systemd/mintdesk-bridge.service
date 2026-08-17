@@ -1,0 +1,22 @@
+[Unit]
+Description=Mintdesk local Linux bridge
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.local/share/mintdesk
+ExecStart=/usr/bin/node %h/.local/share/mintdesk/mintdesk-bridge.mjs
+Restart=on-failure
+RestartSec=3
+Environment=MINTDESK_HOST=127.0.0.1
+Environment=MINTDESK_PORT=18765
+EnvironmentFile=-%h/.config/mintdesk/bridge.env
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.config/mintdesk %h/.local/state/mintdesk
+
+[Install]
+WantedBy=default.target

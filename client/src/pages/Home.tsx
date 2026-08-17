@@ -1,5 +1,8 @@
 /* Mint Atelier: warm editorial Linux desktop dashboard with asymmetric utility panels, parchment surfaces, and mint status signals. */
-import { useMemo, useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect, useMemo, useState } from "react";
+import { bridgeApi, type BridgeMetrics } from "@/lib/bridge";
+import { ProcessPanel } from "@/components/ProcessPanel";
 import {
   Activity,
   Bell,
@@ -43,23 +46,45 @@ const apps = [
   { name: "Notes", type: "Quick capture", icon: FileText, tone: "rose" },
 ];
 
-const activities = [
-  { time: "09:42", title: "System update complete", detail: "12 packages installed", icon: ShieldCheck, tone: "mint" },
-  { time: "09:18", title: "Workspace backed up", detail: "Documents · 148 MB", icon: HardDrive, tone: "blue" },
-  { time: "08:56", title: "New network connected", detail: "Studio Wi-Fi · secured", icon: Wifi, tone: "amber" },
-];
-
 export default function Home() {
+  // The useAuth hook provides authentication state.
+  // To implement login/logout, call logout(), or start login from an event
+  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
+  // startLogin() during render (no href={startLogin()}) — it mints a one-time
+  // nonce cookie and must run only at the moment of navigation.
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const [activeNav, setActiveNav] = useState("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [query, setQuery] = useState("");
+  const [now] = useState(() => new Date());
+  const [bridgeMetrics, setBridgeMetrics] = useState<BridgeMetrics | null>(null);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    bridgeApi.metrics().then((metrics) => {
+      if (!active) return;
+      setBridgeMetrics(metrics);
+      setBridgeError(null);
+    }).catch((error: unknown) => {
+      if (!active) return;
+      setBridgeError(error instanceof Error ? error.message : "Linux companion unavailable");
+    });
+    return () => { active = false; };
+  }, []);
 
   const filteredApps = useMemo(
     () => apps.filter((app) => app.name.toLowerCase().includes(query.toLowerCase())),
     [query],
   );
+  const formatUptime = (seconds: number) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    return `${days}d ${hours}h`;
+  };
 
   const handleNav = (label: string) => {
     setActiveNav(label);
@@ -132,8 +157,8 @@ export default function Home() {
         <div className="content-wrap">
           <section className="welcome-row">
             <div>
-              <p className="eyebrow"><span className="eyebrow-line" /> Monday, August 17, 2026</p>
-              <h1>Good morning, <em>Abelion.</em></h1>
+              <p className="eyebrow"><span className="eyebrow-line" /> {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+              <h1>Good morning, <em>{user?.name || "Workspace user"}.</em></h1>
               <p className="welcome-copy">Your workspace is in good shape. Here&apos;s the pulse of your machine.</p>
             </div>
             <button className={`focus-toggle ${focusMode ? "on" : ""}`} onClick={() => { setFocusMode(!focusMode); toast(focusMode ? "Focus mode off" : "Focus mode on"); }}><span className="toggle-dot" /> Focus mode</button>
@@ -143,17 +168,17 @@ export default function Home() {
             <article className="system-hero panel">
               <div className="hero-art" aria-hidden="true" />
               <div className="hero-content">
-                <div className="hero-topline"><span className="status-chip"><span /> System healthy</span><button className="bare-button" onClick={() => toast("System report refreshed")}>Refresh <Activity size={14} /></button></div>
-                <div className="hero-heading"><p className="panel-kicker">System overview</p><h2>Everything is<br /><span>running smoothly.</span></h2><p className="hero-description">Your machine is ready for the work ahead. No action needed right now.</p></div>
-                <div className="hero-meta"><div><p>Last checked</p><strong>Just now</strong></div><div><p>Uptime</p><strong>14d 06h</strong></div><div><p>Kernel</p><strong>6.8.0-41</strong></div></div><div className="system-metrics"><div><span>CPU</span><strong>18%</strong><i><b style={{ width: "18%" }} /></i></div><div><span>Memory</span><strong>6.4 / 16 GB</strong><i><b style={{ width: "40%" }} /></i></div><div><span>Storage</span><strong>248 / 512 GB</strong><i><b style={{ width: "48%" }} /></i></div></div>
+                <div className="hero-topline"><span className={`status-chip ${bridgeMetrics ? "" : "status-unavailable"}`}><span /> {bridgeMetrics ? "System connected" : "Linux bridge unavailable"}</span><button className="bare-button" onClick={() => window.location.reload()}>Refresh <Activity size={14} /></button></div>
+                <div className="hero-heading"><p className="panel-kicker">System overview</p><h2>{bridgeMetrics ? <>Live system<br /><span>data connected.</span></> : <>Connect the Linux<br /><span>companion to begin.</span></>}</h2><p className="hero-description">{bridgeError || "Metrics are read from your local Linux companion. No fallback values are shown."}</p></div>
+                <div className="hero-meta"><div><p>Last checked</p><strong>{bridgeMetrics ? new Date(bridgeMetrics.checkedAt).toLocaleTimeString() : "Unavailable"}</strong></div><div><p>Uptime</p><strong>{bridgeMetrics ? formatUptime(bridgeMetrics.uptimeSeconds) : "Unavailable"}</strong></div><div><p>Platform</p><strong>{bridgeMetrics ? bridgeMetrics.platform : "Unavailable"}</strong></div></div><div className="system-metrics"><div><span>CPU</span><strong>{bridgeMetrics ? `${bridgeMetrics.cpuPercent}%` : "—"}</strong><i><b style={{ width: `${bridgeMetrics?.cpuPercent ?? 0}%` }} /></i></div><div><span>Memory</span><strong>{bridgeMetrics ? `${bridgeMetrics.memory.usedPercent}%` : "—"}</strong><i><b style={{ width: `${bridgeMetrics?.memory.usedPercent ?? 0}%` }} /></i></div><div><span>Load</span><strong>{bridgeMetrics ? bridgeMetrics.loadAverage[0]?.toFixed(2) : "—"}</strong><i><b style={{ width: `${Math.min((bridgeMetrics?.loadAverage[0] ?? 0) * 25, 100)}%` }} /></i></div></div>
               </div>
             </article>
 
             <article className="weather-card panel">
-              <div className="card-heading"><div><p className="panel-kicker">Today</p><h3>Surabaya, ID</h3></div><CloudSun size={26} className="weather-icon" /></div>
-              <div className="temperature"><strong>29°</strong><span>Partly cloudy</span></div>
-              <div className="weather-range"><span>H 31°</span><span>L 24°</span><span className="weather-bar"><i /></span></div>
-              <div className="sunrise"><span>Sunrise <strong>05:35</strong></span><span>Sunset <strong>17:32</strong></span></div>
+              <div className="card-heading"><div><p className="panel-kicker">External data</p><h3>Weather not connected</h3></div><CloudSun size={26} className="weather-icon" /></div>
+              <div className="connection-empty"><strong>No provider configured.</strong><span>Weather will appear here after a real provider is connected.</span></div>
+              <div className="weather-range"><span>Source —</span><span>Permission —</span><span className="weather-bar"><i style={{ width: "0%" }} /></span></div>
+              <div className="sunrise"><span>Last sync <strong>—</strong></span><span>State <strong>Unavailable</strong></span></div>
             </article>
           </section>
 
@@ -168,19 +193,20 @@ export default function Home() {
           <section className="lower-grid">
             <article className="activity-card panel">
               <div className="section-header"><div><p className="panel-kicker">Live feed</p><h2>Recent activity</h2></div><button className="icon-button subtle" aria-label="More activity options" onClick={() => toast("Activity filters opened")}><MoreHorizontal size={18} /></button></div>
-              <div className="activity-list">{activities.map(({ time, title, detail, icon: Icon, tone }) => <div className="activity-row" key={title}><span className={`activity-icon ${tone}`}><Icon size={16} /></span><div className="activity-copy"><strong>{title}</strong><span>{detail}</span></div><time>{time}</time></div>)}</div>
+              <div className="connection-empty activity-empty"><strong>No activity source connected.</strong><span>System events will appear after the Linux bridge exposes an activity stream.</span></div>
               <button className="activity-footer" onClick={() => toast("Full activity history opened")}>See full activity <ChevronRight size={15} /></button>
             </article>
 
             <article className="calendar-card panel">
-              <div className="section-header"><div><p className="panel-kicker">Monday</p><h2>August 17</h2></div><CalendarDays size={21} className="calendar-symbol" /></div>
-              <div className="calendar-event"><span className="event-time">10:00</span><div className="event-line" /><div><strong>Design review</strong><span>Workspace refresh · 45 min</span></div></div>
-              <div className="calendar-event"><span className="event-time">14:30</span><div className="event-line amber-line" /><div><strong>Build &amp; ship</strong><span>OlivX product sync · 30 min</span></div></div>
+              <div className="section-header"><div><p className="panel-kicker">Workspace data</p><h2>Calendar</h2></div><CalendarDays size={21} className="calendar-symbol" /></div>
+              <div className="connection-empty calendar-empty"><strong>Google Calendar not connected.</strong><span>Re-authorize with Calendar read scope to load real events.</span></div>
               <button className="activity-footer" onClick={() => toast("Calendar opened")}>Open calendar <ChevronRight size={15} /></button>
             </article>
           </section>
 
-          <footer className="bottom-status"><span><span className="live-dot" /> All systems operational</span><span>mintdesk 1.4.0</span><span>Updated just now</span></footer>
+          <section className="process-section"><ProcessPanel /></section>
+
+          <footer className="bottom-status"><span><span className="live-dot" /> {bridgeMetrics ? "Linux bridge connected" : "Waiting for Linux bridge"}</span><span>mintdesk</span><span>{bridgeMetrics ? `Checked ${new Date(bridgeMetrics.checkedAt).toLocaleTimeString()}` : "System status unavailable"}</span></footer>
         </div>
       </main>
     </div>
