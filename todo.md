@@ -74,9 +74,9 @@
 - [x] Diagnosa `redirect_uri_mismatch` Google OAuth dan bandingkan URI callback aplikasi dengan Authorized redirect URIs di Google Cloud. Penyebabnya: aplikasi mengirim host runtime internal `ydhstprd65-aco4kte4cq-ue.a.run.app`, bukan domain publik Mintdesk.
 - [x] Terapkan dan uji fallback forwarded-host tanpa mengekspos credential OAuth. Test contract lulus, tetapi smoke test produksi membuktikan gateway masih meneruskan host runtime internal sehingga konfigurasi callback kanonik tetap diperlukan.
 - [x] Uji redirect OAuth anonim dan perbarui runbook callback URI. Smoke test production mencapai pemilihan akun Google tanpa `redirect_uri_mismatch`; runbook memuat URI production dan localhost.
-- [ ] Simpan checkpoint perbaikan OAuth setelah validasi.
+- [x] Simpan checkpoint perbaikan OAuth setelah validasi. Callback production, localhost, dan consent pengguna telah diverifikasi serta dipublikasikan.
 - [x] Tambahkan konfigurasi URI callback publik kanonik yang tidak bergantung pada host runtime internal melalui `GOOGLE_OAUTH_REDIRECT_URI`.
 - [x] Daftarkan URI callback Mintdesk yang sama di Authorized redirect URIs Google Cloud. Production dan `http://localhost:3000/api/google/callback` sudah disimpan pada OAuth Client Mintdesk; consent flow akan diuji setelah deployment callback kanonik.
 - [x] Dukung callback OAuth localhost yang terdaftar terpisah untuk pengembangan lokal tanpa menggantikan callback production.
 - [x] Perbaiki filter Calendar Morning Briefing agar hanya event yang overlap window 24 jam yang tampil. Verifikasi production menunjukkan event Juli berakhir September sehingga memang ongoing pada window Agustus.
-- [ ] Jelaskan event Calendar multi-hari yang overlap window sebagai ongoing dengan waktu selesai, bukan hanya tanggal mulai yang dapat terlihat lampau.
+- [x] Jelaskan event Calendar multi-hari yang overlap window sebagai ongoing dengan waktu selesai, bukan hanya tanggal mulai yang dapat terlihat lampau. Helper presentasi dan regression test lulus; release dipublikasikan pada checkpoint Calendar clarity.
