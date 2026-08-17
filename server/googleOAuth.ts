@@ -65,8 +65,11 @@ export function decryptGoogleRefreshToken(value: string) {
 }
 
 function callbackUrl(req: Request) {
-  const protocol = req.headers["x-forwarded-proto"]?.toString().split(",")[0] || req.protocol;
-  return `${protocol}://${req.get("host")}/api/google/callback`;
+  const forwardedProtocol = req.headers["x-forwarded-proto"]?.toString().split(",")[0]?.trim();
+  const forwardedHost = req.headers["x-forwarded-host"]?.toString().split(",")[0]?.trim();
+  const protocol = forwardedProtocol || req.protocol;
+  const host = forwardedHost || req.get("host");
+  return `${protocol}://${host}/api/google/callback`;
 }
 
 function redirectHome(res: Response, status: string) {
@@ -157,4 +160,4 @@ export function registerGoogleOAuthRoutes(app: Express) {
   });
 }
 
-export const __googleOAuthInternals = { signState, parseState, encryptSecret, decryptSecret };
+export const __googleOAuthInternals = { signState, parseState, encryptSecret, decryptSecret, callbackUrl };

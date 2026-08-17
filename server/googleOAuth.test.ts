@@ -18,4 +18,14 @@ describe("Google OAuth security helpers", () => {
     expect(encrypted).not.toContain("refresh-token-value");
     expect(__googleOAuthInternals.decryptSecret(encrypted)).toBe("refresh-token-value");
   });
+
+  it("uses the public forwarded host for the callback when running behind the deployment gateway", () => {
+    const request = {
+      protocol: "http",
+      headers: { "x-forwarded-proto": "https", "x-forwarded-host": "mintdash-khcj34hp.manus.space" },
+      get: () => "ydhstprd65-aco4kte4cq-ue.a.run.app",
+    } as any;
+
+    expect(__googleOAuthInternals.callbackUrl(request)).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
+  });
 });

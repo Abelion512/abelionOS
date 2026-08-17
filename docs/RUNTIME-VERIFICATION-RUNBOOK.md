@@ -118,7 +118,7 @@ Di Google Cloud Console untuk project Mintdesk:
 1. Aktifkan **Google Calendar API** dan **Gmail API**.
 2. Konfigurasikan OAuth consent screen. Jika statusnya *Testing*, tambahkan akun Anda sebagai test user.
 3. Buat atau perbarui OAuth Client bertipe **Web application**.
-4. Tambahkan redirect URI persis berikut:
+4. Tambahkan **Authorized redirect URI** persis berikut pada OAuth client yang memakai Client ID Mintdesk. Tidak boleh ada trailing slash atau domain runtime internal:
 
 ```text
 https://mintdash-khcj34hp.manus.space/api/google/callback

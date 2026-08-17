@@ -68,3 +68,10 @@
 - [x] Verifikasi route `/connections`, `/processes`, `/activity`, dan `/files` di browser dengan state nyata tanpa data seed; workflow upload membuktikan metadata tidak dibuat bila transfer gagal. Storage template tidak menyediakan delete-object, sehingga object orphan akibat metadata failure tidak dapat dibersihkan langsung dan tidak memiliki referensi aplikasi. Automation E2E CI yang lebih luas tetap backlog quality, bukan klaim selesai.
 - [x] Perbarui audit, PRD, SRS, SDD, UI/UX, Task Breakdown, runbook, dan catatan remediation untuk Morning Briefing.
 - [x] Jalankan test, typecheck, build, dan visual check route utama setelah restart bersih. Checkpoint release siap disimpan setelah review checklist ini.
+
+# Google OAuth Redirect URI Fix
+
+- [x] Diagnosa `redirect_uri_mismatch` Google OAuth dan bandingkan URI callback aplikasi dengan Authorized redirect URIs di Google Cloud. Penyebabnya: aplikasi mengirim host runtime internal `ydhstprd65-aco4kte4cq-ue.a.run.app`, bukan domain publik Mintdesk.
+- [x] Terapkan perbaikan kode tanpa mengekspos credential OAuth. Callback kini memprioritaskan `X-Forwarded-Host` dan `X-Forwarded-Proto` dari gateway publik; test contract lulus.
+- [ ] Uji redirect OAuth anonim dan perbarui runbook callback URI.
+- [ ] Simpan checkpoint perbaikan OAuth setelah validasi.
