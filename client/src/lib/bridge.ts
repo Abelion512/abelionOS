@@ -24,6 +24,7 @@ export type BridgeProcess = {
 
 export type BridgeConfig = { baseUrl: string; token: string };
 export type BridgeStatus = "connected" | "unavailable" | "error";
+export type BridgeHealth = { ok: boolean; service: string; version: string };
 
 export function getBridgeStatus(metrics: BridgeMetrics | null, error: string | null): BridgeStatus {
   if (metrics) return "connected";
@@ -55,7 +56,7 @@ async function bridgeRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const bridgeApi = {
-  health: () => bridgeRequest<{ ok: boolean; service: string; version: string }>("/health"),
+  health: () => bridgeRequest<BridgeHealth>("/health"),
   metrics: () => bridgeRequest<BridgeMetrics>("/v1/metrics"),
   processes: () => bridgeRequest<{ processes: BridgeProcess[]; currentUser: string }>("/v1/processes"),
   audit: () => bridgeRequest<{ events: BridgeAuditEvent[] }>("/v1/audit"),

@@ -52,3 +52,16 @@ export const files = mysqlTable("files", {
 
 export type FileRecord = typeof files.$inferSelect;
 export type InsertFileRecord = typeof files.$inferInsert;
+
+export const googleConnections = mysqlTable("google_connections", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  encryptedRefreshToken: text("encryptedRefreshToken").notNull(),
+  grantedScopes: text("grantedScopes").notNull(),
+  tokenExpiry: timestamp("tokenExpiry"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GoogleConnection = typeof googleConnections.$inferSelect;
+export type InsertGoogleConnection = typeof googleConnections.$inferInsert;

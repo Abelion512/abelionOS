@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { AuditEvent, FileRecord, InsertAuditEvent, InsertFileRecord, InsertUser, auditEvents, files, users } from "../drizzle/schema";
+import { AuditEvent, FileRecord, GoogleConnection, InsertAuditEvent, InsertFileRecord, InsertGoogleConnection, InsertUser, auditEvents, files, googleConnections, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -116,4 +116,26 @@ export async function listUserFiles(userId: number, limit = 100): Promise<FileRe
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return db.select().from(files).where(eq(files.userId, userId)).orderBy(desc(files.createdAt)).limit(Math.min(limit, 100));
+}
+
+export async function getGoogleConnection(userId: number): Promise<GoogleConnection | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.select().from(googleConnections).where(eq(googleConnections.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function upsertGoogleConnection(connection: InsertGoogleConnection): Promise<GoogleConnection> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(googleConnections).values(connection).onDuplicateKeyUpdate({
+    set: {
+      encryptedRefreshToken: connection.encryptedRefreshToken,
+      grantedScopes: connection.grantedScopes,
+      tokenExpiry: connection.tokenExpiry,
+    },
+  });
+  const saved = await getGoogleConnection(connection.userId);
+  if (!saved) throw new Error("Google connection was not saved");
+  return saved;
 }

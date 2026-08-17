@@ -15,6 +15,13 @@
       "when": 1786966636757,
       "tag": "0001_plain_ma_gnuci",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786970427729,
+      "tag": "0002_milky_shiver_man",
+      "breakpoints": true
     }
   ]
 }

@@ -2,9 +2,8 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { createFileRecord, listAuditEvents, listUserFiles } from "./db";
-import { storagePut } from "./storage";
-import { validateUploadBytes } from "./fileValidation";
+import { createFileRecord, getGoogleConnection, listAuditEvents, listUserFiles } from "./db";
+import { storageCreatePresignedUpload } from "./storage";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -26,15 +25,27 @@ export const appRouter = router({
       listAuditEvents(ctx.user.id, input?.limit ?? 50)
     ),
   }),
+  google: router({
+    status: protectedProcedure.query(async ({ ctx }) => {
+      const connection = await getGoogleConnection(ctx.user.id);
+      if (!connection) return { connected: false as const, scopes: [] as string[], updatedAt: null };
+      return { connected: true as const, scopes: connection.grantedScopes.split(" ").filter(Boolean), updatedAt: connection.updatedAt };
+    }),
+  }),
   files: router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) =>
       listUserFiles(ctx.user.id, input?.limit ?? 100)
     ),
-    upload: protectedProcedure.input(z.object({ fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(160), base64: z.string().min(1).max(12_000_000), sizeBytes: z.number().int().positive().max(8_000_000) })).mutation(async ({ ctx, input }) => {
-      const bytes = validateUploadBytes(input.base64, input.sizeBytes);
+    prepareUpload: protectedProcedure.input(z.object({ fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(160), sizeBytes: z.number().int().positive().max(8_000_000) })).mutation(async ({ ctx, input }) => {
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const uploaded = await storagePut(`${ctx.user.id}-files/${safeName}`, bytes, input.mimeType);
-      return createFileRecord({ userId: ctx.user.id, objectKey: uploaded.key, objectUrl: uploaded.url, fileName: input.fileName, mimeType: input.mimeType, sizeBytes: input.sizeBytes });
+      return storageCreatePresignedUpload(`${ctx.user.id}-files/${safeName}`);
+    }),
+    completeUpload: protectedProcedure.input(z.object({ objectKey: z.string().min(1).max(512), objectUrl: z.string().min(1).max(1024), fileName: z.string().min(1).max(255), mimeType: z.string().min(1).max(160), sizeBytes: z.number().int().positive().max(8_000_000) })).mutation(async ({ ctx, input }) => {
+      const prefix = `${ctx.user.id}-files/`;
+      if (!input.objectKey.startsWith(prefix) || input.objectUrl !== `/manus-storage/${input.objectKey}`) {
+        throw new Error("Upload object does not belong to the authenticated user");
+      }
+      return createFileRecord({ userId: ctx.user.id, objectKey: input.objectKey, objectUrl: input.objectUrl, fileName: input.fileName, mimeType: input.mimeType, sizeBytes: input.sizeBytes });
     }),
   }),
 });

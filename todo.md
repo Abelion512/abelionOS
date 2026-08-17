@@ -37,3 +37,19 @@
 - [x] Dokumentasikan prosedur Linux companion, termasuk health, metrics, process listing, audit lokal, dan terminasi proses disposable. Eksekusi aktual memerlukan laptop Linux pengguna.
 - [x] Dokumentasikan prosedur login dan uji upload File Storage hingga metadata serta URL S3 dapat diverifikasi. Eksekusi aktual memerlukan session login pengguna.
 - [x] Dokumentasikan konfigurasi OAuth Google scope-minimal dan pekerjaan callback/server adapter yang masih harus diimplementasikan sebelum Gmail atau Calendar diaktifkan.
+
+# Reliability and Google OAuth Upgrade
+
+- [x] Tambahkan progress upload berbasis byte dan error message yang dapat ditindaklanjuti pada Files.
+- [x] Tambahkan bridge health polling real-time pada Overview dan Connections.
+- [x] Tambahkan schema token OAuth Google yang terenkripsi dan terikat user.
+- [x] Implementasikan `/api/google/start` dengan state, PKCE, scope minimum, dan redirect aman.
+- [x] Implementasikan `/api/google/callback` dengan validasi state, code exchange, dan penyimpanan token server-side.
+- [x] Tambahkan test keamanan OAuth state dan visual route. Total 5 test files dan 10 tests lulus sebelum coverage UI tambahan.
+- [x] Tambahkan automated test Files untuk state preparing, byte-progress, finalizing, success, dan error yang actionable.
+- [x] Tambahkan automated test Overview/Connections untuk health unavailable, sukses, polling refresh, dan failure fallback. Total 7 test files dan 14 tests lulus; OAuth route smoke test mengembalikan redirect aman untuk sesi anonim dan access denial.
+- [x] Tambahkan integration test shared poller untuk refresh berkala, timestamp, failure fallback, dan cleanup timer. Total 8 test files dan 15 tests lulus.
+- [x] Tambahkan component/integration test Overview untuk health success, timestamp, dan fallback berikutnya.
+- [x] Tambahkan component/integration test Connections untuk health success dan fallback berikutnya. Total 10 test files dan 17 tests lulus.
+- [x] Tambahkan assertion render state awal Overview sebelum health pertama berhasil.
+- [x] Tambahkan assertion label dan detail state awal Connections sebelum health pertama berhasil. Total 10 test files dan 19 tests lulus.
