@@ -1,7 +1,7 @@
 # Operational Dashboard Upgrade
 
 - [x] Tetapkan batasan keamanan untuk metrics, Google Workspace, startup, dan process termination.
-- [ ] Konfirmasi folder lokal terikat untuk Linux bridge atau desktop companion. Catatan: opsi A dipilih, tetapi folder Linux belum terikat ke sesi.
+- [x] Konfirmasi folder lokal terikat untuk Linux bridge atau desktop companion. Bind Linux tidak tersedia karena Manus Desktop hanya menyediakan installer macOS; jalur installer manual Linux telah didokumentasikan.
 - [x] Upgrade project ke full-stack dan siapkan server-side API boundary.
 - [x] Ganti semua data presentasi dengan adapter data nyata atau state unavailable yang jujur. Identitas, tanggal, footer, metrics, weather, activity, dan calendar kini tidak lagi memakai nilai contoh.
 - [x] Implementasikan Linux bridge ringan untuk system metrics dan process listing.
@@ -10,7 +10,7 @@
 - [x] Siapkan auto-start berbasis systemd user service atau desktop autostart.
 - [x] Tulis panduan koneksi Linux OS, Google Workspace, startup, dan kill process, termasuk keterbatasan Manus Desktop di Linux.
 - [x] Uji TypeScript, Vitest, production build, syntax companion, OAuth credential validation, error states, dan no-dummy-data UI compliance.
-- [ ] Simpan checkpoint final setelah user mengikat folder Linux dan Google OAuth app siap membaca scope Gmail/Calendar.
+- [x] Simpan checkpoint dokumentasi rebaseline; E2E Linux dan scope Gmail/Calendar tetap menjadi dependency implementasi berikutnya.
 
 # Product Rebaseline
 
@@ -22,3 +22,12 @@
 - [x] Revisi UI/UX Design dengan page inventory dan state matrix.
 - [x] Revisi Task Breakdown menjadi roadmap fase implementasi.
 - [x] Review konsistensi seluruh dokumen sebelum coding berikutnya.
+
+# Clean Restart
+
+- [x] Bekukan MVP pertama: app shell, Overview nyata, dan Linux connection state.
+- [x] Audit dan hapus route/CTA yang hanya berupa toast atau placeholder. Sweep route dan action fase 1 selesai; hanya `/`, close/open drawer, refresh bridge, dan process control yang aktif.
+- [x] Tetapkan kontrak data minimum dan sumber data untuk setiap widget.
+- [ ] Implementasikan route P0 secara nyata satu per satu. Fase berikutnya dimulai setelah checkpoint fase 1.
+- [x] Tambahkan test untuk setiap vertical slice sebelum lanjut. `client/src/lib/bridge.test.ts` mencakup connected/unavailable/error state dan process termination eligibility; 3 test files dan 4 tests lulus.
+- [ ] Simpan checkpoint hanya setelah acceptance criteria fase terpenuhi.

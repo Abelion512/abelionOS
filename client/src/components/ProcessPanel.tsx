@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CircleStop, Cpu, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { bridgeApi, type BridgeProcess } from "@/lib/bridge";
+import { bridgeApi, canRequestProcessTermination, type BridgeProcess } from "@/lib/bridge";
 
 export function ProcessPanel() {
   const [processes, setProcesses] = useState<BridgeProcess[]>([]);
@@ -24,7 +24,7 @@ export function ProcessPanel() {
   useEffect(() => { void load(); }, [load]);
 
   const terminate = async (process: BridgeProcess) => {
-    if (!process.canTerminate) return;
+    if (!canRequestProcessTermination(process)) return;
     if (!window.confirm(`Terminate ${process.command} (PID ${process.pid}) with SIGTERM?`)) return;
     try {
       await bridgeApi.terminate(process.pid);
@@ -40,6 +40,6 @@ export function ProcessPanel() {
     {loading && <div className="connection-empty process-empty"><strong>Reading process table…</strong><span>Waiting for the local companion.</span></div>}
     {!loading && error && <div className="connection-empty process-empty"><strong>Process list unavailable.</strong><span>{error}</span></div>}
     {!loading && !error && processes.length === 0 && <div className="connection-empty process-empty"><strong>No user processes returned.</strong><span>The bridge returned an empty process list.</span></div>}
-    {!loading && !error && processes.length > 0 && <div className="process-list">{processes.slice(0, 8).map((process) => <div className="process-row" key={process.pid}><span className="process-glyph"><Cpu size={15} /></span><div className="process-copy"><strong>{process.command}</strong><span>PID {process.pid} · CPU {process.cpuPercent}% · MEM {process.memoryPercent}%</span></div><button className="kill-button" disabled={!process.canTerminate} aria-label={`Terminate ${process.command}`} onClick={() => void terminate(process)}><CircleStop size={15} /></button></div>)}</div>}
+    {!loading && !error && processes.length > 0 && <div className="process-list">{processes.slice(0, 8).map((process) => <div className="process-row" key={process.pid}><span className="process-glyph"><Cpu size={15} /></span><div className="process-copy"><strong>{process.command}</strong><span>PID {process.pid} · CPU {process.cpuPercent}% · MEM {process.memoryPercent}%</span></div><button className="kill-button" disabled={!canRequestProcessTermination(process)} aria-label={`Terminate ${process.command}`} onClick={() => void terminate(process)}><CircleStop size={15} /></button></div>)}</div>}
   </article>;
 }

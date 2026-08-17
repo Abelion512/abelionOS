@@ -21,6 +21,16 @@ export type BridgeProcess = {
 };
 
 export type BridgeConfig = { baseUrl: string; token: string };
+export type BridgeStatus = "connected" | "unavailable" | "error";
+
+export function getBridgeStatus(metrics: BridgeMetrics | null, error: string | null): BridgeStatus {
+  if (metrics) return "connected";
+  return error ? "error" : "unavailable";
+}
+
+export function canRequestProcessTermination(process: BridgeProcess): boolean {
+  return process.canTerminate === true && process.pid > 1 && process.command.length > 0;
+}
 
 export function getBridgeConfig(): BridgeConfig | null {
   const baseUrl = import.meta.env.VITE_MINTDESK_BRIDGE_URL || "http://127.0.0.1:18765";
