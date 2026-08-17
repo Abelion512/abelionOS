@@ -109,7 +109,7 @@
 # Morning Briefing Agent Boundary
 
 - [x] Nonaktifkan endpoint/UI Gmail Drafts dan hapus `gmail.compose` dari scope OAuth karena agent tidak boleh menyentuh data di luar Morning Briefing.
-- [ ] Revoke/re-consent koneksi Google ke scope read-only Morning Briefing setelah capability Drafts dinonaktifkan.
+- [x] Revoke/re-consent koneksi Google ke scope read-only Morning Briefing setelah capability Drafts dinonaktifkan. Production kini menunjukkan tiga scope read-only tanpa `gmail.compose`; Daily Focus memuat Calendar nyata, dan Gmail metadata tetap menyatakan unavailable secara eksplisit saat provider tidak dapat di-refresh.
 - [x] Tambahkan mutation Disconnect Google Workspace yang meminta konfirmasi, mencoba revoke refresh token di Google, menghapus koneksi terenkripsi lokal, dan mencatat audit tanpa token atau scope sensitif.
 - [x] Tambahkan status UI serta error state untuk disconnect Google, lalu arahkan pengguna ke connect ulang dengan scope read-only.
 - [x] Definisikan kontrak rekomendasi harian: sumber yang diizinkan, evidence, prioritas, rekomendasi langkah, ketidakpastian, dan human override.
