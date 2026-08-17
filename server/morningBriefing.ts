@@ -15,11 +15,25 @@ export type CalendarBriefingEvent = {
   summary: string;
   start: string;
   end: string;
+  organizer: string | null;
+  attendees: string[];
+  location: string | null;
+  description: string | null;
+  meetingUrl: string | null;
+  htmlLink: string | null;
+};
+
+export type InboxBriefingMessage = {
+  id: string;
+  sender: string | null;
+  subject: string | null;
+  receivedAt: string | null;
 };
 
 export type WorkspaceBriefing = {
   calendarEvents: CalendarBriefingEvent[] | null;
   unreadInboxCount: number | null;
+  inboxMessages: InboxBriefingMessage[] | null;
   source: BriefingSource;
 };
 
@@ -32,7 +46,20 @@ export type MorningBriefing = {
 };
 
 type WorkspaceReader = (connection: GoogleConnection, window: { from: Date; until: Date }) => Promise<WorkspaceBriefing>;
-type GoogleCalendarEvent = { id?: string; summary?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string } };
+type GoogleCalendarEvent = {
+  id?: string;
+  summary?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  organizer?: { displayName?: string; email?: string };
+  attendees?: Array<{ displayName?: string; email?: string }>;
+  location?: string;
+  description?: string;
+  hangoutLink?: string;
+  htmlLink?: string;
+  conferenceData?: { entryPoints?: Array<{ entryPointType?: string; uri?: string }> };
+};
+type GmailMessageResource = { id?: string; internalDate?: string; payload?: { headers?: Array<{ name?: string; value?: string }> } };
 
 const REQUIRED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events.readonly",
@@ -58,8 +85,18 @@ function normalizeCalendarEvents(items: GoogleCalendarEvent[], window: { from: D
     const startAt = Date.parse(start);
     const endAt = Date.parse(end);
     if (!Number.isFinite(startAt) || !Number.isFinite(endAt) || endAt <= window.from.getTime() || startAt >= window.until.getTime()) return [];
-    return [{ id: event.id, summary: event.summary || "Untitled event", start, end }];
+    const organizer = event.organizer?.displayName || event.organizer?.email || null;
+    const attendees = (event.attendees ?? []).map((attendee) => attendee.displayName || attendee.email).filter((value): value is string => Boolean(value));
+    const meetingUrl = event.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video" && entry.uri)?.uri || event.hangoutLink || null;
+    return [{ id: event.id, summary: event.summary || "Untitled event", start, end, organizer, attendees, location: event.location || null, description: event.description || null, meetingUrl, htmlLink: event.htmlLink || null }];
   });
+}
+
+function normalizeInboxMessage(message: GmailMessageResource): InboxBriefingMessage | null {
+  if (!message.id) return null;
+  const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name?.toLowerCase(), header.value]));
+  const receivedAt = message.internalDate && Number.isFinite(Number(message.internalDate)) ? new Date(Number(message.internalDate)).toISOString() : null;
+  return { id: message.id, sender: headers.get("from") || null, subject: headers.get("subject") || null, receivedAt };
 }
 
 async function refreshGoogleAccessToken(connection: GoogleConnection) {
@@ -82,7 +119,7 @@ async function refreshGoogleAccessToken(connection: GoogleConnection) {
 
 export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, window: { from: Date; until: Date }): Promise<WorkspaceBriefing> {
   if (!hasRequiredScopes(connection)) {
-    return { calendarEvents: null, unreadInboxCount: null, source: { status: "unavailable", detail: "Required Calendar or Gmail scope was not granted." } };
+    return { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "unavailable", detail: "Required Calendar or Gmail scope was not granted." } };
   }
 
   try {
@@ -94,6 +131,7 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
     calendarUrl.searchParams.set("singleEvents", "true");
     calendarUrl.searchParams.set("orderBy", "startTime");
     calendarUrl.searchParams.set("maxResults", "10");
+    calendarUrl.searchParams.set("conferenceDataVersion", "1");
 
     const inboxUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
     inboxUrl.searchParams.set("labelIds", "INBOX");
@@ -107,22 +145,28 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
       }),
       fetch(inboxUrl, { headers: auth }).then(async (response) => {
         if (!response.ok) throw new Error(`Gmail request failed (${response.status})`);
-        return response.json() as Promise<{ resultSizeEstimate?: number }>;
+        const payload = await response.json() as { resultSizeEstimate?: number; messages?: Array<{ id?: string }> };
+        const detailResults = await Promise.allSettled((payload.messages ?? []).slice(0, 3).flatMap((message) => message.id ? [fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(message.id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`, { headers: auth }).then(async (detailResponse) => {
+          if (!detailResponse.ok) throw new Error(`Gmail message metadata request failed (${detailResponse.status})`);
+          return detailResponse.json() as Promise<GmailMessageResource>;
+        })] : []));
+        return { unreadInboxCount: payload.resultSizeEstimate ?? 0, inboxMessages: detailResults.flatMap((result) => result.status === "fulfilled" ? [normalizeInboxMessage(result.value)].filter((message): message is InboxBriefingMessage => Boolean(message)) : []) };
       }),
     ]);
 
     const calendarEvents = calendarResult.status === "fulfilled"
       ? normalizeCalendarEvents(calendarResult.value.items ?? [], window)
       : null;
-    const unreadInboxCount = inboxResult.status === "fulfilled" ? inboxResult.value.resultSizeEstimate ?? 0 : null;
+    const unreadInboxCount = inboxResult.status === "fulfilled" ? inboxResult.value.unreadInboxCount : null;
+    const inboxMessages = inboxResult.status === "fulfilled" ? inboxResult.value.inboxMessages : null;
 
     if (calendarEvents === null && unreadInboxCount === null) throw new Error("Calendar and Gmail were both unavailable");
     if (calendarEvents === null || unreadInboxCount === null) {
-      return { calendarEvents, unreadInboxCount, source: { status: "partial", detail: "One Google Workspace source could not be refreshed." } };
+      return { calendarEvents, unreadInboxCount, inboxMessages, source: { status: "partial", detail: "One Google Workspace source could not be refreshed." } };
     }
-    return { calendarEvents, unreadInboxCount, source: { status: "ready", detail: "Calendar and Gmail metadata refreshed." } };
+    return { calendarEvents, unreadInboxCount, inboxMessages, source: { status: "ready", detail: "Calendar and Gmail metadata refreshed." } };
   } catch (error) {
-    return { calendarEvents: null, unreadInboxCount: null, source: { status: "error", detail: providerFailureMessage(error) } };
+    return { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "error", detail: providerFailureMessage(error) } };
   }
 }
 
@@ -158,9 +202,9 @@ export async function buildMorningBriefing(
 
   let workspace: WorkspaceBriefing;
   if (connectionResult.status !== "fulfilled") {
-    workspace = { calendarEvents: null, unreadInboxCount: null, source: { status: "error", detail: "Google Workspace connection status could not be loaded." } };
+    workspace = { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "error", detail: "Google Workspace connection status could not be loaded." } };
   } else if (!connectionResult.value) {
-    workspace = { calendarEvents: null, unreadInboxCount: null, source: { status: "unavailable", detail: "Google Workspace is not connected." } };
+    workspace = { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "unavailable", detail: "Google Workspace is not connected." } };
   } else {
     workspace = await readWorkspace(connectionResult.value, window);
   }
@@ -168,4 +212,4 @@ export async function buildMorningBriefing(
   return { generatedAt: now, window, workspace, activity, files };
 }
 
-export const __morningBriefingInternals = { normalizeCalendarEvents };
+export const __morningBriefingInternals = { normalizeCalendarEvents, normalizeInboxMessage };

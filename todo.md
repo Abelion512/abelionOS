@@ -80,3 +80,12 @@
 - [x] Dukung callback OAuth localhost yang terdaftar terpisah untuk pengembangan lokal tanpa menggantikan callback production.
 - [x] Perbaiki filter Calendar Morning Briefing agar hanya event yang overlap window 24 jam yang tampil. Verifikasi production menunjukkan event Juli berakhir September sehingga memang ongoing pada window Agustus.
 - [x] Jelaskan event Calendar multi-hari yang overlap window sebagai ongoing dengan waktu selesai, bukan hanya tanggal mulai yang dapat terlihat lampau. Helper presentasi dan regression test lulus; release dipublikasikan pada checkpoint Calendar clarity.
+
+# Morning Briefing 5W1H Clarity
+
+- [x] Audit kontrak saat ini: Calendar hanya memakai ringkasan dan waktu; Gmail hanya memakai unread count. Metadata 5W1H belum diambil sehingga tidak boleh diklaim tersedia.
+- [x] Perluas kontrak backend untuk metadata Calendar dan Gmail yang benar-benar dikembalikan provider serta aman untuk scope read-only yang sudah disetujui. Calendar memakai ringkasan, waktu, organizer/peserta, lokasi, deskripsi, serta tautan event/meeting bila dikembalikan; Gmail memakai From, Subject, dan internalDate dengan `format=metadata`, tanpa body.
+- [x] Rancang dan implementasikan hierarchy Calendar/Inbox terpisah dengan label 5W1H serta unavailable state per field.
+- [x] Tambahkan test data-presentation dan component untuk layout 5W1H, partial source, dan field yang unavailable.
+- [x] Implementasikan blok 5W1H, empty/partial/error state yang ringkas, dan visual grouping yang konsisten.
+- [x] Tambahkan test presentation dan component, lalu lakukan visual smoke check desktop/mobile. Validasi release lulus: 17 test files dan 40 tests, typecheck, serta production build; checkpoint siap disimpan.

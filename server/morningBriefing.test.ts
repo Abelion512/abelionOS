@@ -17,7 +17,7 @@ describe("Morning Briefing aggregation", () => {
 
     expect(readWorkspace).not.toHaveBeenCalled();
     expect(briefing.window).toEqual({ from: now, until: new Date("2026-08-18T01:00:00.000Z"), label: "Next 24 hours" });
-    expect(briefing.workspace).toEqual({ calendarEvents: null, unreadInboxCount: null, source: { status: "unavailable", detail: "Google Workspace is not connected." } });
+    expect(briefing.workspace).toEqual({ calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "unavailable", detail: "Google Workspace is not connected." } });
     expect(briefing.activity).toMatchObject({ events: [], source: { status: "ready" } });
     expect(briefing.files).toMatchObject({ recent: [], source: { status: "ready" } });
   });
@@ -30,8 +30,9 @@ describe("Morning Briefing aggregation", () => {
       listActivity: async () => [],
       listFiles: async () => [],
       readWorkspace: async () => ({
-        calendarEvents: [{ id: "event-1", summary: "Review", start: "2026-08-17T02:00:00.000Z", end: "2026-08-17T02:30:00.000Z" }],
+        calendarEvents: [{ id: "event-1", summary: "Review", start: "2026-08-17T02:00:00.000Z", end: "2026-08-17T02:30:00.000Z", organizer: null, attendees: [], location: null, description: null, meetingUrl: null, htmlLink: null }],
         unreadInboxCount: null,
+        inboxMessages: null,
         source: { status: "partial", detail: "One Google Workspace source could not be refreshed." },
       }),
     });
@@ -48,10 +49,10 @@ describe("Morning Briefing aggregation", () => {
       getConnection: async () => connection,
       listActivity: async () => [],
       listFiles: async () => [],
-      readWorkspace: async () => ({ calendarEvents: null, unreadInboxCount: null, source: { status: "error", detail: "Google authorization must be connected again." } }),
+      readWorkspace: async () => ({ calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "error", detail: "Google authorization must be connected again." } }),
     });
 
-    expect(briefing.workspace).toEqual({ calendarEvents: null, unreadInboxCount: null, source: { status: "error", detail: "Google authorization must be connected again." } });
+    expect(briefing.workspace).toEqual({ calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "error", detail: "Google authorization must be connected again." } });
   });
 
   it("keeps simultaneous briefing refreshes user-scoped", async () => {
@@ -75,5 +76,13 @@ describe("Morning Briefing aggregation", () => {
     ], { from: now, until: new Date("2026-08-18T01:00:00.000Z") });
 
     expect(events.map((event) => event.id)).toEqual(["current", "overlap"]);
+  });
+
+  it("maps only Calendar and Gmail metadata that can support 5W1H without email body access", () => {
+    const [event] = __morningBriefingInternals.normalizeCalendarEvents([{ id: "event-1", summary: "Planning", start: { dateTime: "2026-08-17T02:00:00.000Z" }, end: { dateTime: "2026-08-17T02:30:00.000Z" }, organizer: { displayName: "Abelion" }, attendees: [{ displayName: "Team" }], location: "Studio", description: "Review launch plan", conferenceData: { entryPoints: [{ entryPointType: "video", uri: "https://meet.google.com/abc-defg-hij" }] } }], { from: now, until: new Date("2026-08-18T01:00:00.000Z") });
+    const message = __morningBriefingInternals.normalizeInboxMessage({ id: "mail-1", internalDate: "1786928400000", payload: { headers: [{ name: "From", value: "Project <project@example.com>" }, { name: "Subject", value: "Launch checklist" }] } });
+
+    expect(event).toMatchObject({ organizer: "Abelion", attendees: ["Team"], location: "Studio", description: "Review launch plan", meetingUrl: "https://meet.google.com/abc-defg-hij" });
+    expect(message).toMatchObject({ sender: "Project <project@example.com>", subject: "Launch checklist" });
   });
 });
