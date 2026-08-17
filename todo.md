@@ -78,4 +78,5 @@
 - [x] Tambahkan konfigurasi URI callback publik kanonik yang tidak bergantung pada host runtime internal melalui `GOOGLE_OAUTH_REDIRECT_URI`.
 - [x] Daftarkan URI callback Mintdesk yang sama di Authorized redirect URIs Google Cloud. Production dan `http://localhost:3000/api/google/callback` sudah disimpan pada OAuth Client Mintdesk; consent flow akan diuji setelah deployment callback kanonik.
 - [x] Dukung callback OAuth localhost yang terdaftar terpisah untuk pengembangan lokal tanpa menggantikan callback production.
-- [ ] Perbaiki filter Calendar Morning Briefing agar hanya event pada window 24 jam yang tampil setelah OAuth production tersambung.
+- [x] Perbaiki filter Calendar Morning Briefing agar hanya event yang overlap window 24 jam yang tampil. Verifikasi production menunjukkan event Juli berakhir September sehingga memang ongoing pada window Agustus.
+- [ ] Jelaskan event Calendar multi-hari yang overlap window sebagai ongoing dengan waktu selesai, bukan hanya tanggal mulai yang dapat terlihat lampau.
