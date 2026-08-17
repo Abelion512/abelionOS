@@ -1,5 +1,4 @@
-import { Link } from "wouter";
-import { ArrowLeft, CheckCircle2, CircleHelp, Settings2, ShieldAlert } from "lucide-react";
+import { CheckCircle2, CircleHelp, Settings2, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getBridgeConfig } from "@/lib/bridge";
 import { trpc } from "@/lib/trpc";
@@ -10,7 +9,7 @@ export default function Settings() {
   const workspace = trpc.google.status.useQuery(undefined, { enabled: isAuthenticated });
   const workspaceStatus = !isAuthenticated ? "Not authenticated" : workspace.isLoading ? "Checking" : workspace.data?.connected ? "Connected" : "Not configured";
   return <div className="feature-page">
-    <header className="feature-header"><div><p className="eyebrow"><span className="eyebrow-line" /> Runtime configuration</p><h1>Settings</h1><p>This page exposes current runtime facts only. There are no settings controls until persistence and permission contracts exist.</p></div><Link href="/" className="back-link"><ArrowLeft size={15} /> Overview</Link></header>
+    <header className="feature-header"><div><p className="eyebrow"><span className="eyebrow-line" /> Runtime configuration</p><h1>Settings</h1><p>This page exposes current runtime facts only. There are no settings controls until persistence and permission contracts exist.</p></div></header>
     <div className="settings-grid">
       <article className="panel settings-card"><div className="settings-card-heading"><Settings2 size={18} /><h2>Application</h2></div><dl><div><dt>Environment</dt><dd>Web app</dd></div><div><dt>Storage</dt><dd>S3 metadata-backed</dd></div><div><dt>Workspace OAuth</dt><dd>{workspaceStatus}</dd></div></dl></article>
       <article className="panel settings-card"><div className="settings-card-heading"><ShieldAlert size={18} /><h2>Authentication</h2></div><dl><div><dt>Status</dt><dd>{isAuthenticated ? "Authenticated" : "Not authenticated"}</dd></div><div><dt>Identity</dt><dd>{user?.email || user?.name || "Unavailable"}</dd></div><div><dt>Provider</dt><dd>Manus OAuth</dd></div></dl></article>

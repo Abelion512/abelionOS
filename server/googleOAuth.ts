@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { parse as parseCookieHeader } from "cookie";
-import { createAuditEvent, upsertGoogleConnection } from "./db";
+import type { GoogleConnection, InsertAuditEvent } from "../drizzle/schema";
+import { createAuditEvent, deleteGoogleConnection, getGoogleConnection, upsertGoogleConnection } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
 import { sdk } from "./_core/sdk";
@@ -76,6 +77,44 @@ function callbackUrl(req: Request) {
 
 function redirectHome(res: Response, status: string) {
   res.redirect(302, `/?google=${encodeURIComponent(status)}`);
+}
+
+type DisconnectDependencies = {
+  getConnection?: (userId: number) => Promise<GoogleConnection | undefined>;
+  deleteConnection?: (userId: number) => Promise<boolean>;
+  createAudit?: (event: InsertAuditEvent) => ReturnType<typeof createAuditEvent>;
+  revoke?: (refreshToken: string) => Promise<void>;
+};
+
+async function revokeGoogleToken(refreshToken: string) {
+  const response = await fetch("https://oauth2.googleapis.com/revoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ token: refreshToken }),
+  });
+  if (!response.ok) throw new Error(`Google token revoke failed (${response.status})`);
+}
+
+export async function disconnectGoogleWorkspace(userId: number, dependencies: DisconnectDependencies = {}) {
+  const getConnection = dependencies.getConnection ?? getGoogleConnection;
+  const deleteConnection = dependencies.deleteConnection ?? deleteGoogleConnection;
+  const createAudit = dependencies.createAudit ?? createAuditEvent;
+  const revoke = dependencies.revoke ?? revokeGoogleToken;
+  const connection = await getConnection(userId);
+  if (!connection) return { disconnected: false as const, providerRevoke: "not_needed" as const };
+
+  let providerRevoke: "revoked" | "failed" = "revoked";
+  try {
+    await revoke(decryptGoogleRefreshToken(connection.encryptedRefreshToken));
+  } catch (error) {
+    providerRevoke = "failed";
+    console.warn("[Google OAuth] Provider revoke failed; deleting local connection anyway", error instanceof Error ? error.message : "unknown error");
+  }
+
+  const deleted = await deleteConnection(userId);
+  if (!deleted) throw new Error("Google connection could not be removed locally");
+  await createAudit({ userId, action: "google.oauth.disconnected", resourceType: "google_connection", status: "accepted", details: JSON.stringify({ providerRevoke }) });
+  return { disconnected: true as const, providerRevoke };
 }
 
 export function registerGoogleOAuthRoutes(app: Express) {
@@ -162,4 +201,4 @@ export function registerGoogleOAuthRoutes(app: Express) {
   });
 }
 
-export const __googleOAuthInternals = { signState, parseState, encryptSecret, decryptSecret, callbackUrl, googleScopes: GOOGLE_SCOPES };
+export const __googleOAuthInternals = { signState, parseState, encryptSecret, decryptSecret, callbackUrl, googleScopes: GOOGLE_SCOPES, revokeGoogleToken };

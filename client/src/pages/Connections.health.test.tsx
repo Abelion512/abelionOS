@@ -3,10 +3,10 @@ import React from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ health: vi.fn(), getBridgeConfig: vi.fn() }));
+const mocks = vi.hoisted(() => ({ health: vi.fn(), getBridgeConfig: vi.fn(), invalidate: vi.fn(), mutate: vi.fn(), reset: vi.fn() }));
 
 vi.mock("@/lib/bridge", () => ({ bridgeApi: { health: mocks.health }, getBridgeConfig: mocks.getBridgeConfig }));
-vi.mock("@/lib/trpc", () => ({ trpc: { google: { status: { useQuery: () => ({ data: { connected: false }, isLoading: false }) } } } }));
+vi.mock("@/lib/trpc", () => ({ trpc: { useUtils: () => ({ google: { status: { invalidate: mocks.invalidate } }, briefing: { invalidate: mocks.invalidate } }), google: { status: { useQuery: () => ({ data: { connected: false }, isLoading: false }) }, disconnect: { useMutation: () => ({ mutate: mocks.mutate, reset: mocks.reset, isPending: false, error: null }) } } } }));
 
 import Connections from "./Connections";
 

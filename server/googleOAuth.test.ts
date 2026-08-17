@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { __googleOAuthInternals } from "./googleOAuth";
+import { describe, expect, it, vi } from "vitest";
+import { disconnectGoogleWorkspace, __googleOAuthInternals } from "./googleOAuth";
 import { ENV } from "./_core/env";
+import type { GoogleConnection } from "../drizzle/schema";
 
 describe("Google OAuth security helpers", () => {
   it("accepts a signed state before expiry and rejects a changed signature", () => {
@@ -50,5 +51,20 @@ describe("Google OAuth security helpers", () => {
     expect(ENV.googleOAuthRedirectUri).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
     const response = await fetch(ENV.googleOAuthRedirectUri, { redirect: "manual" });
     expect([301, 302, 303, 307, 308]).toContain(response.status);
+  });
+
+  it("removes only the current user connection and records a token-free audit even when provider revoke fails", async () => {
+    const encryptedRefreshToken = __googleOAuthInternals.encryptSecret("refresh-token-value");
+    const connection = { id: 1, userId: 9, encryptedRefreshToken, grantedScopes: "https://www.googleapis.com/auth/gmail.compose", tokenExpiry: null, createdAt: new Date(), updatedAt: new Date() } as GoogleConnection;
+    const revoke = vi.fn().mockRejectedValue(new Error("Google unavailable"));
+    const deleteConnection = vi.fn().mockResolvedValue(true);
+    const createAudit = vi.fn().mockResolvedValue(undefined);
+
+    const result = await disconnectGoogleWorkspace(9, { getConnection: async () => connection, revoke, deleteConnection, createAudit });
+
+    expect(result).toEqual({ disconnected: true, providerRevoke: "failed" });
+    expect(deleteConnection).toHaveBeenCalledWith(9);
+    expect(createAudit).toHaveBeenCalledWith(expect.objectContaining({ userId: 9, action: "google.oauth.disconnected", status: "accepted" }));
+    expect(JSON.stringify(createAudit.mock.calls)).not.toContain("refresh-token-value");
   });
 });

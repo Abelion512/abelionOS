@@ -139,3 +139,10 @@ export async function upsertGoogleConnection(connection: InsertGoogleConnection)
   if (!saved) throw new Error("Google connection was not saved");
   return saved;
 }
+
+export async function deleteGoogleConnection(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.delete(googleConnections).where(eq(googleConnections.userId, userId));
+  return (result[0]?.affectedRows ?? 0) > 0;
+}

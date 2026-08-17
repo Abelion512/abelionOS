@@ -100,7 +100,7 @@
 - [x] Tambahkan component test dasar `/drafts` untuk edit dan delete yang dibatalkan.
 - [x] Tambahkan test tRPC/router untuk list, get, create, update, dan delete termasuk error ketika `gmail.compose` belum granted.
 - [x] Tambahkan component test `/drafts` untuk load error, create/update confirmation=true, delete confirmation=true, dan pesan error mutation.
-- [ ] Perbarui runbook, validasi end-to-end dengan akun pengguna, dan simpan checkpoint.
+- [x] Perbarui runbook, validasi end-to-end dengan akun pengguna, dan simpan checkpoint. Dibatal-kan oleh security rebaseline: capability Gmail Drafts telah dicabut; runbook kini mendokumentasikan re-consent read-only.
 
 ## Approved Scope Boundary
 
@@ -110,6 +110,8 @@
 
 - [x] Nonaktifkan endpoint/UI Gmail Drafts dan hapus `gmail.compose` dari scope OAuth karena agent tidak boleh menyentuh data di luar Morning Briefing.
 - [ ] Revoke/re-consent koneksi Google ke scope read-only Morning Briefing setelah capability Drafts dinonaktifkan.
+- [x] Tambahkan mutation Disconnect Google Workspace yang meminta konfirmasi, mencoba revoke refresh token di Google, menghapus koneksi terenkripsi lokal, dan mencatat audit tanpa token atau scope sensitif.
+- [x] Tambahkan status UI serta error state untuk disconnect Google, lalu arahkan pengguna ke connect ulang dengan scope read-only.
 - [x] Definisikan kontrak rekomendasi harian: sumber yang diizinkan, evidence, prioritas, rekomendasi langkah, ketidakpastian, dan human override.
 - [x] Bangun layar Daily Briefing sebagai pendukung data nyata, tanpa data dummy atau aksi agent-to-agent.
 - [x] Tambahkan guardrail companion yang melarang write action, scheduled action, dan akses data di luar sumber Morning Briefing.
@@ -148,3 +150,7 @@
 - [x] Tambahkan test UI Daily Focus yang memaksa `bridgeApi.dailyFocus` reject lalu memastikan panel menampilkan reasoning unavailable tanpa merender hasil AI baru maupun hasil AI lama.
 - [x] Tambahkan test UI Storage yang memaksa `bridgeApi.workdirStorage()` gagal lalu memastikan Workdir unavailable serta error observer tampil benar.
 - [x] Perbaiki tombol Refresh Storage pada viewport mobile agar hanya menampilkan ikon yang dapat diakses, tanpa label terpotong.
+- [x] Pindahkan Connections dan Settings dari sidebar ke menu profil popover yang ringkas, dapat diakses dengan keyboard, dan menjaga route tetap tersedia.
+- [x] Sederhanakan informasi profil/sidebar untuk hierarki visual yang lebih tenang, modern, dan konsisten dengan HIG Apple tanpa menghilangkan status yang bermakna.
+- [x] Tambahkan test kontrak disconnect serta test menu profil, lalu verifikasi desktop/mobile sebelum checkpoint.
+- [x] Perbaiki layout mobile Connections dan Settings agar kartu tidak meluber horizontal dan tetap mudah dibaca pada viewport sempit.

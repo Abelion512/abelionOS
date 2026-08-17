@@ -5,6 +5,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createFileRecord, getGoogleConnection, listAuditEvents, listUserFiles } from "./db";
 import { storageCreatePresignedUpload } from "./storage";
 import { buildMorningBriefing } from "./morningBriefing";
+import { disconnectGoogleWorkspace } from "./googleOAuth";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -32,6 +33,7 @@ export const appRouter = router({
       if (!connection) return { connected: false as const, scopes: [] as string[], updatedAt: null };
       return { connected: true as const, scopes: connection.grantedScopes.split(" ").filter(Boolean), updatedAt: connection.updatedAt };
     }),
+    disconnect: protectedProcedure.mutation(({ ctx }) => disconnectGoogleWorkspace(ctx.user.id)),
   }),
   briefing: router({
     get: protectedProcedure.query(({ ctx }) => buildMorningBriefing(ctx.user.id)),
