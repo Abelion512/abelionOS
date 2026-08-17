@@ -1,63 +1,47 @@
-# Product Requirements Document (PRD)
+# Product Requirements Document
 
-## 1. Informasi Dokumen
+## Product
 
-| Atribut | Nilai |
-|---|---|
-| Produk | Dashboard OS Linux Mint / mintdesk |
-| Versi | 1.0 |
-| Status | Baseline untuk MVP frontend |
-| Pemilik produk | Abelion / OlivX |
-| Penulis | Manus AI |
-| Tanggal | 17 Agustus 2026 |
+**Mintdesk** adalah dashboard operasional untuk pengguna Linux yang ingin melihat kondisi laptop, mengelola proses milik user, mengakses file, dan menghubungkan layanan Google Workspace dari satu antarmuka yang terasa seperti desktop Linux. Produk ini bukan pengganti desktop environment, bukan remote shell, dan bukan service manager dengan hak root.
 
-## 2. Ringkasan Produk
+## Problem
 
-Dashboard OS Linux Mint adalah personal workspace dashboard yang menyajikan kondisi mesin, aplikasi yang sering digunakan, aktivitas terbaru, agenda harian, dan konteks cuaca dalam satu layar. Produk ini mengambil bahasa visual Linux Mint, tetapi menyusunnya sebagai pengalaman desktop yang hangat, editorial, dan mudah dipindai.
+Pengguna harus berpindah antara system monitor, file manager, browser, Gmail, Calendar, dan terminal untuk memahami keadaan workspace. Dashboard saat ini baru memvisualisasikan konsep tersebut; MVP harus mengubahnya menjadi alur nyata dengan sumber data yang dapat diverifikasi.
 
-> Produk ini bukan pengganti desktop environment Linux. Pada fase MVP, produk berfungsi sebagai dashboard web responsif yang memvisualisasikan status workspace dan menyediakan titik masuk ke fitur-fitur lanjutan.
+## Users
 
-## 3. Masalah yang Diselesaikan
-
-Pengguna perlu berpindah antara utilitas sistem, file manager, kalender, catatan, dan status perangkat untuk memahami kondisi workspace. Informasi tersebut biasanya tersebar dan tidak memiliki hirarki yang jelas. Dashboard ini mengurangi context switching dengan merangkum informasi penting dalam satu permukaan yang konsisten.
-
-## 4. Target Pengguna
-
-| Persona | Kebutuhan utama | Hambatan |
+| Persona | Kebutuhan | Risiko |
 |---|---|---|
-| Developer Linux | Membaca health status dan membuka tool dengan cepat | Data tersebar di banyak aplikasi |
-| Founder/solo builder | Memulai hari dengan konteks kerja yang jelas | Tidak punya ringkasan workspace |
-| Power user | Mengawasi resource dan aktivitas | Dashboard generik kurang relevan |
+| Linux power user | Metrics, process control, files, quick workspace context | Salah menghentikan proses penting |
+| Developer | Proses dev, logs, storage, terminal links | Token dan command leakage |
+| Founder/operator | Calendar, Gmail metadata, activity audit | Data Workspace terlalu luas |
 
-## 5. Tujuan dan Non-Tujuan
+## MVP Scope
 
-Tujuan MVP adalah menyediakan dashboard yang terbuka cepat, dapat dipindai dalam kurang dari satu menit, memiliki navigasi yang jelas, dan menjadi fondasi untuk integrasi data nyata. Non-tujuan MVP adalah mengontrol hardware secara langsung, menggantikan window manager, menyediakan terminal penuh di browser, dan membuat sistem operasi Linux baru.
+MVP wajib mencakup Overview berbasis metrics Linux bridge, Processes dengan filtering dan terminate allowlist, Files dengan upload/list/download/delete melalui S3, Connections dengan status OAuth, Settings untuk bridge dan provider, serta Activity Audit untuk aksi sensitif. Semua halaman harus memiliki loading, empty, unavailable, permission denied, dan error state.
 
-## 6. Fitur MVP
+Out of scope untuk MVP adalah arbitrary shell execution, root operations, remote machine control, email body indexing, automatic file deletion, background cloud polling tanpa consent, dan fitur weather tanpa provider nyata.
 
-| ID | Fitur | Deskripsi | Prioritas |
-|---|---|---|---|
-| PRD-01 | Overview workspace | Ringkasan greeting, tanggal, status sistem, dan konteks mesin | P0 |
-| PRD-02 | System health | Status healthy, uptime, kernel, CPU, memory, dan storage | P0 |
-| PRD-03 | Quick launch | Shortcut Files, Terminal, Editor, dan Notes | P0 |
-| PRD-04 | Activity feed | Riwayat aktivitas sistem dan workspace | P1 |
-| PRD-05 | Calendar context | Agenda hari berjalan | P1 |
-| PRD-06 | Weather context | Kondisi cuaca lokasi pengguna | P1 |
-| PRD-07 | Navigation shell | Sidebar desktop dan drawer mobile | P0 |
-| PRD-08 | Interaction feedback | Search filtering, toast, notifications, dan focus mode | P1 |
+## Success Metrics
 
-## 7. Kebutuhan Pengalaman
+Keberhasilan MVP diukur melalui kriteria teknis, bukan kesan visual: metrics tampil dari laptop Linux nyata dalam kurang dari tiga detik setelah bridge aktif; terminate hanya menerima proses yang allowlisted dan selalu tercatat; file upload dapat ditemukan kembali setelah refresh; OAuth scope yang tidak diberikan membuat fitur disabled; serta build, unit test, dan integration test lulus.
 
-Produk harus terasa personal, tenang, teknis, dan presisi. Pengguna harus dapat mengenali status sehat melalui bahasa warna Mint Leaf tanpa memerlukan penjelasan tambahan. Tampilan desktop mengutamakan rail navigasi dan komposisi asimetris; tampilan mobile mengutamakan urutan prioritas informasi dan akses menu yang mudah.
+## Page Priority
 
-## 8. Acceptance Criteria Tingkat Produk
+| Prioritas | Halaman | Tujuan |
+|---|---|---|
+| P0 | Overview | Ringkasan system state nyata |
+| P0 | Processes | Melihat dan menghentikan proses yang aman |
+| P0 | Connections | Menghubungkan Linux bridge dan Google Workspace |
+| P1 | Files | Upload, list, preview metadata, dan download |
+| P1 | Activity | Audit event dan status perubahan |
+| P1 | Settings | Token bridge, provider, retention, dan permissions |
+| P2 | Workspace | Gmail/Calendar/Drive views setelah adapter tersedia |
 
-MVP diterima apabila pengguna dapat memahami status sistem dari halaman pertama, membuka quick launch, memfilter aplikasi melalui search, melihat activity dan calendar, serta mengakses navigasi pada desktop dan mobile. Tidak boleh ada teks yang kehilangan kontras, aksi utama yang tidak memberi feedback, atau layout yang melampaui viewport mobile.
+## Non-negotiables
 
-## 9. Risiko dan Asumsi
+Tidak ada mock data pada runtime production. Jika sumber data belum tersedia, UI menampilkan unavailable state. Setiap action sensitif memiliki confirmation, permission check, audit event, dan error handling. Semua credential disimpan server-side atau pada konfigurasi lokal yang permission-nya ketat.
 
-Dokumen ini mengasumsikan data sistem, cuaca, kalender, dan aktivitas pada versi awal masih berupa data presentasi atau adapter lokal. Integrasi API nyata akan memerlukan autentikasi, permission, error state, caching, dan kebijakan privasi. Nama pengguna dan lokasi dapat dikonfigurasi pada fase berikutnya.
+## Risks
 
-## 10. Roadmap
-
-Fase berikutnya mencakup File Storage, autentikasi, data system metrics nyata, integrasi kalender dan cuaca, serta personalisasi workspace. Setiap integrasi harus memiliki loading, empty, error, dan offline state sebelum dianggap production-ready.
+Risiko utama adalah Manus Desktop belum mendukung Linux, sehingga companion harus diinstal manual. Risiko kedua adalah Google OAuth scope dan review. Risiko ketiga adalah perbedaan proses Linux antar desktop environment. Semua risiko tersebut harus direpresentasikan sebagai dependency di Task Breakdown, bukan disembunyikan dalam UI.

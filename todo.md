@@ -11,3 +11,14 @@
 - [x] Tulis panduan koneksi Linux OS, Google Workspace, startup, dan kill process, termasuk keterbatasan Manus Desktop di Linux.
 - [x] Uji TypeScript, Vitest, production build, syntax companion, OAuth credential validation, error states, dan no-dummy-data UI compliance.
 - [ ] Simpan checkpoint final setelah user mengikat folder Linux dan Google OAuth app siap membaca scope Gmail/Calendar.
+
+# Product Rebaseline
+
+- [x] Audit page, route, backend, bridge, storage, auth, and Workspace implementation status.
+- [x] Pisahkan implemented, scaffolded, blocked, and not-started features.
+- [x] Revisi PRD dengan MVP realistis dan prioritas halaman.
+- [x] Revisi SRS dengan requirement yang dapat diuji dan unavailable states.
+- [x] Revisi SDD dengan arsitektur aktual dan target architecture.
+- [x] Revisi UI/UX Design dengan page inventory dan state matrix.
+- [x] Revisi Task Breakdown menjadi roadmap fase implementasi.
+- [x] Review konsistensi seluruh dokumen sebelum coding berikutnya.

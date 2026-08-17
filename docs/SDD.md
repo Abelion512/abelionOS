@@ -1,103 +1,68 @@
-# Software Design Document (SDD)
+# Software Design Document
 
-## 1. Tujuan Desain
+## 1. Design Position
 
-SDD ini menerjemahkan kebutuhan PRD dan SRS menjadi desain teknis yang dapat diimplementasikan. Desain saat ini mempertahankan frontend-only untuk MVP, tetapi memisahkan vocabulary domain dan boundary komponen agar integrasi backend dapat ditambahkan tanpa membongkar UI utama.
+Mintdesk memakai arsitektur hybrid. Web application mengelola identity, metadata, S3 references, OAuth state, audit, dan UI. Linux companion berjalan lokal untuk metrics dan process control. Tidak ada komponen yang diberi hak root dari dashboard.
 
-## 2. Arsitektur Tingkat Tinggi
+## 2. Architecture
 
 ```text
 Browser
-  └── React App
-      ├── App Router
-      ├── Theme Provider
-      ├── Home Dashboard
-      │   ├── Navigation Shell
-      │   ├── System Health Module
-      │   ├── Weather Module
-      │   ├── Quick Launch Module
-      │   ├── Activity Module
-      │   └── Calendar Module
-      ├── UI primitives / shadcn
-      └── Toast feedback
+  ├── React + Wouter pages
+  ├── tRPC client
+  └── local bridge client ── localhost + bearer token ── Linux companion
 
-Future Full-stack Boundary
-  ├── Auth service
-  ├── System metrics adapter
-  ├── File Storage service
-  ├── Calendar adapter
-  └── Weather adapter
+Full-stack server
+  ├── Manus auth/context
+  ├── tRPC domain routers
+  ├── Drizzle database
+  ├── S3 storage helpers
+  ├── Google OAuth + provider adapters
+  └── audit/event service
+
+Linux companion
+  ├── metrics adapter
+  ├── process reader
+  ├── explicit termination allowlist
+  ├── SIGTERM executor
+  └── JSONL audit writer
 ```
 
-## 3. Struktur Direktori
+## 3. Domain Modules
 
-| Lokasi | Tanggung jawab |
-|---|---|
-| `client/src/App.tsx` | Theme provider, error boundary, route utama |
-| `client/src/pages/Home.tsx` | Komposisi dashboard dan local interaction state |
-| `client/src/index.css` | Design tokens, responsive layout, interaction states |
-| `client/src/components/ui/` | Primitive UI reusable dari template |
-| `client/src/contexts/` | Theme dan context lintas halaman |
-| `client/public/` | File konfigurasi kecil saja |
-| `docs/` | PRD, SRS, SDD, UI/UX, dan task breakdown |
+| Module | Responsibility | Boundary |
+|---|---|---|
+| Identity | user/session/ownership | Manus OAuth + protected procedures |
+| Bridge | health, metrics, process list, terminate | localhost HTTP, token, origin allowlist |
+| Files | upload, metadata, download, deletion policy | S3 bytes, DB metadata |
+| Workspace | OAuth and provider data | server-side Google APIs |
+| Audit | sensitive action history | DB for app events, JSONL local bridge events |
+| Settings | connection configuration and revocation | protected user-owned records |
 
-## 4. Modul Utama
+## 4. Data Model
 
-### 4.1 Navigation Shell
+Target tables are `users`, `files`, `bridge_connections`, `workspace_connections`, `audit_events`, and `user_settings`. `files` stores owner, object key, original name, MIME, byte size, checksum, and timestamps. File bytes never enter database columns. `workspace_connections` stores provider, encrypted refresh token, granted scopes, account identity, and expiry metadata. `audit_events` stores actor, action, resource type, resource id, result, and timestamp.
 
-Sidebar desktop memiliki brand mark, primary navigation, quick tip, settings, help, dan profile. Pada mobile, sidebar berubah menjadi drawer yang dibuka melalui menu button dan ditutup melalui close button atau scrim.
+## 5. API Contracts
 
-### 4.2 System Health
+The app uses tRPC procedures for authenticated domain calls. Planned contracts include `bridge.getStatus`, `files.createUpload`, `files.list`, `files.getDownloadUrl`, `connections.startGoogleOAuth`, `connections.getStatus`, `activity.list`, and `processes.list`/`processes.terminate`. Browser code must not call arbitrary shell commands, Google secrets, or S3 credentials directly.
 
-System health adalah panel dominan yang berisi status semantic, metadata mesin, serta progress resource. Warna Mint Leaf digunakan untuk healthy state dan progress. Pada integrasi nyata, modul ini akan menerima `SystemHealth` melalui adapter, bukan mengambil data secara langsung dari JSX.
+## 6. Linux Companion Design
 
-### 4.3 Quick Launch
+The companion binds to `127.0.0.1`, requires a 32-character bearer token, checks an explicit command allowlist, verifies current-user ownership, rejects protected/system processes, sends SIGTERM, and appends an audit JSONL record with restrictive permissions. The service is installed as a `systemd --user` unit. E2E validation must be done on a real Linux laptop because the current development session has no bound Linux folder.
 
-Quick launch memakai data array terstruktur yang berisi nama, deskripsi, icon, dan tone. Search state memfilter data berdasarkan nama. Aksi aplikasi pada MVP menghasilkan toast; versi berikutnya dapat memanggil deep link, route, atau backend command broker yang aman.
+## 7. Google Workspace Design
 
-### 4.4 Activity dan Calendar
+Google OAuth runs on the server. The app requests the narrowest scopes needed, stores refresh tokens encrypted, checks returned granted scopes, and disables provider features when scopes are missing. Gmail and Calendar are separate capabilities; consent for one does not imply the other. Agent connectors available in the Manus session are not treated as runtime API access for the deployed website.
 
-Activity dan calendar menggunakan daftar data terurut yang dirender sebagai row. Struktur ini sengaja tidak mengikat komponen pada provider tertentu sehingga adapter kalender atau audit log dapat ditambahkan kemudian.
+## 8. Frontend Structure
 
-## 5. State Management
+Routes should be split into `OverviewPage`, `ProcessesPage`, `FilesPage`, `ConnectionsPage`, `WorkspacePage`, `ActivityPage`, and `SettingsPage`, all inside a shared desktop shell. Feature hooks consume typed tRPC procedures and bridge adapter functions. Components must never embed fabricated data to fill empty states.
 
-State lokal digunakan untuk `activeNav`, `sidebarOpen`, `notificationsOpen`, `focusMode`, dan `query`. State server di masa depan harus dipisahkan dari state presentasi menggunakan query layer atau service hook. Perubahan state tidak boleh dilakukan pada fase render.
+## 9. Failure Handling
 
-## 6. Data Flow Future
+Each adapter returns typed state rather than throwing presentation-specific errors. The UI maps failures to actionable states: install bridge, re-authorize provider, retry request, check ownership, or contact administrator. Last-known data may be displayed only when it is explicitly timestamped as stale.
 
-```text
-External provider / backend
-        ↓
-Typed adapter / API client
-        ↓
-Feature hook: useSystemHealth / useActivity / useCalendar
-        ↓
-Dashboard module
-        ↓
-Loading, success, empty, error, offline states
-```
+## 10. Deployment and Operations
 
-File Storage akan menggunakan boundary terpisah: `FileStorageService` menangani presigned upload atau managed upload, sedangkan `FilesModule` hanya mengenal metadata file, progress, error, dan callback refresh.
-
-## 7. Keputusan Teknologi
-
-| Keputusan | Alasan |
-|---|---|
-| React + TypeScript | Komponen terstruktur dan type safety |
-| Wouter | Routing ringan untuk aplikasi dashboard |
-| Tailwind 4 + CSS custom properties | Token design dan responsive styling yang eksplisit |
-| Lucide React | Icon monoline konsisten dengan system glyphs |
-| Sonner | Feedback aksi yang ringan dan non-blocking |
-| Generated storage assets | Hero dan brand asset dapat digunakan konsisten pada lifecycle project |
-
-## 8. Error Handling
-
-Error pada navigasi placeholder dikomunikasikan melalui toast. Untuk provider eksternal, error harus dipetakan ke copy yang actionable, misalnya status unavailable, retry, atau last known value. Error boundary tetap menjadi fallback untuk crash tingkat aplikasi.
-
-## 9. Security dan Privacy
-
-MVP tidak menyimpan credential atau data sensitif. Saat backend ditambahkan, token provider harus berada di server, endpoint harus divalidasi, upload file harus memiliki batas ukuran dan MIME type, dan URL file harus memiliki access policy yang sesuai. Data lokasi cuaca harus dapat diubah atau dimatikan pengguna.
-
-## 10. Testing Strategy
-
-Unit test diperlukan untuk filtering aplikasi, mapping status resource, dan transformasi adapter. Integration test diperlukan untuk upload file, retry, dan refresh data. Visual verification dilakukan pada desktop dan mobile. Regression checklist mencakup route `/`, sidebar drawer, notification popover, search, focus mode, dan toast.
+The web app is deployed through the managed web project. Linux companion is distributed as source plus installer because Manus Desktop does not currently provide a Linux installer. Production secrets are configured through environment management. Schema changes are generated and applied through the project migration workflow.

@@ -1,62 +1,75 @@
 # Task Breakdown
 
-## 1. Delivery Strategy
+## Delivery Strategy
 
-Pekerjaan dibagi menjadi foundation, core dashboard, interaction, data integration, quality, dan release. Prioritas P0 berarti wajib untuk MVP, P1 berarti penting untuk usable release, dan P2 berarti enhancement setelah baseline stabil.
+Pekerjaan dibagi berdasarkan vertical slice. Sebuah slice tidak dianggap selesai hanya karena UI muncul; slice harus memiliki route, domain model, API contract, data source, permission, empty/error state, test, dan dokumentasi. P0 adalah blocker MVP, P1 adalah release usability, dan P2 adalah enhancement.
 
-## 2. Work Breakdown Structure
+## Phase 0: Product and Architecture
 
-| ID | Task | Priority | Dependency | Output | Acceptance criteria |
-|---|---|---:|---|---|---|
-| T01 | Finalisasi design tokens dan asset references | P0 | None | CSS tokens, logo, hero asset | Warna, font, dan asset sesuai UI/UX spec |
-| T02 | Implementasi app shell dan route `/` | P0 | T01 | App.tsx, Home route | Route terbuka tanpa error |
-| T03 | Implementasi sidebar desktop | P0 | T02 | Navigation shell | Active state dan destinations terlihat |
-| T04 | Implementasi mobile drawer | P0 | T03 | Drawer, scrim, close action | Tidak overflow dan dapat ditutup |
-| T05 | Implementasi system health hero | P0 | T01, T02 | Hero card, status chip, metrics | Status dan resource bars terbaca |
-| T06 | Implementasi weather context | P1 | T02 | Weather card | Location, temperature, range, sunrise/sunset tampil |
-| T07 | Implementasi quick launch | P0 | T02 | App card list | Search/filter dan click feedback berjalan |
-| T08 | Implementasi activity feed | P1 | T02 | Activity module | Time, title, detail, icon tampil konsisten |
-| T09 | Implementasi calendar module | P1 | T02 | Calendar module | Agenda memiliki timeline dan metadata |
-| T10 | Implementasi notification popover | P1 | T02 | Notification state | Popover toggle dan empty message jelas |
-| T11 | Implementasi focus mode | P1 | T02 | Toggle state | State berubah dan toast muncul |
-| T12 | Tambahkan File Storage | P1 | T02, backend upgrade | Upload/list/delete UI dan service | Upload memiliki progress, success, error, retry |
-| T13 | Tambahkan autentikasi | P1 | T12 | Auth boundary | User hanya melihat file miliknya |
-| T14 | Hubungkan system metrics nyata | P1 | T05, backend upgrade | Metrics adapter | Loading, success, error, offline tersedia |
-| T15 | Hubungkan kalender dan cuaca | P2 | T06, T09 | Provider adapters | Permission dan provider failure ditangani |
-| T16 | Unit test transformasi dan filtering | P0 | T05, T07, T08 | Test suite | Test lulus untuk state inti |
-| T17 | Responsive and accessibility QA | P0 | T03–T11 | QA checklist | Desktop, tablet, mobile, keyboard, reduced motion lulus |
-| T18 | Production build dan checkpoint | P0 | T16, T17 | Build artifact, checkpoint | Check, build, dan preview berhasil |
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T01 | P0 | Bekukan scope MVP dan page inventory | Audit | PRD/SRS/UIUX/SDD konsisten |
+| T02 | P0 | Definisikan schema files, connections, audit, settings | T01 | Drizzle schema dan migration plan tersedia |
+| T03 | P0 | Definisikan tRPC procedures dan ownership rules | T02 | Contract typed dan error codes terdokumentasi |
+| T04 | P0 | Definisikan auth, secret, OAuth, dan bridge threat model | T01 | Security review checklist disetujui |
 
-## 3. Suggested Sprint Sequence
+## Phase 1: App Shell and Core Pages
 
-### Sprint 1: Foundation dan Shell
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T05 | P0 | Pisahkan Overview, Processes, Files, Connections, Activity, Settings routes | T01 | Tidak ada page feature yang hanya berupa toast placeholder |
+| T06 | P0 | Gunakan shared desktop shell dan mobile drawer | T05 | Semua route memiliki navigation escape path |
+| T07 | P0 | Implementasikan real auth identity state | T04 | Nama dan ownership berasal dari session |
+| T08 | P0 | Tambahkan global loading/error/unavailable components | T05 | Semua P0 page memakai state matrix |
 
-Kerjakan T01 sampai T04. Hasil sprint adalah aplikasi yang memiliki route, brand, typography, desktop rail, dan mobile drawer.
+## Phase 2: Linux Operations Slice
 
-### Sprint 2: Core Dashboard
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T09 | P0 | Stabilkan bridge health dan metrics adapter | T04 | Health, CPU, memory, uptime, load diuji di Linux nyata |
+| T10 | P0 | Implementasikan Processes page | T09 | Daftar proses user nyata tampil dengan refresh |
+| T11 | P0 | Implementasikan explicit terminate allowlist | T10 | Non-allowlist dan foreign process ditolak |
+| T12 | P0 | Implementasikan audit event bridge dan app | T11, T02 | Aksi terminate tercatat dan dapat difilter |
+| T13 | P0 | Dokumentasikan installer dan systemd startup | T09 | User Linux dapat install manual dan uninstall |
 
-Kerjakan T05 sampai T09. Hasil sprint adalah dashboard yang dapat dipindai dan memiliki status sistem, weather context, quick launch, activity, serta calendar.
+## Phase 3: File Storage Slice
 
-### Sprint 3: Interaction dan Quality
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T14 | P0 | Tambahkan files table dan ownership query | T02 | Migration applied dan query teruji |
+| T15 | P0 | Implementasikan managed/presigned upload | T14 | File bytes masuk S3, metadata masuk DB |
+| T16 | P0 | Implementasikan Files page | T15 | Upload/list/download berjalan setelah refresh |
+| T17 | P1 | Tambahkan delete policy dan confirmation | T16 | Delete tidak dapat mengakses file user lain |
 
-Kerjakan T10, T11, T16, dan T17. Fokusnya adalah feedback, state behavior, accessibility, dan regression verification.
+## Phase 4: Google Workspace Slice
 
-### Sprint 4: Full-stack Integrations
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T18 | P0 | Implementasikan Google OAuth callback dan state | T04 | Code exchange dan CSRF state diuji |
+| T19 | P0 | Simpan refresh token terenkripsi | T18, T02 | Plaintext token tidak masuk DB/log/browser |
+| T20 | P1 | Implementasikan Calendar readonly | T19 | Event nyata tampil atau insufficient-scope state |
+| T21 | P1 | Implementasikan Gmail metadata readonly | T19 | Search/list nyata tampil atau permission state |
+| T22 | P2 | Implementasikan Drive readonly | T19 | File provider terpisah dari local S3 |
 
-Kerjakan T12 sampai T15. File Storage sebaiknya didahulukan sebelum metrics provider karena menjadi vertical slice yang jelas: auth, upload, metadata, list, dan delete.
+## Phase 5: Quality and Release
 
-## 4. Definition of Ready
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T23 | P0 | Unit tests domain dan security | T03, T11, T14, T18 | Test allowlist, ownership, OAuth, and states lulus |
+| T24 | P0 | Integration tests backend dan S3 | T15, T19 | API dan storage flow lulus tanpa dummy data |
+| T25 | P0 | E2E test pada laptop Linux | T09, T13 | Service, metrics, process list, and terminate diverifikasi |
+| T26 | P0 | Responsive/accessibility QA | T05–T22 | Desktop/mobile/keyboard/reduced motion lulus |
+| T27 | P0 | Documentation and operational handoff | T25 | Installer, env, rollback, and troubleshooting lengkap |
+| T28 | P0 | Production checkpoint | T23–T27 | Build, tests, and live smoke test lulus |
 
-Task siap dikerjakan apabila tujuan, output, dependency, acceptance criteria, dan owner sudah jelas. Untuk task integrasi, provider, credential boundary, error behavior, dan privacy impact harus ditulis sebelum coding dimulai.
+## Explicit Non-Tasks
 
-## 5. Definition of Done
+Tidak ada task untuk arbitrary shell, root escalation, remote host control, fake weather, fake activity, fake calendar, fabricated reviews, atau background polling yang tidak memiliki consent dan rate limit.
 
-Task selesai apabila implementasi telah direview, TypeScript check dan build berhasil, acceptance criteria terpenuhi, state error/empty dipertimbangkan, dan perubahan tidak merusak desktop maupun mobile layout.
+## Definition of Ready
 
-## 6. Critical Dependencies
+Task siap jika output, dependency, owner, data source, permission model, acceptance criteria, failure state, dan test plan sudah jelas. Integrasi provider tidak boleh dimulai dengan hanya API key tanpa penetapan data minimization.
 
-File Storage memerlukan backend/full-stack capability, storage provider, access policy, upload limit, dan metadata contract. System metrics memerlukan sumber data yang aman; browser tidak boleh mengakses informasi host secara langsung tanpa adapter yang sesuai. Integrasi kalender dan cuaca memerlukan permission serta kebijakan fallback.
+## Definition of Done
 
-## 7. Risks
-
-Risiko utama adalah menganggap placeholder sebagai data nyata, mengabaikan offline/error state, serta menambahkan integrasi provider tanpa batas akses yang jelas. Risiko visual adalah pertumbuhan modul yang membuat dashboard kembali menjadi grid generik. Setiap task UI baru harus mempertahankan satu panel dominan, rail yang jelas, dan Mint Leaf sebagai bahasa status.
+Task dianggap selesai setelah implementasi direview, TypeScript dan unit test lulus, acceptance criteria terpenuhi, real-data path diuji atau secara jujur diberi unavailable state, dan dokumentasi operasional diperbarui.

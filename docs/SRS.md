@@ -1,71 +1,52 @@
-# Software Requirements Specification (SRS)
+# Software Requirements Specification
 
 ## 1. Scope
 
-SRS ini mendefinisikan perilaku perangkat lunak untuk Dashboard OS Linux Mint versi MVP. Cakupan saat ini adalah aplikasi web client-side dengan route utama `/`, visualisasi data dashboard, interaksi navigasi, dan responsivitas. Backend, database, autentikasi, serta integrasi API nyata berada di luar baseline MVP.
+SRS ini mendefinisikan perilaku Mintdesk setelah rebaseline. Sistem terdiri dari web client, backend full-stack, database metadata, S3 File Storage, Google OAuth adapter, dan Linux companion lokal. Runtime harus membedakan data `connected`, `stale`, `unavailable`, `permission_denied`, dan `error`.
 
-## 2. Aktor Sistem
+## 2. Functional Requirements
 
-| Aktor | Hak akses / tujuan |
-|---|---|
-| Pengguna workspace | Melihat status, membuka shortcut, mengubah focus mode, mencari aplikasi |
-| Sistem aplikasi | Menghasilkan status UI, toast, filtering, dan navigasi |
-| Integrasi data masa depan | Menyediakan system metrics, cuaca, agenda, serta aktivitas |
-
-## 3. Kebutuhan Fungsional
-
-| ID | Requirement | Acceptance criteria |
+| ID | Requirement | Acceptance |
 |---|---|---|
-| SRS-F01 | Sistem menampilkan greeting, nama pengguna, tanggal, dan deskripsi kondisi workspace. | Semua elemen tampil pada route `/` tanpa error. |
-| SRS-F02 | Sistem menampilkan status healthy, last checked, uptime, kernel, CPU, memory, dan storage. | Nilai dan progress bar terlihat serta memiliki label yang terbaca. |
-| SRS-F03 | Sistem menyediakan navigasi Overview, Workspace, Applications, dan System health. | Item aktif memiliki state visual; item lain memberi feedback saat dipilih. |
-| SRS-F04 | Sistem menyediakan quick launch Files, Terminal, Editor, dan Notes. | Klik setiap item menghasilkan feedback dan tidak menyebabkan dead-end. |
-| SRS-F05 | Sistem menyediakan pencarian aplikasi. | Hasil quick launch tersaring berdasarkan nama secara case-insensitive. |
-| SRS-F06 | Sistem menyediakan notification popover. | Klik ikon notifikasi membuka dan menutup popover dengan status yang jelas. |
-| SRS-F07 | Sistem menyediakan Focus mode. | Klik toggle mengubah state visual dan menampilkan toast. |
-| SRS-F08 | Sistem menampilkan activity feed dan agenda. | Data tersusun berdasarkan waktu dan memiliki icon, detail, serta timestamp. |
-| SRS-F09 | Sistem menyediakan responsive mobile navigation. | Menu dapat dibuka dari mobile, memiliki scrim, dan dapat ditutup. |
-| SRS-F10 | Sistem menghormati reduced motion preference. | Animasi non-esensial dikurangi ketika preference aktif. |
+| FR-01 | Sistem menampilkan user dari auth session | Nama tidak hardcoded; anonymous state jelas |
+| FR-02 | Sistem mengambil metrics dari bridge | CPU, memory, uptime, load memiliki timestamp source |
+| FR-03 | Sistem menampilkan processes user | PID, command, CPU, memory, state, canTerminate |
+| FR-04 | Sistem mengirim terminate hanya untuk allowlist | Non-allowlist ditolak server/bridge |
+| FR-05 | Setiap terminate membuat audit event | Audit menyimpan actor, PID, command, signal, timestamp, result |
+| FR-06 | Sistem menyediakan koneksi bridge | Token tidak ditampilkan ulang penuh dan dapat dicabut |
+| FR-07 | Sistem meng-upload file ke S3 | Bytes tidak disimpan di DB; metadata dapat dicari setelah refresh |
+| FR-08 | Sistem menampilkan daftar file user | File milik user lain tidak ikut tampil |
+| FR-09 | Sistem menghubungkan Google OAuth | Granted scope diperiksa sebelum fitur enabled |
+| FR-10 | Sistem menampilkan Calendar/Gmail hanya jika authorized | Scope kurang menghasilkan permission state |
+| FR-11 | Sistem menyimpan settings user | Settings tidak memakai localStorage untuk secret |
+| FR-12 | Sistem menampilkan audit activity | Empty state jujur ketika belum ada event |
 
-## 4. Kebutuhan Nonfungsional
+## 3. Page and Route Requirements
 
-| ID | Area | Requirement |
+| Route | Page | Required states |
 |---|---|---|
-| SRS-N01 | Performance | Halaman utama harus dapat dibuild dengan command project dan tidak menghasilkan TypeScript error. |
-| SRS-N02 | Responsiveness | Layout harus mendukung desktop, tablet, dan viewport mobile sekitar 390px. |
-| SRS-N03 | Accessibility | Button interaktif memiliki label atau teks yang bermakna, focus ring tidak dihilangkan, dan kontras teks dijaga. |
-| SRS-N04 | Maintainability | Warna dan spacing utama menggunakan CSS custom properties; page component tidak menyimpan server logic. |
-| SRS-N05 | Reliability | Aksi placeholder tidak boleh gagal secara diam-diam; aksi tersebut menampilkan toast atau state yang dapat dipahami. |
-| SRS-N06 | Security | Versi MVP tidak memproses kredensial, token, atau data privat pengguna. |
+| `/` | Overview | connected, unavailable, loading, error |
+| `/processes` | Processes | list, empty, permission denied, terminate pending, audit success |
+| `/files` | Files | upload, progress, empty, list, download error |
+| `/connections` | Connections | not connected, consent, connected, expired, insufficient scope |
+| `/workspace` | Workspace | Calendar/Gmail/Drive per-provider availability |
+| `/activity` | Activity | audit list, empty, filter, load error |
+| `/settings` | Settings | saved, invalid, revoked, local bridge instructions |
 
-## 5. UI States
+## 4. Nonfunctional Requirements
 
-Setiap fitur yang akan dihubungkan ke data eksternal wajib memiliki state loading, success, empty, error, dan offline. Pada MVP statis, state success digunakan sebagai baseline dan toast digunakan untuk aksi simulasi. Empty state sudah ditentukan untuk hasil pencarian aplikasi.
+Authentication wajib digunakan untuk data user. Server harus memvalidasi ownership sebelum query atau mutation. Credential dan refresh token tidak boleh masuk ke browser bundle, URL, log umum, atau database plaintext. Companion harus bind ke localhost, berjalan tanpa root, dan membatasi endpoint pada token serta allowlisted origins.
 
-## 6. Data Contract Awal
+UI harus keyboard accessible, memiliki focus state, memiliki contrast yang dapat dibaca, dan menghormati reduced motion. API harus mengembalikan structured errors. Semua timestamps disimpan UTC dan ditampilkan dalam timezone pengguna.
 
-```ts
-type SystemHealth = {
-  status: "healthy" | "attention" | "critical";
-  lastChecked: string;
-  uptime: string;
-  kernel: string;
-  cpuPercent: number;
-  memoryUsedGb: number;
-  memoryTotalGb: number;
-  storageUsedGb: number;
-  storageTotalGb: number;
-};
+## 5. Data Integrity
 
-type ActivityItem = {
-  id: string;
-  time: string;
-  title: string;
-  detail: string;
-  type: "system" | "backup" | "network";
-};
-```
+Tidak boleh ada seeded customer data, fabricated activity, fabricated weather, fabricated calendar event, atau fake health status. Data tidak tersedia harus direpresentasikan sebagai `null` atau state enum dan bukan angka nol yang menyesatkan.
 
-## 7. Definition of Done
+## 6. Security Requirements
 
-Sebuah requirement dianggap selesai apabila implementasi tersedia pada route yang ditentukan, memiliki state interaksi yang teruji, tidak menghasilkan TypeScript error, tidak menimbulkan overflow pada mobile, dan memenuhi acceptance criteria pada tabel di atas. Requirement yang bergantung pada API tidak boleh dianggap selesai hanya karena placeholder berhasil ditampilkan.
+Process termination memakai SIGTERM dan explicit command allowlist. Root process, system daemon, display server, network manager, bridge sendiri, dan proses di luar current user harus ditolak. File access harus memakai user ownership. OAuth scope harus incremental dan provider-specific.
+
+## 7. Test Requirements
+
+Unit tests wajib mencakup auth, ownership, allowlist, audit serialization, unavailable state, dan OAuth scope mapping. Integration tests wajib mencakup upload/list file, bridge health/metrics, process termination rejection, dan token expiration. End-to-end Linux test harus dijalankan pada laptop Linux nyata sebelum feature dinyatakan released.
