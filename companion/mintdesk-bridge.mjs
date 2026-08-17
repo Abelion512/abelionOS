@@ -106,6 +106,16 @@ async function getProcesses() {
   }).filter(Boolean).filter((item) => item.user === currentUser).sort((a, b) => b.cpuPercent - a.cpuPercent).slice(0, 100);
 }
 
+async function readAudit() {
+  try {
+    const content = await fs.readFile(AUDIT_PATH, "utf8");
+    return content.split("\n").filter(Boolean).slice(-100).map((line) => JSON.parse(line)).reverse();
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return [];
+    throw error;
+  }
+}
+
 async function terminateProcess(pid) {
   if (!Number.isInteger(pid) || pid < 2 || pid === process.pid) throw new Error("Invalid process id");
   const processes = await getProcesses();
@@ -136,6 +146,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && req.url === "/health") return json(res, 200, { ok: true, service: "mintdesk-bridge", version: "1.0.0" }, origin);
     if (req.method === "GET" && req.url === "/v1/metrics") return json(res, 200, await getMetrics(), origin);
     if (req.method === "GET" && req.url === "/v1/processes") return json(res, 200, { processes: await getProcesses(), currentUser: os.userInfo().username }, origin);
+    if (req.method === "GET" && req.url === "/v1/audit") return json(res, 200, { events: await readAudit() }, origin);
     if (req.method === "POST" && req.url === "/v1/processes/terminate") {
       const payload = await body(req);
       return json(res, 200, { result: await terminateProcess(Number(payload.pid)) }, origin);

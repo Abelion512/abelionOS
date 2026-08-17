@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { AuditEvent, InsertAuditEvent, InsertUser, auditEvents, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,16 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createAuditEvent(event: InsertAuditEvent): Promise<AuditEvent | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(auditEvents).values(event);
+  const inserted = await db.select().from(auditEvents).where(eq(auditEvents.id, result[0].insertId)).limit(1);
+  return inserted[0];
+}
+
+export async function listAuditEvents(userId: number, limit = 50): Promise<AuditEvent[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select().from(auditEvents).where(eq(auditEvents.userId, userId)).orderBy(desc(auditEvents.createdAt)).limit(Math.min(limit, 100));
+}

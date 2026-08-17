@@ -9,6 +9,8 @@ export type BridgeMetrics = {
   checkedAt: string;
 };
 
+export type BridgeAuditEvent = { action: string; pid: number; command: string; signal: string; terminatedAt: string; actor: string };
+
 export type BridgeProcess = {
   pid: number;
   command: string;
@@ -55,5 +57,6 @@ async function bridgeRequest<T>(path: string, init?: RequestInit): Promise<T> {
 export const bridgeApi = {
   metrics: () => bridgeRequest<BridgeMetrics>("/v1/metrics"),
   processes: () => bridgeRequest<{ processes: BridgeProcess[]; currentUser: string }>("/v1/processes"),
+  audit: () => bridgeRequest<{ events: BridgeAuditEvent[] }>("/v1/audit"),
   terminate: (pid: number) => bridgeRequest<{ result: { pid: number; command: string; signal: string; terminatedAt: string } }>("/v1/processes/terminate", { method: "POST", body: JSON.stringify({ pid }) }),
 };

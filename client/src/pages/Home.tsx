@@ -3,6 +3,7 @@ import { bridgeApi, type BridgeMetrics } from "@/lib/bridge";
 import { ProcessPanel } from "@/components/ProcessPanel";
 import { Activity, CheckCircle2, CircleHelp, Cpu, FolderOpen, LayoutDashboard, Menu, Settings, ShieldAlert, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 
 function formatUptime(seconds: number) {
   const days = Math.floor(seconds / 86400);
@@ -46,7 +47,8 @@ export default function Home() {
       <nav className="primary-nav" aria-label="Primary navigation">
         <p className="nav-eyebrow">Workspace</p>
         <div className="nav-item active"><LayoutDashboard size={18} /><span>Overview</span><span className="nav-dot" /></div>
-        <div className="nav-item"><Activity size={18} /><span>Processes</span><span className="nav-status">Local</span></div>
+        <Link href="/processes" className="nav-item"><Activity size={18} /><span>Processes</span><span className="nav-status">Local</span></Link>
+        <Link href="/activity" className="nav-item"><Activity size={18} /><span>Activity</span><span className="nav-status">Audit</span></Link>
         <div className="nav-item"><FolderOpen size={18} /><span>Files</span><span className="nav-status">Planned</span></div>
       </nav>
       <div className="sidebar-note"><div className="note-icon"><ShieldAlert size={17} /></div><div><p className="note-title">No hidden fallback</p><p className="note-copy">Unavailable data stays unavailable until a source is connected.</p></div></div>
