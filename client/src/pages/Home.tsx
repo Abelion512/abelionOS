@@ -4,7 +4,7 @@ import { bridgeApi, type BridgeMetrics } from "@/lib/bridge";
 import { ProcessPanel } from "@/components/ProcessPanel";
 import { healthFailed, healthSucceeded, initialBridgeHealthState } from "@/lib/bridgeHealthState";
 import { pollBridgeHealth, startBridgeHealthPolling } from "@/lib/bridgeHealthPolling";
-import { Activity, CheckCircle2, CircleHelp, Cpu, FilePenLine, FolderOpen, LayoutDashboard, Menu, Settings, ShieldAlert, Sun, X } from "lucide-react";
+import { Activity, CheckCircle2, CircleHelp, Cpu, FolderOpen, LayoutDashboard, Menu, Settings, ShieldAlert, Sun, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
@@ -56,7 +56,6 @@ export default function Home() {
         <p className="nav-eyebrow">Workspace</p>
         <div className="nav-item active"><LayoutDashboard size={18} /><span>Overview</span><span className="nav-dot" /></div>
         <Link href="/briefing" className="nav-item"><Sun size={18} /><span>Morning briefing</span><span className="nav-status">Live</span></Link>
-        <Link href="/drafts" className="nav-item"><FilePenLine size={18} /><span>Gmail drafts</span><span className="nav-status">Server</span></Link>
         <Link href="/processes" className="nav-item"><Activity size={18} /><span>Processes</span><span className="nav-status">Local</span></Link>
         <Link href="/activity" className="nav-item"><Activity size={18} /><span>Activity</span><span className="nav-status">Audit</span></Link>
         <Link href="/files" className="nav-item"><FolderOpen size={18} /><span>Files</span><span className="nav-status">S3</span></Link>

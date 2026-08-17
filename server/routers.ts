@@ -5,7 +5,6 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createFileRecord, getGoogleConnection, listAuditEvents, listUserFiles } from "./db";
 import { storageCreatePresignedUpload } from "./storage";
 import { buildMorningBriefing } from "./morningBriefing";
-import { createGmailDraft, deleteGmailDraft, getGmailDraft, listGmailDrafts, updateGmailDraft } from "./gmailDrafts";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -36,13 +35,6 @@ export const appRouter = router({
   }),
   briefing: router({
     get: protectedProcedure.query(({ ctx }) => buildMorningBriefing(ctx.user.id)),
-  }),
-  gmailDrafts: router({
-    list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(20) }).optional()).query(({ ctx, input }) => listGmailDrafts(ctx.user.id, input?.limit ?? 20)),
-    get: protectedProcedure.input(z.object({ draftId: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/) })).query(({ ctx, input }) => getGmailDraft(ctx.user.id, input.draftId)),
-    create: protectedProcedure.input(z.object({ to: z.array(z.string().email()).min(1).max(25), cc: z.array(z.string().email()).max(25).default([]), bcc: z.array(z.string().email()).max(25).default([]), subject: z.string().max(255), body: z.string().max(100_000), confirmed: z.literal(true) })).mutation(({ ctx, input }) => createGmailDraft(ctx.user.id, input)),
-    update: protectedProcedure.input(z.object({ draftId: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/), to: z.array(z.string().email()).min(1).max(25), cc: z.array(z.string().email()).max(25).default([]), bcc: z.array(z.string().email()).max(25).default([]), subject: z.string().max(255), body: z.string().max(100_000), confirmed: z.literal(true) })).mutation(({ ctx, input }) => updateGmailDraft(ctx.user.id, input.draftId, input)),
-    delete: protectedProcedure.input(z.object({ draftId: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/), confirmed: z.literal(true) })).mutation(({ ctx, input }) => deleteGmailDraft(ctx.user.id, input.draftId)),
   }),
   files: router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) =>

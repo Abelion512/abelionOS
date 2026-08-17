@@ -105,3 +105,12 @@
 ## Approved Scope Boundary
 
 - [x] Pengguna menyetujui scope restricted `gmail.compose` untuk lifecycle draft. Rilis awal mengekspos list, get, create, update, dan delete; `send` tidak diimplementasikan atau diekspos.
+
+# Morning Briefing Agent Boundary
+
+- [ ] Nonaktifkan endpoint/UI Gmail Drafts dan hapus `gmail.compose` dari scope OAuth karena agent tidak boleh menyentuh data di luar Morning Briefing.
+- [ ] Revoke/re-consent koneksi Google ke scope read-only Morning Briefing setelah capability Drafts dinonaktifkan.
+- [ ] Definisikan kontrak rekomendasi harian: sumber yang diizinkan, evidence, prioritas, rekomendasi langkah, ketidakpastian, dan human override.
+- [ ] Bangun layar Daily Briefing bergaya hologram sebagai pendukung data nyata, tanpa data dummy atau aksi agent-to-agent.
+- [ ] Tambahkan guardrail backend yang melarang write action, scheduled action, dan akses data di luar sumber Morning Briefing.
+- [ ] Uji policy boundary, human override, unavailable state, dan dokumentasikan model operasional asisten.

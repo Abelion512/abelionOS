@@ -11,7 +11,6 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
   "https://www.googleapis.com/auth/calendar.events.readonly",
   "https://www.googleapis.com/auth/gmail.metadata",
-  "https://www.googleapis.com/auth/gmail.compose",
 ];
 
 type GoogleState = { state: string; userId: number; verifier: string; expiresAt: number };
