@@ -30,4 +30,4 @@
 - [x] Tetapkan kontrak data minimum dan sumber data untuk setiap widget.
 - [x] Implementasikan route P0 secara nyata satu per satu. Routes `/`, `/processes`, `/activity`, `/files`, `/connections`, dan `/settings` sekarang nyata; file upload end-to-end tetap membutuhkan authenticated runtime + S3 availability, Workspace tetap unavailable sampai OAuth scope tersedia.
 - [x] Tambahkan test untuk setiap vertical slice sebelum lanjut. Bridge dan file validation tercakup; 4 test files dan 7 tests lulus.
-- [ ] Simpan checkpoint hanya setelah acceptance criteria fase terpenuhi.
+- [x] Simpan checkpoint hanya setelah acceptance criteria fase terpenuhi. Checkpoint P0 tersedia; runtime blockers Workspace OAuth dan Linux E2E tetap terdokumentasi.
