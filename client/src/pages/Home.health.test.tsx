@@ -24,7 +24,7 @@ describe("Overview health polling", () => {
     mocks.metrics.mockReturnValue(new Promise(() => undefined));
     render(<Home />);
     expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Connect the Linux/)).toBeTruthy();
+    expect(screen.getByText("Linux companion unavailable")).toBeTruthy();
   });
 
   it("renders connected health then switches to unavailable after the next poll fails", async () => {
@@ -37,12 +37,12 @@ describe("Overview health polling", () => {
 
     render(<Home />);
     await flush();
-    expect(screen.getByText("Connected")).toBeTruthy();
+    expect(screen.getByText("Linux companion connected")).toBeTruthy();
     expect(screen.getAllByText(/Health checked/).length).toBeGreaterThan(0);
 
     await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
     await flush();
-    expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    expect(screen.getByText("Linux companion unavailable")).toBeTruthy();
     expect(screen.getByText("Bridge offline")).toBeTruthy();
   });
 });

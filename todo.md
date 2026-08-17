@@ -154,3 +154,6 @@
 - [x] Sederhanakan informasi profil/sidebar untuk hierarki visual yang lebih tenang, modern, dan konsisten dengan HIG Apple tanpa menghilangkan status yang bermakna.
 - [x] Tambahkan test kontrak disconnect serta test menu profil, lalu verifikasi desktop/mobile sebelum checkpoint.
 - [x] Perbaiki layout mobile Connections dan Settings agar kartu tidak meluber horizontal dan tetap mudah dibaca pada viewport sempit.
+- [x] Hapus copy Dashboard yang terasa seperti AI-slop dan rapikan status ringkas agar hanya menyatakan fakta runtime yang bermakna.
+- [x] Sederhanakan profile trigger dengan menghapus ikon atau dekorasi yang tidak menambah affordance, sambil mempertahankan menu profil yang dapat diakses.
+- [x] Tambahkan atau perbarui test dan verifikasi visual desktop/mobile untuk revisi anti-slop sebelum checkpoint.
