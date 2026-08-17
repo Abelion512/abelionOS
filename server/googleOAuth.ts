@@ -60,6 +60,10 @@ function decryptSecret(value: string) {
   return Buffer.concat([decipher.update(Buffer.from(cipherText, "base64url")), decipher.final()]).toString("utf8");
 }
 
+export function decryptGoogleRefreshToken(value: string) {
+  return decryptSecret(value);
+}
+
 function callbackUrl(req: Request) {
   const protocol = req.headers["x-forwarded-proto"]?.toString().split(",")[0] || req.protocol;
   return `${protocol}://${req.get("host")}/api/google/callback`;

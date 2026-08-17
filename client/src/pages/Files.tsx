@@ -4,6 +4,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, FileText, Loader2, UploadCloud } 
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { completedUpload, finalizingUpload, getUploadError, initialUploadState, preparingUpload, uploadFailure, uploadProgress } from "@/lib/fileUploadState";
+import { runFileUploadWorkflow } from "@/lib/fileUploadWorkflow";
 
 function uploadWithProgress(uploadUrl: string, file: File, onProgress: (percent: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -42,12 +43,15 @@ export default function Files() {
     }
 
     try {
-      setUploadState(preparingUpload(file.name));
-      const prepared = await prepareUpload.mutateAsync({ fileName: file.name, mimeType: file.type || "application/octet-stream", sizeBytes: file.size });
-      setUploadState(uploadProgress(file.name, 0));
-      await uploadWithProgress(prepared.uploadUrl, file, (progress) => setUploadState(uploadProgress(file.name, progress)));
-      setUploadState(finalizingUpload(file.name));
-      await completeUpload.mutateAsync({ objectKey: prepared.key, objectUrl: prepared.objectUrl, fileName: file.name, mimeType: file.type || "application/octet-stream", sizeBytes: file.size });
+      await runFileUploadWorkflow({
+        file,
+        prepare: () => prepareUpload.mutateAsync({ fileName: file.name, mimeType: file.type || "application/octet-stream", sizeBytes: file.size }),
+        transfer: (prepared) => uploadWithProgress(prepared.uploadUrl, file, (progress) => setUploadState(uploadProgress(file.name, progress))),
+        complete: async (prepared) => { await completeUpload.mutateAsync({ objectKey: prepared.key, objectUrl: prepared.objectUrl, fileName: file.name, mimeType: file.type || "application/octet-stream", sizeBytes: file.size }); },
+        onPreparing: () => setUploadState(preparingUpload(file.name)),
+        onUploading: () => setUploadState(uploadProgress(file.name, 0)),
+        onFinalizing: () => setUploadState(finalizingUpload(file.name)),
+      });
       await utils.files.list.invalidate();
       setUploadState(completedUpload(file.name));
       toast.success("File uploaded and recorded");

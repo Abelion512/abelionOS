@@ -51,16 +51,23 @@ Pekerjaan dibagi berdasarkan vertical slice. Sebuah slice tidak dianggap selesai
 | T21 | P1 | Implementasikan Gmail metadata readonly | T19 | Search/list nyata tampil atau permission state |
 | T22 | P2 | Implementasikan Drive readonly | T19 | File provider terpisah dari local S3 |
 
+## Phase 4B: Morning Briefing Slice
+
+| ID | Priority | Task | Dependency | Done when |
+|---|---|---|---|---|
+| T22A | P1 | Implementasikan agregasi briefing server-side | T14, T19 | Audit dan file metadata user-scoped serta Calendar/Gmail source-aware tersedia |
+| T22B | P1 | Tambahkan route Briefing dan snapshot bridge browser-local | T09, T22A | Loading, partial, unavailable, error, dan stale state terlihat tanpa mengirim token bridge ke backend |
+
 ## Phase 5: Quality and Release
 
 | ID | Priority | Task | Dependency | Done when |
 |---|---|---|---|---|
 | T23 | P0 | Unit tests domain dan security | T03, T11, T14, T18 | Test allowlist, ownership, OAuth, and states lulus |
-| T24 | P0 | Integration tests backend dan S3 | T15, T19 | API dan storage flow lulus tanpa dummy data |
+| T24 | P0 | Integration tests backend dan S3 | T15, T19 | Kontrak prepare → transfer → complete teruji tanpa dummy data; E2E upload nyata masih dilakukan pengguna |
 | T25 | P0 | E2E test pada laptop Linux | T09, T13 | Service, metrics, process list, and terminate diverifikasi |
 | T26 | P0 | Responsive/accessibility QA | T05–T22 | Desktop/mobile/keyboard/reduced motion lulus |
 | T27 | P0 | Documentation and operational handoff | T25 | Installer, env, rollback, and troubleshooting lengkap |
-| T28 | P0 | Production checkpoint | T23–T27 | Build, tests, and live smoke test lulus |
+| T28 | P0 | Production checkpoint | T23–T27 | Build, tests, and live smoke test lulus; Linux/S3/Google real-runtime gate dicatat bila belum dijalankan |
 
 ## Explicit Non-Tasks
 

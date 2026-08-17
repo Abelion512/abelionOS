@@ -20,6 +20,9 @@ SRS ini mendefinisikan perilaku Mintdesk setelah rebaseline. Sistem terdiri dari
 | FR-10 | Sistem menampilkan Calendar/Gmail hanya jika authorized | Scope kurang menghasilkan permission state |
 | FR-11 | Sistem menyimpan settings user | Settings tidak memakai localStorage untuk secret |
 | FR-12 | Sistem menampilkan audit activity | Empty state jujur ketika belum ada event |
+| FR-13 | Sistem menghasilkan Morning Briefing on-demand | Audit dan file metadata selalu user-scoped; Calendar/Gmail hanya dibaca setelah OAuth tersambung |
+| FR-14 | Sistem menampilkan snapshot health Linux di Briefing | Snapshot dibaca browser langsung dari localhost; bearer token tidak pernah dikirim ke backend |
+| FR-15 | Sistem mempertahankan hasil briefing terakhir dengan label stale | Hasil lama tidak dilabeli current saat refresh berikutnya gagal |
 
 ## 3. Page and Route Requirements
 
@@ -32,6 +35,7 @@ SRS ini mendefinisikan perilaku Mintdesk setelah rebaseline. Sistem terdiri dari
 | `/workspace` | Workspace | Calendar/Gmail/Drive per-provider availability |
 | `/activity` | Activity | audit list, empty, filter, load error |
 | `/settings` | Settings | saved, invalid, revoked, local bridge instructions |
+| `/briefing` | Morning Briefing | loading, fresh, partial, stale, unavailable, error |
 
 ## 4. Nonfunctional Requirements
 
@@ -41,7 +45,7 @@ UI harus keyboard accessible, memiliki focus state, memiliki contrast yang dapat
 
 ## 5. Data Integrity
 
-Tidak boleh ada seeded customer data, fabricated activity, fabricated weather, fabricated calendar event, atau fake health status. Data tidak tersedia harus direpresentasikan sebagai `null` atau state enum dan bukan angka nol yang menyesatkan.
+Tidak boleh ada seeded customer data, fabricated activity, fabricated weather, fabricated calendar event, fake health status, atau ringkasan harian sintetis. Data tidak tersedia harus direpresentasikan sebagai `null` atau state enum dan bukan angka nol yang menyesatkan. Metadata file baru dipersist setelah upload object berhasil; kegagalan transfer tidak boleh memanggil completion metadata. Storage template tidak memberi API delete object, sehingga kegagalan completion dapat meninggalkan object tanpa metadata yang tidak direferensikan aplikasi; sistem tidak boleh mengklaim cleanup fisik yang tidak tersedia.
 
 ## 6. Security Requirements
 
@@ -49,4 +53,4 @@ Process termination memakai SIGTERM dan explicit command allowlist. Root process
 
 ## 7. Test Requirements
 
-Unit tests wajib mencakup auth, ownership, allowlist, audit serialization, unavailable state, dan OAuth scope mapping. Integration tests wajib mencakup upload/list file, bridge health/metrics, process termination rejection, dan token expiration. End-to-end Linux test harus dijalankan pada laptop Linux nyata sebelum feature dinyatakan released.
+Unit tests wajib mencakup auth, ownership, allowlist, audit serialization, unavailable state, OAuth scope mapping, timeout bridge, failure transaksi upload, stale briefing, dan refresh bersamaan. Integration tests wajib mencakup upload/list file, bridge health/metrics, process termination rejection, dan token expiration. End-to-end Linux test harus dijalankan pada laptop Linux nyata sebelum feature dinyatakan released.

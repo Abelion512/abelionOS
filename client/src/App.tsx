@@ -10,6 +10,7 @@ import Activity from "./pages/Activity";
 import Files from "./pages/Files";
 import Connections from "./pages/Connections";
 import Settings from "./pages/Settings";
+import MorningBriefing from "./pages/MorningBriefing";
 import NotFound from "./pages/NotFound";
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/files" component={Files} />
       <Route path="/connections" component={Connections} />
       <Route path="/settings" component={Settings} />
+      <Route path="/briefing" component={MorningBriefing} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

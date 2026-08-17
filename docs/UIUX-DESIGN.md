@@ -15,6 +15,7 @@ Mintdesk memakai **Mint Atelier**: shell desktop Linux yang tenang, material, da
 | Workspace | Membaca Gmail/Calendar/Drive | Filter by provider and date |
 | Activity | Memahami perubahan sensitif | Filter / inspect audit detail |
 | Settings | Mengatur bridge dan preference | Save / revoke / reset |
+| Morning Briefing | Membaca konteks 24 jam dari source nyata | Refresh / open source data |
 
 ## Shell
 
@@ -34,7 +35,7 @@ Desktop mempertahankan rail kiri, topbar utility, breadcrumb, user identity, and
 
 ## Component Rules
 
-System status card dominan tetapi harus menampilkan source, timestamp, hostname/platform, dan state. Process row wajib menampilkan PID, command, ownership, resource usage, dan action disabled bila tidak allowlisted. File row wajib menampilkan name, size, MIME, modified time, owner context, dan action states. Connection card wajib membedakan agent connector, app OAuth, dan local bridge.
+System status card dominan tetapi harus menampilkan source, timestamp, hostname/platform, dan state. Process row wajib menampilkan PID, command, ownership, resource usage, dan action disabled bila tidak allowlisted. File row wajib menampilkan name, size, MIME, modified time, owner context, dan action states. Connection card wajib membedakan agent connector, app OAuth, dan local bridge. Morning Briefing memakai source badge per kartu, memperlihatkan Calendar, Gmail metadata, audit, file metadata, serta snapshot health Linux sebagai sumber terpisah.
 
 ## Copy Rules
 

@@ -2,7 +2,7 @@
 
 ## Product
 
-**Mintdesk** adalah dashboard operasional untuk pengguna Linux yang ingin melihat kondisi laptop, mengelola proses milik user, mengakses file, dan menghubungkan layanan Google Workspace dari satu antarmuka yang terasa seperti desktop Linux. Produk ini bukan pengganti desktop environment, bukan remote shell, dan bukan service manager dengan hak root.
+**Mintdesk** adalah dashboard operasional dan Morning Briefing on-demand untuk pengguna Linux yang ingin melihat kondisi laptop, mengelola proses milik user, mengakses file, serta melihat metadata Google Workspace dari satu antarmuka yang terasa seperti desktop Linux. Produk ini bukan pengganti desktop environment, bukan remote shell, dan bukan service manager dengan hak root.
 
 ## Problem
 
@@ -18,13 +18,13 @@ Pengguna harus berpindah antara system monitor, file manager, browser, Gmail, Ca
 
 ## MVP Scope
 
-MVP wajib mencakup Overview berbasis metrics Linux bridge, Processes dengan filtering dan terminate allowlist, Files dengan upload/list/download/delete melalui S3, Connections dengan status OAuth, Settings untuk bridge dan provider, serta Activity Audit untuk aksi sensitif. Semua halaman harus memiliki loading, empty, unavailable, permission denied, dan error state.
+MVP wajib mencakup Overview berbasis metrics Linux bridge, Processes dengan filtering dan terminate allowlist, Files dengan upload/list/download melalui S3, Connections dengan status OAuth, Settings untuk bridge dan provider, Activity Audit untuk aksi sensitif, serta Morning Briefing on-demand. Briefing menggabungkan audit dan metadata file per user dari server, Calendar dan Gmail metadata hanya bila OAuth aktif, dan snapshot health Linux hanya dari bridge browser-local. Semua halaman harus memiliki loading, empty, unavailable, permission denied, dan error state; Briefing juga memberi label stale bila refresh gagal setelah hasil sebelumnya tersedia.
 
 Out of scope untuk MVP adalah arbitrary shell execution, root operations, remote machine control, email body indexing, automatic file deletion, background cloud polling tanpa consent, dan fitur weather tanpa provider nyata.
 
 ## Success Metrics
 
-Keberhasilan MVP diukur melalui kriteria teknis, bukan kesan visual: metrics tampil dari laptop Linux nyata dalam kurang dari tiga detik setelah bridge aktif; terminate hanya menerima proses yang allowlisted dan selalu tercatat; file upload dapat ditemukan kembali setelah refresh; OAuth scope yang tidak diberikan membuat fitur disabled; serta build, unit test, dan integration test lulus.
+Keberhasilan MVP diukur melalui kriteria teknis, bukan kesan visual: metrics tampil dari laptop Linux nyata setelah bridge aktif; request bridge yang macet berhenti dalam lima detik; terminate hanya menerima proses yang allowlisted dan selalu tercatat; file upload dapat ditemukan kembali setelah refresh; OAuth scope yang tidak diberikan membuat fitur disabled; dan Briefing tidak membuat ringkasan sintetis ketika sumber belum tersedia.
 
 ## Page Priority
 
@@ -36,7 +36,8 @@ Keberhasilan MVP diukur melalui kriteria teknis, bukan kesan visual: metrics tam
 | P1 | Files | Upload, list, preview metadata, dan download |
 | P1 | Activity | Audit event dan status perubahan |
 | P1 | Settings | Token bridge, provider, retention, dan permissions |
-| P2 | Workspace | Gmail/Calendar/Drive views setelah adapter tersedia |
+| P1 | Morning Briefing | Ringkasan on-demand, source status, dan tautan menuju data asli |
+| P2 | Workspace | Gmail/Calendar/Drive views terpisah setelah kebutuhan product bertambah |
 
 ## Non-negotiables
 

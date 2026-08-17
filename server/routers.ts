@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createFileRecord, getGoogleConnection, listAuditEvents, listUserFiles } from "./db";
 import { storageCreatePresignedUpload } from "./storage";
+import { buildMorningBriefing } from "./morningBriefing";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -31,6 +32,9 @@ export const appRouter = router({
       if (!connection) return { connected: false as const, scopes: [] as string[], updatedAt: null };
       return { connected: true as const, scopes: connection.grantedScopes.split(" ").filter(Boolean), updatedAt: connection.updatedAt };
     }),
+  }),
+  briefing: router({
+    get: protectedProcedure.query(({ ctx }) => buildMorningBriefing(ctx.user.id)),
   }),
   files: router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) =>

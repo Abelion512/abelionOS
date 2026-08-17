@@ -53,3 +53,18 @@
 - [x] Tambahkan component/integration test Connections untuk health success dan fallback berikutnya. Total 10 test files dan 17 tests lulus.
 - [x] Tambahkan assertion render state awal Overview sebelum health pertama berhasil.
 - [x] Tambahkan assertion label dan detail state awal Connections sebelum health pertama berhasil. Total 10 test files dan 19 tests lulus.
+
+# Morning Briefing and Stress-Test Upgrade
+
+- [x] Ekstrak dan audit report stres yang dilampirkan, termasuk temuan yang dapat direproduksi.
+- [x] Tetapkan kontrak Morning Briefing dengan sumber data nyata dan source-status per bagian.
+- [x] Tambahkan backend briefing yang menggabungkan audit, file metadata, dan Google Workspace hanya ketika masing-masing sumber benar-benar tersedia.
+- [x] Tambahkan route dan UI Morning Briefing dengan loading, empty, partial, dan failure state yang jujur.
+- [x] Tambahkan stress-test untuk bridge recovery, Workspace belum tersambung, token OAuth invalid, upload state failure, dan refresh bersamaan. Validasi memakai 30 test otomatis tanpa membuat file, audit, atau provider data sintetis.
+- [x] Perbaiki temuan report yang berada dalam scope halaman dan kontrak data saat ini. Status Workspace di Settings kini user-scoped; briefing memakai source-aware aggregator. Uji E2E Linux companion, S3, dan consent Google tetap memerlukan koneksi nyata pengguna.
+- [x] Revisi kontrak briefing: audit, file metadata, dan Google Workspace diagregasi server-side; snapshot Linux bridge tetap browser-local agar bearer token tidak berpindah ke backend.
+- [x] Tambahkan stale-state eksplisit pada Morning Briefing untuk hasil terakhir saat refresh gagal.
+- [x] Tambahkan test timeout Linux bridge dan test upload failure pada alur prepare-upload → transfer → complete-upload.
+- [x] Verifikasi route `/connections`, `/processes`, `/activity`, dan `/files` di browser dengan state nyata tanpa data seed; workflow upload membuktikan metadata tidak dibuat bila transfer gagal. Storage template tidak menyediakan delete-object, sehingga object orphan akibat metadata failure tidak dapat dibersihkan langsung dan tidak memiliki referensi aplikasi. Automation E2E CI yang lebih luas tetap backlog quality, bukan klaim selesai.
+- [x] Perbarui audit, PRD, SRS, SDD, UI/UX, Task Breakdown, runbook, dan catatan remediation untuk Morning Briefing.
+- [x] Jalankan test, typecheck, build, dan visual check route utama setelah restart bersih. Checkpoint release siap disimpan setelah review checklist ini.

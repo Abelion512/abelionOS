@@ -8,7 +8,7 @@
 |---|---|---|
 | Linux companion | Implemented, belum diuji di laptop Linux pengguna | Service hidup, health/metrics/process/audit memberi respons nyata, dan satu proses disposable dihentikan dengan `SIGTERM` |
 | File Storage | Implemented, membutuhkan login dan S3 runtime | File kecil diunggah, muncul pada halaman **Files**, dan tautan `/manus-storage/…` dapat dibuka |
-| Google Workspace | Kredensial diuji, OAuth callback dan adapter belum dibuat | OAuth callback, token storage aman, dan adapter Calendar/Gmail read-only tersedia |
+| Google Workspace | Implemented, belum melewati consent pengguna pada runtime ini | OAuth callback berjalan, token refresh tersimpan terenkripsi, dan Morning Briefing mengembalikan Calendar/Gmail metadata nyata atau source state jujur |
 
 ## 1. Uji Linux Companion End-to-End
 
@@ -109,7 +109,7 @@ Penerapan saat ini membatasi file hingga **8 MB**. Jika muncul error ukuran, pil
 
 ### 3.1 Batas implementasi saat ini
 
-Kredensial `GOOGLE_OAUTH_CLIENT_ID` dan `GOOGLE_OAUTH_CLIENT_SECRET` telah tervalidasi sebagai client Google yang dikenali, tetapi aplikasi **belum** memiliki route `/api/google/callback`, token storage, refresh-token handler, atau Calendar/Gmail adapter. Menambahkan redirect URI atau scope saja **belum mengaktifkan Gmail dan Calendar pada UI**.
+Route `/api/google/start` dan `/api/google/callback` sudah memakai PKCE dan signed state cookie. Refresh token disimpan per user dalam bentuk terenkripsi AES-256-GCM; token tidak dikirim ke bundle browser. Setelah consent selesai, halaman **Morning Briefing** membuat query on-demand ke Calendar dan Gmail metadata, lalu menampilkan data nyata, `partial`, `unavailable`, atau `error` per sumber. Tidak ada polling cloud berkala dan tidak ada isi email yang dirender.
 
 ### 3.2 Konfigurasi Google Cloud
 
@@ -134,17 +134,14 @@ https://mintdash-khcj34hp.manus.space/api/google/callback
 
 Google merekomendasikan meminta scope sekecil mungkin dan memverifikasi scope yang benar-benar diberikan token sebelum mengaktifkan fitur [1] [2].
 
-### 3.3 Pengembangan yang masih harus dilakukan
+### 3.3 Jalankan consent dan verifikasi
 
-Sebelum tombol Connect Google dibuat, implementasikan secara berurutan:
+1. Pastikan `GOOGLE_OAUTH_CLIENT_ID` dan `GOOGLE_OAUTH_CLIENT_SECRET` di deployment cocok dengan OAuth client Web application dan redirect URI pada langkah 3.2.
+2. Buka `/connections` sebagai user yang sudah sign-in, lalu klik **Connect Google Workspace**. Consent terjadi di Google, bukan di Manus connector.
+3. Kembali ke `/briefing` dan klik **Refresh**. Periksa badge source untuk Calendar dan Gmail metadata.
+4. Bila consent ditolak, scope kurang, atau refresh token invalid, sumber terkait wajib tampil `unavailable` atau `error`, bukan angka contoh.
 
-1. Tambahkan `GOOGLE_OAUTH_CLIENT_ID` dan `GOOGLE_OAUTH_CLIENT_SECRET` ke environment helper server, bukan client.
-2. Tambahkan `/api/google/start` yang membentuk authorization request dengan `state`, PKCE, scope minimal, dan `access_type=offline`.
-3. Tambahkan `/api/google/callback` yang memvalidasi state, menukar authorization code, dan menyimpan refresh token terenkripsi pada database per user.
-4. Tambahkan procedure Calendar/Gmail read-only yang memakai token server-side, menangani refresh token, dan mengembalikan `permission required` atau `unavailable` secara jujur.
-5. Tambahkan audit event untuk connect, refresh failure, revoke, dan penggunaan data. Jangan tampilkan isi email penuh pada Overview.
-
-Setelah flow tersebut ada, lakukan satu test Calendar read-only dan satu Gmail metadata query. Fitur yang tidak memperoleh scope harus tetap disabled atau unavailable. Google menjelaskan bahwa scope token membatasi resource dan operasi yang dapat diakses; Calendar scope tidak memberikan Gmail access secara otomatis [1].
+Lakukan satu verifikasi Calendar read-only dan satu query Gmail metadata pada akun yang diizinkan. Calendar scope tidak memberi akses Gmail secara otomatis [1].
 
 ## Checklist Bukti
 
@@ -152,7 +149,7 @@ Setelah flow tersebut ada, lakukan satu test Calendar read-only dan satu Gmail m
 |---|---|
 | Linux companion | `/health`, `/metrics`, `/processes`, dan `/audit` memberi data nyata; satu test `node` dihentikan melalui `SIGTERM` |
 | File Storage | File uji kurang dari 8 MB tercantum di Files dan tautan `/manus-storage/…` dapat dibuka setelah login |
-| Google OAuth | Callback tersedia, token tersimpan server-side, scope diverifikasi, dan adapter read-only berhasil memberi data nyata |
+| Google OAuth | Callback tersedia, token tersimpan server-side, scope diverifikasi, dan Morning Briefing memberi data nyata atau source state yang benar setelah consent |
 
 ## References
 

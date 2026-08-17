@@ -25,6 +25,7 @@ export type BridgeProcess = {
 export type BridgeConfig = { baseUrl: string; token: string };
 export type BridgeStatus = "connected" | "unavailable" | "error";
 export type BridgeHealth = { ok: boolean; service: string; version: string };
+export const BRIDGE_REQUEST_TIMEOUT_MS = 5_000;
 
 export function getBridgeStatus(metrics: BridgeMetrics | null, error: string | null): BridgeStatus {
   if (metrics) return "connected";
@@ -41,10 +42,23 @@ export function getBridgeConfig(): BridgeConfig | null {
   return token ? { baseUrl, token } : null;
 }
 
+export async function fetchBridgeWithTimeout(url: string, init: RequestInit, timeoutMs = BRIDGE_REQUEST_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error(`Linux companion request timed out after ${Math.round(timeoutMs / 1000)} seconds`);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function bridgeRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const config = getBridgeConfig();
   if (!config) throw new Error("Linux companion is not connected");
-  const response = await fetch(`${config.baseUrl}${path}`, {
+  const response = await fetchBridgeWithTimeout(`${config.baseUrl}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${config.token}`, "Content-Type": "application/json", ...(init?.headers || {}) },
   });

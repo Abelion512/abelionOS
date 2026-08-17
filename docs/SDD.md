@@ -38,14 +38,15 @@ Linux companion
 | Workspace | OAuth and provider data | server-side Google APIs |
 | Audit | sensitive action history | DB for app events, JSONL local bridge events |
 | Settings | connection configuration and revocation | protected user-owned records |
+| Morning Briefing | on-demand read model and source provenance | server-side audit/files/Workspace plus browser-local bridge health |
 
 ## 4. Data Model
 
-Target tables are `users`, `files`, `bridge_connections`, `workspace_connections`, `audit_events`, and `user_settings`. `files` stores owner, object key, original name, MIME, byte size, checksum, and timestamps. File bytes never enter database columns. `workspace_connections` stores provider, encrypted refresh token, granted scopes, account identity, and expiry metadata. `audit_events` stores actor, action, resource type, resource id, result, and timestamp.
+Current tables are `users`, `files`, `google_connections`, and `audit_events`. `files` stores owner, object key, original name, MIME, byte size, and timestamps; file bytes never enter database columns. `google_connections` stores an AES-256-GCM encrypted refresh token, granted scopes, and expiry metadata. `audit_events` stores actor, action, resource type, resource id, result, and timestamp. Bridge credentials deliberately remain browser-local rather than entering this database.
 
 ## 5. API Contracts
 
-The app uses tRPC procedures for authenticated domain calls. Planned contracts include `bridge.getStatus`, `files.createUpload`, `files.list`, `files.getDownloadUrl`, `connections.startGoogleOAuth`, `connections.getStatus`, `activity.list`, and `processes.list`/`processes.terminate`. Browser code must not call arbitrary shell commands, Google secrets, or S3 credentials directly.
+The app uses protected tRPC procedures for authenticated domain calls, including `files.prepareUpload`, `files.completeUpload`, `files.list`, `google.status`, `audit.list`, and `briefing.get`. Google OAuth uses `/api/google/start` and `/api/google/callback` with PKCE and signed state. `briefing.get` reads only per-user audit, file metadata, and provider data available through a stored encrypted refresh token. Browser code must not call arbitrary shell commands, Google secrets, or S3 credentials directly.
 
 ## 6. Linux Companion Design
 
@@ -57,11 +58,11 @@ Google OAuth runs on the server. The app requests the narrowest scopes needed, s
 
 ## 8. Frontend Structure
 
-Routes should be split into `OverviewPage`, `ProcessesPage`, `FilesPage`, `ConnectionsPage`, `WorkspacePage`, `ActivityPage`, and `SettingsPage`, all inside a shared desktop shell. Feature hooks consume typed tRPC procedures and bridge adapter functions. Components must never embed fabricated data to fill empty states.
+Routes are split into `OverviewPage`, `ProcessesPage`, `FilesPage`, `ConnectionsPage`, `ActivityPage`, `SettingsPage`, and `MorningBriefingPage`, all inside a shared desktop shell. The Morning Briefing page refreshes its server query and its local bridge health snapshot independently; the backend never receives the browser-local bridge token. Components must never embed fabricated data to fill empty states.
 
 ## 9. Failure Handling
 
-Each adapter returns typed state rather than throwing presentation-specific errors. The UI maps failures to actionable states: install bridge, re-authorize provider, retry request, check ownership, or contact administrator. Last-known data may be displayed only when it is explicitly timestamped as stale.
+Each adapter returns typed state rather than throwing presentation-specific errors. Browser bridge fetches abort after five seconds. The UI maps failures to actionable states: install bridge, re-authorize provider, retry request, check ownership, or contact administrator. Last-known briefing data may be displayed only when it is explicitly labelled stale with the refresh error; no prior value is shown as current.
 
 ## 10. Deployment and Operations
 
