@@ -1,43 +1,37 @@
-/* Mint Atelier: the app shell keeps the dashboard as the primary workspace and preserves a warm light theme. */
+/* Mint Atelier: dashboard shell with a single workspace navigation across every operational route. */
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { WorkspaceShell } from "./components/WorkspaceShell";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-import Processes from "./pages/Processes";
 import Activity from "./pages/Activity";
-import Files from "./pages/Files";
 import Connections from "./pages/Connections";
-import Settings from "./pages/Settings";
+import Home from "./pages/Home";
 import MorningBriefing from "./pages/MorningBriefing";
 import NotFound from "./pages/NotFound";
+import Processes from "./pages/Processes";
+import Settings from "./pages/Settings";
+import Storage from "./pages/Storage";
+
+function FeatureCanvas({ children }: { children: React.ReactNode }) {
+  return <main className="main-canvas">{children}</main>;
+}
+
 function Router() {
-  // make sure to consider if you need authentication for certain routes
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/processes" component={Processes} />
-      <Route path="/activity" component={Activity} />
-      <Route path="/files" component={Files} />
-      <Route path="/connections" component={Connections} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/briefing" component={MorningBriefing} />
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
-  );
+  return <Switch>
+    <Route path="/">{() => <WorkspaceShell><Home /></WorkspaceShell>}</Route>
+    <Route path="/processes">{() => <WorkspaceShell><FeatureCanvas><Processes /></FeatureCanvas></WorkspaceShell>}</Route>
+    <Route path="/activity">{() => <WorkspaceShell><FeatureCanvas><Activity /></FeatureCanvas></WorkspaceShell>}</Route>
+    <Route path="/storage">{() => <WorkspaceShell><FeatureCanvas><Storage /></FeatureCanvas></WorkspaceShell>}</Route>
+    <Route path="/connections">{() => <WorkspaceShell><FeatureCanvas><Connections /></FeatureCanvas></WorkspaceShell>}</Route>
+    <Route path="/settings">{() => <WorkspaceShell><FeatureCanvas><Settings /></FeatureCanvas></WorkspaceShell>}</Route>
+    <Route path="/briefing">{() => <WorkspaceShell><FeatureCanvas><MorningBriefing /></FeatureCanvas></WorkspaceShell>}</Route>
+    <Route path="/404" component={NotFound} />
+    <Route component={NotFound} />
+  </Switch>;
 }
 
 export default function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster position="bottom-right" />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster position="bottom-right" /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
 }

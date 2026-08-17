@@ -67,6 +67,14 @@ describe("Morning Briefing aggregation", () => {
     expect(briefings.every((briefing) => briefing.workspace.source.status === "unavailable")).toBe(true);
   });
 
+  it("excludes historical Gmail Draft actions from Daily Focus evidence while preserving other audit actions", () => {
+    const events = __morningBriefingInternals.filterDailyFocusActivity([
+      { id: 1, userId: 9, action: "gmail.draft.created", resourceType: "draft", resourceId: null, status: "accepted", details: null, createdAt: now },
+      { id: 2, userId: 9, action: "google.oauth.connected", resourceType: "google_connection", resourceId: null, status: "accepted", details: null, createdAt: now },
+    ]);
+    expect(events.map((event) => event.action)).toEqual(["google.oauth.connected"]);
+  });
+
   it("filters provider Calendar events outside the briefing window", () => {
     const events = __morningBriefingInternals.normalizeCalendarEvents([
       { id: "past", summary: "Past event", start: { dateTime: "2026-07-13T10:00:00.000Z" }, end: { dateTime: "2026-07-13T11:00:00.000Z" } },

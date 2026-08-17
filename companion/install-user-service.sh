@@ -16,6 +16,12 @@ if [[ ! -f "$CONFIG_DIR/bridge.env" ]]; then
   cat > "$CONFIG_DIR/bridge.env" <<EOF
 MINTDESK_TOKEN=${TOKEN}
 MINTDESK_ALLOWED_ORIGINS=http://localhost:3000,https://mintdash-khcj34hp.manus.space
+# Optional read-only workdir observer. Do not point this at your home directory root.
+# MINTDESK_WORKDIR=/media/abelion/Isaf/ican/project
+# Optional local reasoning service. Keep its bearer token in this file only.
+# MINTDESK_9ROUTER_URL=http://127.0.0.1:20128/v1
+# MINTDESK_9ROUTER_MODEL=claude-work
+# MINTDESK_9ROUTER_TOKEN=replace-with-local-secret
 EOF
 fi
 

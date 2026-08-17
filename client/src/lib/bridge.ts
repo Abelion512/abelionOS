@@ -25,6 +25,17 @@ export type BridgeProcess = {
 export type BridgeConfig = { baseUrl: string; token: string };
 export type BridgeStatus = "connected" | "unavailable" | "error";
 export type BridgeHealth = { ok: boolean; service: string; version: string };
+export type BridgeStorageEntry = { name: string; kind: "directory" | "file" | "symlink" | "other"; sizeBytes: number | null; modifiedAt: string };
+export type BridgeWorkdirStorage = {
+  workdir: string;
+  entryLimit: number;
+  totalEntryCount: number;
+  entries: BridgeStorageEntry[];
+  capacity: { totalBytes: number; freeBytes: number; usedBytes: number; usedPercent: number | null };
+  scannedAt: string;
+};
+export type DailyFocusPriority = { id: string; title: string; rationale: string; nextStep: string; confidence: "high" | "medium" | "low"; evidenceRefs: string[] };
+export type BridgeDailyFocus = { generatedAt: string; model: string; focus: { headline: string; priorities: DailyFocusPriority[]; tomorrowPreparation: string[]; yesterdayLessons: string[]; uncertainties: string[] } };
 export const BRIDGE_REQUEST_TIMEOUT_MS = 5_000;
 
 export function getBridgeStatus(metrics: BridgeMetrics | null, error: string | null): BridgeStatus {
@@ -74,5 +85,7 @@ export const bridgeApi = {
   metrics: () => bridgeRequest<BridgeMetrics>("/v1/metrics"),
   processes: () => bridgeRequest<{ processes: BridgeProcess[]; currentUser: string }>("/v1/processes"),
   audit: () => bridgeRequest<{ events: BridgeAuditEvent[] }>("/v1/audit"),
+  workdirStorage: () => bridgeRequest<BridgeWorkdirStorage>("/v1/storage/workdir"),
+  dailyFocus: (evidence: unknown) => bridgeRequest<BridgeDailyFocus>("/v1/daily-focus", { method: "POST", body: JSON.stringify(evidence) }),
   terminate: (pid: number) => bridgeRequest<{ result: { pid: number; command: string; signal: string; terminatedAt: string } }>("/v1/processes/terminate", { method: "POST", body: JSON.stringify({ pid }) }),
 };

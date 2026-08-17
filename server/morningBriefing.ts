@@ -77,6 +77,10 @@ function hasRequiredScopes(connection: GoogleConnection) {
   return REQUIRED_GOOGLE_SCOPES.every((scope) => granted.has(scope));
 }
 
+function filterDailyFocusActivity(events: AuditEvent[]) {
+  return events.filter((event) => !event.action.startsWith("gmail.draft."));
+}
+
 function normalizeCalendarEvents(items: GoogleCalendarEvent[], window: { from: Date; until: Date }): CalendarBriefingEvent[] {
   return items.flatMap((event) => {
     const start = event.start?.dateTime || event.start?.date;
@@ -193,8 +197,9 @@ export async function buildMorningBriefing(
     getFiles(userId, 5),
   ]);
 
+  const activityEvents = activityResult.status === "fulfilled" ? filterDailyFocusActivity(activityResult.value) : [];
   const activity = activityResult.status === "fulfilled"
-    ? { events: activityResult.value, source: { status: "ready" as const, detail: activityResult.value.length ? "Recent application activity is available." : "No application activity has been recorded yet." } }
+    ? { events: activityEvents, source: { status: "ready" as const, detail: activityEvents.length ? "Recent supported application activity is available." : "No supported application activity has been recorded yet." } }
     : { events: [], source: { status: "error" as const, detail: "Application activity could not be loaded." } };
   const files = fileResult.status === "fulfilled"
     ? { recent: fileResult.value, source: { status: "ready" as const, detail: fileResult.value.length ? "Recent file metadata is available." : "No file metadata has been recorded yet." } }
@@ -212,4 +217,4 @@ export async function buildMorningBriefing(
   return { generatedAt: now, window, workspace, activity, files };
 }
 
-export const __morningBriefingInternals = { normalizeCalendarEvents, normalizeInboxMessage };
+export const __morningBriefingInternals = { normalizeCalendarEvents, normalizeInboxMessage, filterDailyFocusActivity };

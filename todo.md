@@ -108,9 +108,43 @@
 
 # Morning Briefing Agent Boundary
 
-- [ ] Nonaktifkan endpoint/UI Gmail Drafts dan hapus `gmail.compose` dari scope OAuth karena agent tidak boleh menyentuh data di luar Morning Briefing.
+- [x] Nonaktifkan endpoint/UI Gmail Drafts dan hapus `gmail.compose` dari scope OAuth karena agent tidak boleh menyentuh data di luar Morning Briefing.
 - [ ] Revoke/re-consent koneksi Google ke scope read-only Morning Briefing setelah capability Drafts dinonaktifkan.
-- [ ] Definisikan kontrak rekomendasi harian: sumber yang diizinkan, evidence, prioritas, rekomendasi langkah, ketidakpastian, dan human override.
-- [ ] Bangun layar Daily Briefing bergaya hologram sebagai pendukung data nyata, tanpa data dummy atau aksi agent-to-agent.
-- [ ] Tambahkan guardrail backend yang melarang write action, scheduled action, dan akses data di luar sumber Morning Briefing.
-- [ ] Uji policy boundary, human override, unavailable state, dan dokumentasikan model operasional asisten.
+- [x] Definisikan kontrak rekomendasi harian: sumber yang diizinkan, evidence, prioritas, rekomendasi langkah, ketidakpastian, dan human override.
+- [x] Bangun layar Daily Briefing sebagai pendukung data nyata, tanpa data dummy atau aksi agent-to-agent.
+- [x] Tambahkan guardrail companion yang melarang write action, scheduled action, dan akses data di luar sumber Morning Briefing.
+- [x] Uji policy boundary, human override, unavailable state, dan dokumentasikan model operasional asisten.
+
+# Daily Focus and Workspace Simplification
+
+- [x] Hapus capability Drafts yang sudah dicabut dari catatan active scope, route inventory, dan Daily Focus evidence; dokumentasikan rollback least-privilege dan re-consent Google.
+- [x] Sederhanakan sidebar menjadi workspace-level navigation: Dashboard, Daily Focus, Storage, Activity, Connections, dan Settings; hilangkan Files cloud serta pastikan icon Activity berbeda dari Process control panel.
+- [x] Hilangkan refresh redundant dan jadikan refresh kontekstual hanya pada sumber yang benar-benar on-demand.
+- [x] Rancang local storage observer melalui Linux companion dengan directory allowlist, metadata-only listing, dan tanpa upload/download/modify file.
+- [x] Ganti Files dengan Storage observer yang menampilkan kapasitas, mount, serta folder yang secara eksplisit diizinkan dan dapat dipindai dari companion.
+- [x] Definisikan Daily Focus evidence model untuk today priorities, tomorrow preparation, dan lessons dari activity dengan sumber serta tingkat keyakinan eksplisit.
+- [x] Implementasikan rekomendasi terstruktur melalui companion lokal yang menyertakan evidence, uncertainty, dan human override; tidak ada raw LLM response atau agent-to-agent action.
+- [x] Bangun layar Daily Focus evidence-first dengan refresh sumber yang bermakna, refinement eksplisit, dan zero fabricated content.
+- [x] Tambahkan test policy dan UI lalu validasi Daily Focus, sidebar, dan local storage unavailable state sebelum checkpoint; runtime Linux nyata tetap memerlukan laptop pengguna.
+
+## Confirmed Operating Decisions
+
+- [x] Daily Focus dibentuk saat Dashboard dibuka, menggunakan evidence dan aturan deterministik; AI refinement hanya berjalan saat pengguna meminta agar tidak ada run berulang tanpa kebutuhan nyata.
+- [x] Storage observer dibatasi ke workdir `/media/abelion/Isaf/ican/project` dan hanya membaca metadata allowlisted.
+- [x] Sidebar target: Dashboard, Daily Focus, Storage, Activity, Connections, dan Settings. Process control menjadi panel Dashboard/System; Files cloud tidak lagi menjadi menu terpisah.
+- [x] Audit Log berada pada menu Activity terpisah karena merupakan bukti operasional untuk pembelajaran harian, bukan konfigurasi.
+- [x] 9router local menjadi layanan reasoning lokal untuk Daily Focus. Mintdesk hanya mengirim evidence Morning Briefing yang diizinkan dan menerima rekomendasi schema-terstruktur; 9router tidak menerima tool/action ke Gmail, Calendar, filesystem, atau sistem.
+
+## 9router Daily Focus Runtime
+
+- [x] Dapatkan endpoint, metode autentikasi, dan format request 9router yang berjalan lokal tanpa mengeksposnya ke internet.
+- [x] Implementasikan adapter companion-to-9router dengan allowlist payload Morning Briefing dan schema response Daily Focus yang ketat.
+- [x] Pastikan jika 9router/laptop offline, Daily Focus hanya menampilkan evidence dan reasoning state unavailable tanpa fallback AI atau data lama yang menyesatkan.
+- [x] Terapkan sidebar yang sama pada setiap halaman workspace dan tandai route aktif agar Dashboard, Daily Focus, Storage, Activity, Connections, serta Settings selalu dapat dijangkau tanpa kembali dulu ke Dashboard.
+- [x] Hapus refresh kedua pada hero Dashboard sehingga refresh hanya tersedia sekali pada sumber Linux yang sedang ditampilkan.
+- [x] Tambahkan test UI Daily Focus untuk human override, reasoning unavailable, dan kegagalan companion/9router tanpa fallback AI.
+- [x] Tampilkan state eksplisit pada panel Daily Focus saat Linux companion atau local reasoning belum tersedia, sebelum pengguna meminta refinement.
+- [x] Dokumentasikan model operasional Daily Focus: sumber yang diizinkan, larangan write/schedule, batas local reasoning, dan perilaku human override.
+- [x] Tambahkan test UI Daily Focus yang memaksa `bridgeApi.dailyFocus` reject lalu memastikan panel menampilkan reasoning unavailable tanpa merender hasil AI baru maupun hasil AI lama.
+- [x] Tambahkan test UI Storage yang memaksa `bridgeApi.workdirStorage()` gagal lalu memastikan Workdir unavailable serta error observer tampil benar.
+- [x] Perbaiki tombol Refresh Storage pada viewport mobile agar hanya menampilkan ikon yang dapat diakses, tanpa label terpotong.

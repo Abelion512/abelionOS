@@ -1,22 +1,19 @@
 # Mintdesk Runtime Verification Runbook
 
-> **Tujuan.** Dokumen ini membantu memverifikasi tiga hal secara berurutan: Linux companion lokal, File Storage berbasis S3, dan prasyarat OAuth Google Workspace. Jalankan satu tahap sampai terbukti berhasil sebelum melanjutkan ke tahap berikutnya.
+> **Tujuan.** Runbook ini memverifikasi Linux companion lokal, Storage observer read-only, 9router untuk Daily Focus, dan OAuth Google least-privilege. Jalankan setiap tahap sampai terbukti, lalu lanjutkan ke tahap berikutnya. Tidak ada tahap yang mengizinkan upload, perubahan file, pengiriman Gmail, perubahan Calendar, atau tindakan otomatis oleh AI.
 
-## Status yang Perlu Dipahami
+## Status Operasional
 
-| Area | Status kode saat ini | Definisi selesai |
+| Area | Status kode | Bukti selesai |
 |---|---|---|
-| Linux companion | Implemented, belum diuji di laptop Linux pengguna | Service hidup, health/metrics/process/audit memberi respons nyata, dan satu proses disposable dihentikan dengan `SIGTERM` |
-| File Storage | Implemented, membutuhkan login dan S3 runtime | File kecil diunggah, muncul pada halaman **Files**, dan tautan `/manus-storage/…` dapat dibuka |
-| Google Workspace | Implemented, belum melewati consent pengguna pada runtime ini | OAuth callback berjalan, token refresh tersimpan terenkripsi, dan Morning Briefing mengembalikan Calendar/Gmail metadata nyata atau source state jujur |
+| Linux companion | Diimplementasikan, perlu dipasang pada laptop Linux | Health, metrics, process, audit, Storage observer, dan Daily Focus proxy memberi respons lokal nyata. |
+| Storage observer | Metadata-only pada workdir allowlisted | Path, kapasitas mount, dan daftar entry top-level muncul tanpa kemampuan baca isi, upload, download, atau modifikasi. |
+| Daily Focus | Evidence-first, refinement eksplisit | Bukti Calendar/Gmail metadata/audit tampil; 9router hanya dipanggil setelah pengguna memilih **Refine priorities**. |
+| Google Workspace | OAuth read-only, token lama perlu re-consent | Connections tidak lagi menunjukkan `gmail.compose`; Morning Briefing memakai metadata Calendar dan Gmail saja. |
 
-## 1. Uji Linux Companion End-to-End
+## 1. Pasang dan Verifikasi Linux Companion
 
-### 1.1 Dapatkan source proyek di laptop Linux
-
-Karena Manus Desktop belum menyediakan installer Linux, gunakan **Download as ZIP** dari halaman proyek atau clone repository yang berisi source Mintdesk. Ekstrak source lalu buka terminal pada root proyek.
-
-Prasyaratnya adalah **Node.js 20+**, `systemd --user`, dan akses akun Linux biasa. Root tidak diperlukan.
+Karena Manus Desktop belum menyediakan installer Linux, ambil source Mintdesk dari proyek lalu jalankan installer dari root proyek. Prasyaratnya adalah Node.js 20+, `systemd --user`, dan akun Linux biasa. Root tidak diperlukan.
 
 ```bash
 cd /path/to/dashboard-os-linux-mint
@@ -24,110 +21,75 @@ node --version
 bash companion/install-user-service.sh
 ```
 
-Installer menyalin bridge ke `~/.local/share/mintdesk`, membuat token pada `~/.config/mintdesk/bridge.env`, lalu mengaktifkan user service.
-
-### 1.2 Verifikasi service dan endpoint lokal
+Installer menyalin bridge ke `~/.local/share/mintdesk`, membuat `~/.config/mintdesk/bridge.env`, dan mengaktifkan user service. Buka file environment tersebut lalu set workdir dan konfigurasi 9router pada perangkat lokal saja.
 
 ```bash
+MINTDESK_WORKDIR=/media/abelion/Isaf/ican/project
+MINTDESK_9ROUTER_URL=http://127.0.0.1:20128/v1
+MINTDESK_9ROUTER_TOKEN=PASTE_LOCAL_BEARER_TOKEN
+MINTDESK_9ROUTER_MODEL=claude-work
+```
+
+> Nilai `MINTDESK_9ROUTER_TOKEN` dan `MINTDESK_TOKEN` adalah secret lokal. Jangan memasukkannya ke chat, repository, browser URL, screenshot, atau deployment Mintdesk.
+
+Restart service dan verifikasi endpoint hanya pada loopback.
+
+```bash
+systemctl --user restart mintdesk-bridge.service
 systemctl --user status mintdesk-bridge.service --no-pager
 journalctl --user -u mintdesk-bridge.service -n 50 --no-pager
 
 TOKEN="$(sed -n 's/^MINTDESK_TOKEN=//p' ~/.config/mintdesk/bridge.env)"
 curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/health
 curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/v1/metrics
-curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/v1/processes
+curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/v1/storage/workdir
 ```
 
-Respons `/health` harus memiliki `ok: true`; metrics harus memuat hostname, CPU, memory, uptime, dan timestamp dari laptop; process list harus hanya memuat proses user saat ini. Bridge hanya bind ke `127.0.0.1`, sehingga tidak boleh diubah menjadi `0.0.0.0`.
+Respons health harus memiliki `ok: true`. Endpoint Storage hanya boleh melaporkan metadata entry yang berada langsung dalam `MINTDESK_WORKDIR` dan statistik kapasitas mount. Bridge harus tetap bind ke `127.0.0.1`; jangan mengubahnya menjadi `0.0.0.0`.
 
-### 1.3 Hubungkan browser ke bridge
+## 2. Hubungkan Browser dan Uji Batas Bridge
 
-Buka dashboard yang dipublikasikan: `https://mintdash-khcj34hp.manus.space`.
-
-Pada browser **milik Anda sendiri**, buka Developer Tools → Console, lalu jalankan:
+Buka dashboard production di browser milik Anda sendiri. Masukkan token bridge yang telah dibuat secara lokal melalui Console browser, lalu reload sekali.
 
 ```js
 localStorage.setItem("mintdesk_bridge_token", "PASTE_TOKEN_DARI_bridge.env")
 location.reload()
 ```
 
-Token ini adalah kontrak browser saat ini. Jangan menyimpannya di komputer bersama, screenshot, URL, repository, atau chat. Setelah reload, halaman **Overview**, **Processes**, dan **Connections** seharusnya berubah dari `unavailable` menjadi status bridge nyata.
+Halaman **Dashboard**, **Storage**, **Activity**, dan **Connections** harus beralih dari unavailable ke state lokal yang nyata. Bila domain publik berubah, tambahkan domain baru ke `MINTDESK_ALLOWED_ORIGINS` pada `bridge.env`, lalu restart service. Jangan menyimpan token pada komputer bersama.
 
-Jika domain publik berubah, perbarui `MINTDESK_ALLOWED_ORIGINS` pada `~/.config/mintdesk/bridge.env` agar mencantumkan domain baru, lalu restart service:
-
-```bash
-systemctl --user restart mintdesk-bridge.service
-```
-
-### 1.4 Uji terminasi dengan proses disposable
-
-Bridge menolak command arbitrary dan hanya mengizinkan command dalam allowlist. Gunakan proses `node` disposable, bukan aplikasi kerja atau proses sistem.
+Untuk menguji Process control, gunakan proses disposable yang termasuk allowlist. Jangan menggunakan proses kerja atau sistem.
 
 ```bash
 node -e 'setInterval(() => {}, 600000)' &
 TEST_PID=$!
-echo "Disposable test PID: ${TEST_PID}"
-
 curl -sS -X POST \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   --data "{\"pid\":${TEST_PID}}" \
   http://127.0.0.1:18765/v1/processes/terminate
-
-curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/v1/audit
 ```
 
-Hasil yang benar adalah respons `SIGTERM` untuk `TEST_PID`, proses berhenti, dan satu event baru muncul pada `/v1/audit` serta halaman **Activity**. Jangan mencoba terminasi PID 1, bridge service, desktop session, network manager, atau command di luar allowlist.
+Respons yang benar adalah `SIGTERM` untuk `TEST_PID`. Jangan mencoba terminasi PID 1, bridge service, desktop session, network manager, atau command di luar allowlist.
 
-## 2. Uji File Storage S3
+## 3. Verifikasi Daily Focus dan 9router
 
-### 2.1 Masuk ke aplikasi terlebih dahulu
+Daily Focus selalu membangun evidence terlebih dahulu dari Calendar read-only, Gmail metadata tanpa body, dan audit aplikasi yang didukung. Jejak historis `gmail.draft.*` tidak dikirim sebagai evidence. Pilih **Refine priorities** hanya bila Anda ingin reasoning lokal; Mintdesk tidak menjalankan AI terjadwal dan tidak menyimpan respons AI mentah.
 
-Halaman **Files** memakai protected tRPC procedures. Jika Anda belum terautentikasi, buka dashboard dari browser dan selesaikan sign-in Manus OAuth sampai Settings menunjukkan `Authenticated`.
-
-### 2.2 Gunakan file uji kecil yang tidak sensitif
-
-Jangan menguji dengan password export, SSH private key, database dump, atau dokumen pribadi. Buat file bukti kecil:
-
-```bash
-printf 'mintdesk storage verification %s\n' "$(date --iso-8601=seconds)" > ~/mintdesk-storage-proof.txt
-ls -lh ~/mintdesk-storage-proof.txt
-```
-
-Pada halaman `/files`, klik **Select file**, pilih file tersebut, dan tunggu hingga status upload selesai.
-
-| Bukti yang diharapkan | Arti |
+| Kondisi | Perilaku yang benar |
 |---|---|
-| Baris file muncul pada **Your files** | Metadata berhasil disimpan dengan ownership user login |
-| Ukuran dan MIME type tampil | Browser mengirim metadata yang diterima backend |
-| Tombol **Open** membuka path `/manus-storage/…` | Objek berhasil ditulis ke S3 melalui storage helper |
-| Tidak ada nilai contoh | Daftar kosong bila belum ada upload nyata |
+| Companion atau 9router offline | Evidence tetap tampil dan panel menyatakan local reasoning unavailable. Tidak ada rekomendasi fallback. |
+| 9router merespons | Hanya JSON tervalidasi dengan `evidenceRefs` yang benar dapat dirender. |
+| Pengguna menandai done/deprioritized | Override hanya terjadi di browser. Tidak mengubah Google, Linux, atau evidence asal. |
 
-Penerapan saat ini membatasi file hingga **8 MB**. Jika muncul error ukuran, pilih file lebih kecil. Jika muncul error otorisasi, login belum selesai. Jika muncul `Storage presign failed` atau `Storage upload to S3 failed`, catat pesan lengkap dan jangan menyimpulkan file sudah tersimpan.
+## 4. Re-consent Google Workspace dengan Scope Read-Only
 
-## 3. Konfigurasi Google Workspace OAuth Minimal
+Halaman **Connections** akan menampilkan **re-consent required** jika token yang tersimpan masih memuat `https://www.googleapis.com/auth/gmail.compose`. Token itu berasal dari capability Drafts yang telah dicabut. Mintdesk tidak lagi mengekspos route Draft atau meminta scope tersebut, tetapi scope lama tidak dapat dicabut dari token secara otomatis.
 
-### 3.1 Batas implementasi saat ini
-
-Route `/api/google/start` dan `/api/google/callback` sudah memakai PKCE dan signed state cookie. Refresh token disimpan per user dalam bentuk terenkripsi AES-256-GCM; token tidak dikirim ke bundle browser. Setelah consent selesai, halaman **Morning Briefing** membuat query on-demand ke Calendar dan Gmail metadata, lalu menampilkan data nyata, `partial`, `unavailable`, atau `error` per sumber. Tidak ada polling cloud berkala dan tidak ada isi email yang dirender.
-
-### 3.2 Konfigurasi Google Cloud
-
-Di Google Cloud Console untuk project Mintdesk:
-
-1. Aktifkan **Google Calendar API** dan **Gmail API**.
-2. Konfigurasikan OAuth consent screen. Jika statusnya *Testing*, tambahkan akun Anda sebagai test user.
-3. Buat atau perbarui OAuth Client bertipe **Web application**.
-4. Tambahkan **dua Authorized redirect URI** berikut pada OAuth client yang memakai Client ID Mintdesk. Tidak boleh ada trailing slash atau domain runtime internal:
-
-```text
-https://mintdash-khcj34hp.manus.space/api/google/callback
-http://localhost:3000/api/google/callback
-```
-
-URI HTTPS pertama dipakai deployment production. URI `localhost` kedua hanya dipakai saat `pnpm run dev` berjalan pada port 3000; Google mengizinkan HTTP hanya untuk localhost. Aplikasi memakai `GOOGLE_OAUTH_REDIRECT_URI` sebagai callback production kanonik dan tetap membentuk callback localhost secara dinamis untuk development.
-
-5. Mintdesk meminta scope read-only berikut untuk Morning Briefing:
+1. Buka [Google Account permissions](https://myaccount.google.com/permissions) pada akun `agen.salva@gmail.com`.
+2. Pilih akses Mintdesk, lalu pilih **Remove access**.
+3. Kembali ke `/connections` dan klik **Connect Google Workspace**.
+4. Selesaikan consent hanya untuk scope berikut, kemudian buka `/briefing` dan pilih **Refresh sources**.
 
 | Fitur MVP | Scope |
 |---|---|
@@ -135,24 +97,7 @@ URI HTTPS pertama dipakai deployment production. URI `localhost` kedua hanya dip
 | Event kalender | `https://www.googleapis.com/auth/calendar.events.readonly` |
 | Metadata Gmail | `https://www.googleapis.com/auth/gmail.metadata` |
 
-Mintdesk tidak meminta `gmail.compose`, `gmail.modify`, atau `gmail.full_access`. Agent hanya membaca metadata Gmail dan Calendar pada saat Morning Briefing dibuat; ia tidak mengirim email, mengubah draft, atau mengubah Calendar.
-
-### 3.3 Jalankan consent dan verifikasi
-
-1. Pastikan `GOOGLE_OAUTH_CLIENT_ID` dan `GOOGLE_OAUTH_CLIENT_SECRET` di deployment cocok dengan OAuth client Web application dan redirect URI pada langkah 3.2.
-2. Buka `/connections` sebagai user yang sudah sign-in, lalu klik **Connect Google Workspace**. Consent terjadi di Google, bukan di Manus connector.
-3. Kembali ke `/briefing` dan klik **Refresh**. Periksa badge source untuk Calendar dan Gmail metadata.
-4. Bila consent ditolak, scope kurang, atau refresh token invalid, sumber terkait wajib tampil `unavailable` atau `error`, bukan angka contoh.
-
-Lakukan satu verifikasi Calendar read-only dan satu query Gmail metadata pada akun yang diizinkan. Calendar scope tidak memberi akses Gmail secara otomatis [1].
-
-## Checklist Bukti
-
-| Tahap | Bukti minimum sebelum dianggap selesai |
-|---|---|
-| Linux companion | `/health`, `/metrics`, `/processes`, dan `/audit` memberi data nyata; satu test `node` dihentikan melalui `SIGTERM` |
-| File Storage | File uji kurang dari 8 MB tercantum di Files dan tautan `/manus-storage/…` dapat dibuka setelah login |
-| Google OAuth | Callback tersedia, token tersimpan server-side, scope read-only diverifikasi, dan Morning Briefing memberi data nyata atau source state yang benar setelah consent |
+Mintdesk tidak meminta `gmail.compose`, `gmail.modify`, atau `gmail.full_access`. Bila satu sumber tidak dapat direfresh, Daily Focus harus tetap memperlihatkan state `unavailable`, `partial`, atau `error`, bukan nilai contoh.
 
 ## References
 
