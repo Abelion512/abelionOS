@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { __googleOAuthInternals } from "./googleOAuth";
+import { ENV } from "./_core/env";
 
 describe("Google OAuth security helpers", () => {
   it("accepts a signed state before expiry and rejects a changed signature", () => {
@@ -27,5 +28,22 @@ describe("Google OAuth security helpers", () => {
     } as any;
 
     expect(__googleOAuthInternals.callbackUrl(request)).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
+  });
+
+  it("uses a configured public callback for production but preserves localhost during local development", () => {
+    const previous = ENV.googleOAuthRedirectUri;
+    ENV.googleOAuthRedirectUri = "https://mintdash-khcj34hp.manus.space/api/google/callback";
+    const productionRequest = { protocol: "http", headers: {}, get: () => "ydhstprd65-aco4kte4cq-ue.a.run.app" } as any;
+    const localRequest = { protocol: "http", headers: { host: "localhost:3000" }, get: () => "localhost:3000" } as any;
+
+    expect(__googleOAuthInternals.callbackUrl(productionRequest)).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
+    expect(__googleOAuthInternals.callbackUrl(localRequest)).toBe("http://localhost:3000/api/google/callback");
+    ENV.googleOAuthRedirectUri = previous;
+  });
+
+  it("uses a reachable HTTPS callback endpoint from the configured production URI", async () => {
+    expect(ENV.googleOAuthRedirectUri).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
+    const response = await fetch(ENV.googleOAuthRedirectUri, { redirect: "manual" });
+    expect([301, 302, 303, 307, 308]).toContain(response.status);
   });
 });

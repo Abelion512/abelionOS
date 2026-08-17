@@ -118,11 +118,14 @@ Di Google Cloud Console untuk project Mintdesk:
 1. Aktifkan **Google Calendar API** dan **Gmail API**.
 2. Konfigurasikan OAuth consent screen. Jika statusnya *Testing*, tambahkan akun Anda sebagai test user.
 3. Buat atau perbarui OAuth Client bertipe **Web application**.
-4. Tambahkan **Authorized redirect URI** persis berikut pada OAuth client yang memakai Client ID Mintdesk. Tidak boleh ada trailing slash atau domain runtime internal:
+4. Tambahkan **dua Authorized redirect URI** berikut pada OAuth client yang memakai Client ID Mintdesk. Tidak boleh ada trailing slash atau domain runtime internal:
 
 ```text
 https://mintdash-khcj34hp.manus.space/api/google/callback
+http://localhost:3000/api/google/callback
 ```
+
+URI HTTPS pertama dipakai deployment production. URI `localhost` kedua hanya dipakai saat `pnpm run dev` berjalan pada port 3000; Google mengizinkan HTTP hanya untuk localhost. Aplikasi memakai `GOOGLE_OAUTH_REDIRECT_URI` sebagai callback production kanonik dan tetap membentuk callback localhost secara dinamis untuk development.
 
 5. Mulai dari scope read-only paling sempit:
 

@@ -72,6 +72,9 @@
 # Google OAuth Redirect URI Fix
 
 - [x] Diagnosa `redirect_uri_mismatch` Google OAuth dan bandingkan URI callback aplikasi dengan Authorized redirect URIs di Google Cloud. Penyebabnya: aplikasi mengirim host runtime internal `ydhstprd65-aco4kte4cq-ue.a.run.app`, bukan domain publik Mintdesk.
-- [x] Terapkan perbaikan kode tanpa mengekspos credential OAuth. Callback kini memprioritaskan `X-Forwarded-Host` dan `X-Forwarded-Proto` dari gateway publik; test contract lulus.
+- [x] Terapkan dan uji fallback forwarded-host tanpa mengekspos credential OAuth. Test contract lulus, tetapi smoke test produksi membuktikan gateway masih meneruskan host runtime internal sehingga konfigurasi callback kanonik tetap diperlukan.
 - [ ] Uji redirect OAuth anonim dan perbarui runbook callback URI.
 - [ ] Simpan checkpoint perbaikan OAuth setelah validasi.
+- [ ] Tambahkan konfigurasi URI callback publik kanonik yang tidak bergantung pada host runtime internal.
+- [x] Daftarkan URI callback Mintdesk yang sama di Authorized redirect URIs Google Cloud. Production dan `http://localhost:3000/api/google/callback` sudah disimpan pada OAuth Client Mintdesk; consent flow akan diuji setelah deployment callback kanonik.
+- [x] Dukung callback OAuth localhost yang terdaftar terpisah untuk pengembangan lokal tanpa menggantikan callback production.

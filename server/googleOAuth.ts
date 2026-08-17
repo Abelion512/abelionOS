@@ -69,6 +69,8 @@ function callbackUrl(req: Request) {
   const forwardedHost = req.headers["x-forwarded-host"]?.toString().split(",")[0]?.trim();
   const protocol = forwardedProtocol || req.protocol;
   const host = forwardedHost || req.get("host");
+  const isLocal = host === "localhost" || host?.startsWith("localhost:") || host === "127.0.0.1" || host?.startsWith("127.0.0.1:");
+  if (!isLocal && ENV.googleOAuthRedirectUri) return ENV.googleOAuthRedirectUri;
   return `${protocol}://${host}/api/google/callback`;
 }
 
