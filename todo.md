@@ -28,6 +28,6 @@
 - [x] Bekukan MVP pertama: app shell, Overview nyata, dan Linux connection state.
 - [x] Audit dan hapus route/CTA yang hanya berupa toast atau placeholder. Sweep route dan action fase 1 selesai; hanya `/`, close/open drawer, refresh bridge, dan process control yang aktif.
 - [x] Tetapkan kontrak data minimum dan sumber data untuk setiap widget.
-- [ ] Implementasikan route P0 secara nyata satu per satu. `/processes` dan `/activity` sudah nyata; `/files`, `/connections`, dan `/settings` belum dibuat.
-- [x] Tambahkan test untuk setiap vertical slice sebelum lanjut. `client/src/lib/bridge.test.ts` mencakup connected/unavailable/error state dan process termination eligibility; 3 test files dan 4 tests lulus.
+- [x] Implementasikan route P0 secara nyata satu per satu. Routes `/`, `/processes`, `/activity`, `/files`, `/connections`, dan `/settings` sekarang nyata; file upload end-to-end tetap membutuhkan authenticated runtime + S3 availability, Workspace tetap unavailable sampai OAuth scope tersedia.
+- [x] Tambahkan test untuk setiap vertical slice sebelum lanjut. Bridge dan file validation tercakup; 4 test files dan 7 tests lulus.
 - [ ] Simpan checkpoint hanya setelah acceptance criteria fase terpenuhi.

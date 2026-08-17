@@ -55,6 +55,7 @@ async function bridgeRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const bridgeApi = {
+  health: () => bridgeRequest<{ ok: boolean; service: string; version: string }>("/health"),
   metrics: () => bridgeRequest<BridgeMetrics>("/v1/metrics"),
   processes: () => bridgeRequest<{ processes: BridgeProcess[]; currentUser: string }>("/v1/processes"),
   audit: () => bridgeRequest<{ events: BridgeAuditEvent[] }>("/v1/audit"),

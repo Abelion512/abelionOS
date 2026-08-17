@@ -38,3 +38,17 @@ export const auditEvents = mysqlTable("audit_events", {
 
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type InsertAuditEvent = typeof auditEvents.$inferInsert;
+
+export const files = mysqlTable("files", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  objectKey: varchar("objectKey", { length: 512 }).notNull().unique(),
+  objectUrl: varchar("objectUrl", { length: 1024 }).notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  mimeType: varchar("mimeType", { length: 160 }).notNull(),
+  sizeBytes: int("sizeBytes").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FileRecord = typeof files.$inferSelect;
+export type InsertFileRecord = typeof files.$inferInsert;

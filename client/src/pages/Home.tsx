@@ -49,10 +49,10 @@ export default function Home() {
         <div className="nav-item active"><LayoutDashboard size={18} /><span>Overview</span><span className="nav-dot" /></div>
         <Link href="/processes" className="nav-item"><Activity size={18} /><span>Processes</span><span className="nav-status">Local</span></Link>
         <Link href="/activity" className="nav-item"><Activity size={18} /><span>Activity</span><span className="nav-status">Audit</span></Link>
-        <div className="nav-item"><FolderOpen size={18} /><span>Files</span><span className="nav-status">Planned</span></div>
+        <Link href="/files" className="nav-item"><FolderOpen size={18} /><span>Files</span><span className="nav-status">S3</span></Link>
       </nav>
       <div className="sidebar-note"><div className="note-icon"><ShieldAlert size={17} /></div><div><p className="note-title">No hidden fallback</p><p className="note-copy">Unavailable data stays unavailable until a source is connected.</p></div></div>
-      <div className="sidebar-footer"><div className="nav-item"><Settings size={18} /><span>Settings</span><span className="nav-status">Planned</span></div><div className="nav-item"><CircleHelp size={18} /><span>Connection guide</span></div><div className="profile-row"><div className="avatar">{displayName.slice(0, 2).toUpperCase()}</div><div><p className="profile-name">{displayName}</p><p className="profile-status"><span className={isAuthenticated ? "" : "offline-dot"} /> {isAuthenticated ? "Authenticated" : "Not authenticated"}</p></div></div></div>
+      <div className="sidebar-footer"><Link href="/settings" className="nav-item"><Settings size={18} /><span>Settings</span><span className="nav-status">Read-only</span></Link><Link href="/connections" className="nav-item"><CircleHelp size={18} /><span>Connection guide</span></Link><div className="profile-row"><div className="avatar">{displayName.slice(0, 2).toUpperCase()}</div><div><p className="profile-name">{displayName}</p><p className="profile-status"><span className={isAuthenticated ? "" : "offline-dot"} /> {isAuthenticated ? "Authenticated" : "Not authenticated"}</p></div></div></div>
     </aside>
     {sidebarOpen && <button className="mobile-scrim" aria-label="Close sidebar" onClick={() => setSidebarOpen(false)} />}
     <main className="main-canvas">

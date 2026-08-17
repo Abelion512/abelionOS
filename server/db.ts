@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { AuditEvent, InsertAuditEvent, InsertUser, auditEvents, users } from "../drizzle/schema";
+import { AuditEvent, FileRecord, InsertAuditEvent, InsertFileRecord, InsertUser, auditEvents, files, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -101,4 +101,19 @@ export async function listAuditEvents(userId: number, limit = 50): Promise<Audit
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return db.select().from(auditEvents).where(eq(auditEvents.userId, userId)).orderBy(desc(auditEvents.createdAt)).limit(Math.min(limit, 100));
+}
+
+export async function createFileRecord(file: InsertFileRecord): Promise<FileRecord> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(files).values(file);
+  const inserted = await db.select().from(files).where(eq(files.id, result[0].insertId)).limit(1);
+  if (!inserted[0]) throw new Error("File metadata was not created");
+  return inserted[0];
+}
+
+export async function listUserFiles(userId: number, limit = 100): Promise<FileRecord[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select().from(files).where(eq(files.userId, userId)).orderBy(desc(files.createdAt)).limit(Math.min(limit, 100));
 }
