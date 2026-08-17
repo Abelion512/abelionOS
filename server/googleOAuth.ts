@@ -11,7 +11,10 @@ const GOOGLE_STATE_COOKIE = "mintdesk_google_oauth";
 const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
   "https://www.googleapis.com/auth/calendar.events.readonly",
+  "https://www.googleapis.com/auth/calendar.events.owned",
   "https://www.googleapis.com/auth/gmail.metadata",
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/tasks",
 ];
 
 type GoogleState = { state: string; userId: number; verifier: string; expiresAt: number };

@@ -2,10 +2,14 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { createFileRecord, getGoogleConnection, listAuditEvents, listUserFiles } from "./db";
+import crypto from "node:crypto";
+import { createAuditEvent, createCompanionDevice, createDailyFocusAction, createFileRecord, getCompanionDeviceForUser, getDailyFocusAction, getGoogleConnection, listAuditEvents, listCompanionDevices, listDailyFocusActions, listUserFiles, updateDailyFocusAction } from "./db";
 import { storageCreatePresignedUpload } from "./storage";
 import { buildMorningBriefing } from "./morningBriefing";
 import { disconnectGoogleWorkspace } from "./googleOAuth";
+import { encryptActionInput, hashDeviceSecret } from "./dailyFocusActionCrypto";
+import { dailyFocusActionKindSchema, parseDailyFocusProposal } from "./dailyFocusActionPolicy";
+import { executeDailyFocusGoogleAction } from "./googleDailyFocusActions";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -37,6 +41,123 @@ export const appRouter = router({
   }),
   briefing: router({
     get: protectedProcedure.query(({ ctx }) => buildMorningBriefing(ctx.user.id)),
+  }),
+  companionDevices: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const devices = await listCompanionDevices(ctx.user.id);
+      return devices.map(({ secretHash: _secretHash, ...device }) => ({
+        ...device,
+        capabilities: JSON.parse(device.capabilities) as string[],
+        online: device.lastSeenAt ? Date.now() - device.lastSeenAt.getTime() < 90_000 : false,
+      }));
+    }),
+    enroll: protectedProcedure.input(z.object({
+      name: z.string().trim().min(1).max(120),
+      deviceType: z.enum(["laptop", "server"]),
+    })).mutation(async ({ ctx, input }) => {
+      const deviceId = crypto.randomUUID();
+      const deviceSecret = crypto.randomBytes(32).toString("base64url");
+      const device = await createCompanionDevice({
+        userId: ctx.user.id,
+        deviceId,
+        name: input.name,
+        deviceType: input.deviceType,
+        capabilities: JSON.stringify(["reasoning"]),
+        secretHash: hashDeviceSecret(deviceSecret),
+        isDefaultReasoner: false,
+      });
+      await createAuditEvent({ userId: ctx.user.id, action: "companion.enrolled", resourceType: "companion_device", resourceId: deviceId, status: "accepted", details: JSON.stringify({ deviceType: input.deviceType }) });
+      return { deviceId: device.deviceId, deviceSecret, name: device.name, deviceType: device.deviceType };
+    }),
+  }),
+  dailyFocusActions: router({
+    list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(25) }).optional()).query(({ ctx, input }) =>
+      listDailyFocusActions(ctx.user.id, input?.limit ?? 25).then((actions) => actions.map((action) => ({ ...action, encryptedInput: null })))
+    ),
+    requestProposal: protectedProcedure.input(z.object({
+      deviceId: z.string().uuid(),
+      kind: z.enum(["task.create", "calendar.create"]),
+      text: z.string().trim().min(1).max(5_000),
+    })).mutation(async ({ ctx, input }) => {
+      const device = await getCompanionDeviceForUser(ctx.user.id, input.deviceId);
+      if (!device) throw new Error("Selected companion device was not found");
+      const action = await createDailyFocusAction({
+        userId: ctx.user.id,
+        deviceId: device.deviceId,
+        kind: input.kind,
+        status: "queued",
+        encryptedInput: encryptActionInput(input.text),
+        expiresAt: new Date(Date.now() + 10 * 60_000),
+      });
+      await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.proposal.requested", resourceType: "daily_focus_action", resourceId: String(action.id), status: "accepted", details: JSON.stringify({ kind: input.kind, deviceId: device.deviceId }) });
+      return { id: action.id, status: action.status, expiresAt: action.expiresAt };
+    }),
+    prepareCalendarDelete: protectedProcedure.input(z.object({
+      calendarId: z.string().trim().min(1).max(512),
+      eventId: z.string().trim().min(1).max(1024),
+      title: z.string().trim().min(1).max(1024),
+      start: z.string().datetime(),
+      organizerSelf: z.literal(true),
+    })).mutation(async ({ ctx, input }) => {
+      const proposal = parseDailyFocusProposal({ kind: "calendar.delete", ...input });
+      const action = await createDailyFocusAction({
+        userId: ctx.user.id,
+        kind: proposal.kind,
+        status: "ready",
+        proposalPayload: JSON.stringify(proposal),
+        expiresAt: new Date(Date.now() + 10 * 60_000),
+      });
+      await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.calendar_delete.prepared", resourceType: "daily_focus_action", resourceId: String(action.id), status: "accepted", details: JSON.stringify({ eventId: input.eventId }) });
+      return { id: action.id, status: action.status, expiresAt: action.expiresAt };
+    }),
+    prepareGmailTrash: protectedProcedure.input(z.object({
+      messages: z.array(z.object({
+        id: z.string().trim().min(1).max(512),
+        sender: z.string().max(1024).nullable(),
+        subject: z.string().max(1024).nullable(),
+        receivedAt: z.string().datetime().nullable(),
+      })).min(1).max(25),
+    })).mutation(async ({ ctx, input }) => {
+      const proposal = parseDailyFocusProposal({ kind: "gmail.trash", messages: input.messages });
+      const action = await createDailyFocusAction({
+        userId: ctx.user.id,
+        kind: proposal.kind,
+        status: "ready",
+        proposalPayload: JSON.stringify(proposal),
+        expiresAt: new Date(Date.now() + 10 * 60_000),
+      });
+      await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.gmail_trash.prepared", resourceType: "daily_focus_action", resourceId: String(action.id), status: "accepted", details: JSON.stringify({ messageCount: input.messages.length, permanentDelete: false }) });
+      return { id: action.id, status: action.status, expiresAt: action.expiresAt };
+    }),
+    reject: protectedProcedure.input(z.object({ actionId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const action = await getDailyFocusAction(ctx.user.id, input.actionId);
+      if (!action) throw new Error("Daily Focus action was not found");
+      if (!["draft", "queued", "processing", "ready"].includes(action.status)) throw new Error("Daily Focus action cannot be rejected in its current state");
+      await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "rejected", encryptedInput: null });
+      await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.action.rejected", resourceType: "daily_focus_action", resourceId: String(input.actionId), status: "rejected", details: JSON.stringify({ kind: action.kind }) });
+      return { id: input.actionId, status: "rejected" as const };
+    }),
+    confirm: protectedProcedure.input(z.object({ actionId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const action = await getDailyFocusAction(ctx.user.id, input.actionId);
+      if (!action) throw new Error("Daily Focus action was not found");
+      if (action.status !== "ready" || !action.proposalPayload) throw new Error("Daily Focus action is not ready for confirmation");
+      if (action.expiresAt.getTime() <= Date.now()) {
+        await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "expired", encryptedInput: null });
+        throw new Error("Daily Focus action expired before confirmation");
+      }
+      const proposal = parseDailyFocusProposal(JSON.parse(action.proposalPayload));
+      if (proposal.kind !== action.kind) throw new Error("Daily Focus action proposal does not match its kind");
+      await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "confirmed", confirmedAt: new Date() });
+      try {
+        const result = await executeDailyFocusGoogleAction(ctx.user.id, input.actionId, proposal);
+        await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "executed", providerResourceId: result.providerResourceId, executedAt: new Date(), encryptedInput: null });
+        return { id: input.actionId, status: "executed" as const, providerResourceId: result.providerResourceId };
+      } catch (error) {
+        await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "error", errorCode: "provider_action_failed", encryptedInput: null });
+        await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.action.error", resourceType: "daily_focus_action", resourceId: String(input.actionId), status: "error", details: JSON.stringify({ kind: action.kind, reason: error instanceof Error ? error.message : "unknown" }) });
+        throw error;
+      }
+    }),
   }),
   files: router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(100) }).optional()).query(({ ctx, input }) =>

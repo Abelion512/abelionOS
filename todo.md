@@ -157,3 +157,15 @@
 - [x] Hapus copy Dashboard yang terasa seperti AI-slop dan rapikan status ringkas agar hanya menyatakan fakta runtime yang bermakna.
 - [x] Sederhanakan profile trigger dengan menghapus ikon atau dekorasi yang tidak menambah affordance, sambil mempertahankan menu profil yang dapat diakses.
 - [x] Tambahkan atau perbarui test dan verifikasi visual desktop/mobile untuk revisi anti-slop sebelum checkpoint.
+
+# Daily Focus Action Expansion
+
+- [x] Riset pola AI-slop dari sumber desain dan produk yang kredibel, lalu terjemahkan menjadi rubric visual/copy yang dapat diuji untuk Mintdesk.
+- [x] Gunakan Bun untuk companion hybrid yang dapat berjalan pada Linux laptop dan Linux server; device yang online dipilih secara eksplisit untuk 9router tanpa memindahkan token lokal ke browser.
+- [x] Tentukan arsitektur akses dari ponsel, Linux laptop, dan Linux server tanpa memindahkan token companion atau 9router ke browser.
+- [x] Perluas konfigurasi consent Google hanya untuk Google Tasks, Gmail modify, dan Calendar write/delete setelah menyepakati preview serta konfirmasi per aksi; token pengguna tetap perlu re-consent sebelum action dapat dijalankan.
+- [x] Tambahkan contract action Daily Focus untuk membuat task, menyusun draft event dari teks, membuat/menghapus event, dan menandai atau menghapus inbox dengan audit user-scoped.
+- [x] Bangun companion Linux Bun yang dapat menerima pekerjaan Daily Focus terautentikasi dari server dan mengembalikan proposal terstruktur dari 9router tanpa menjalankan aksi Google sendiri.
+- [x] Bangun UI Daily Focus mobile untuk input teks bebas, preview perubahan, batch selection, dan konfirmasi eksplisit per aksi.
+- [x] Tambahkan test otomatis untuk scope, ownership, preview, failure policy, audit boundary, responsive layout, serta verifikasi build sebelum checkpoint.
+- [ ] Jalankan E2E nyata setelah user memasang Bun companion pada Linux laptop/server dan menyelesaikan re-consent scope action Google; gunakan task dan event disposable serta satu Gmail test message.

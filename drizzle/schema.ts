@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -65,3 +65,40 @@ export const googleConnections = mysqlTable("google_connections", {
 
 export type GoogleConnection = typeof googleConnections.$inferSelect;
 export type InsertGoogleConnection = typeof googleConnections.$inferInsert;
+
+export const companionDevices = mysqlTable("companion_devices", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  deviceId: varchar("deviceId", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 120 }).notNull(),
+  deviceType: mysqlEnum("deviceType", ["laptop", "server"]).notNull(),
+  capabilities: text("capabilities").notNull(),
+  secretHash: varchar("secretHash", { length: 128 }).notNull(),
+  isDefaultReasoner: boolean("isDefaultReasoner").notNull().default(false),
+  lastSeenAt: timestamp("lastSeenAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanionDevice = typeof companionDevices.$inferSelect;
+export type InsertCompanionDevice = typeof companionDevices.$inferInsert;
+
+export const dailyFocusActions = mysqlTable("daily_focus_actions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  deviceId: varchar("deviceId", { length: 64 }),
+  kind: mysqlEnum("kind", ["task.create", "calendar.create", "calendar.delete", "gmail.trash"]).notNull(),
+  status: mysqlEnum("status", ["draft", "queued", "processing", "ready", "confirmed", "executed", "rejected", "error", "expired"]).notNull().default("draft"),
+  encryptedInput: text("encryptedInput"),
+  proposalPayload: text("proposalPayload"),
+  providerResourceId: varchar("providerResourceId", { length: 512 }),
+  errorCode: varchar("errorCode", { length: 120 }),
+  expiresAt: timestamp("expiresAt").notNull(),
+  confirmedAt: timestamp("confirmedAt"),
+  executedAt: timestamp("executedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DailyFocusAction = typeof dailyFocusActions.$inferSelect;
+export type InsertDailyFocusAction = typeof dailyFocusActions.$inferInsert;

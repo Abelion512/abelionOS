@@ -1,19 +1,26 @@
 # Mintdesk Runtime Verification Runbook
 
-> **Tujuan.** Runbook ini memverifikasi Linux companion lokal, Storage observer read-only, 9router untuk Daily Focus, dan OAuth Google least-privilege. Jalankan setiap tahap sampai terbukti, lalu lanjutkan ke tahap berikutnya. Tidak ada tahap yang mengizinkan upload, perubahan file, pengiriman Gmail, perubahan Calendar, atau tindakan otomatis oleh AI.
+> **Tujuan.** Verifikasi Mintdesk pada ponsel, Linux laptop, dan Linux server tanpa memberi browser akses ke secret perangkat atau 9router. Bridge observasi tetap read-only. Companion Bun hybrid hanya mengubah teks menjadi **proposal**; perubahan Google selalu berasal dari backend setelah konfirmasi pengguna.
 
 ## Status Operasional
 
 | Area | Status kode | Bukti selesai |
 |---|---|---|
-| Linux companion | Diimplementasikan, perlu dipasang pada laptop Linux | Health, metrics, process, audit, Storage observer, dan Daily Focus proxy memberi respons lokal nyata. |
-| Storage observer | Metadata-only pada workdir allowlisted | Path, kapasitas mount, dan daftar entry top-level muncul tanpa kemampuan baca isi, upload, download, atau modifikasi. |
-| Daily Focus | Evidence-first, refinement eksplisit | Bukti Calendar/Gmail metadata/audit tampil; 9router hanya dipanggil setelah pengguna memilih **Refine priorities**. |
-| Google Workspace | OAuth read-only, token lama perlu re-consent | Connections tidak lagi menunjukkan `gmail.compose`; Morning Briefing memakai metadata Calendar dan Gmail saja. |
+| Dashboard dan Daily Focus mobile | Web production responsif | Dashboard dan `/briefing` dapat dibuka dari ponsel tanpa secret lokal. |
+| Bridge observasi Linux | Node service lokal terpisah | Health, metrics, process, audit, dan Storage observer bekerja melalui loopback. |
+| Companion proposal hybrid | Bun service pada laptop dan/atau server | Device terdaftar melakukan polling outbound dan mengembalikan proposal JSON tervalidasi. |
+| Action Daily Focus | Preview dan confirmation eksplisit | Task, event baru, Trash Gmail, atau delete event tidak berjalan sebelum konfirmasi. |
+| Google Workspace | Re-consent action scope diperlukan | Token memiliki scope Morning Briefing serta scope action yang tercantum pada tabel di bawah. |
 
-## 1. Pasang dan Verifikasi Linux Companion
+## 1. Akses dari Ponsel
 
-Karena Manus Desktop belum menyediakan installer Linux, ambil source Mintdesk dari proyek lalu jalankan installer dari root proyek. Prasyaratnya adalah Node.js 20+, `systemd --user`, dan akun Linux biasa. Root tidak diperlukan.
+Gunakan domain production Mintdesk dari browser ponsel. Ponsel tidak menyimpan `MINTDESK_9ROUTER_TOKEN`, `MINTDESK_DEVICE_SECRET`, atau token bridge. Dari Daily Focus, ponsel hanya mengirim teks ke backend untuk dibuat sebagai job terenkripsi. Laptop atau server yang terdaftar dan online akan memproses job dengan 9router lokal, lalu backend menampilkan preview.
+
+> Jika semua companion offline, Mintdesk tidak membuat fallback AI. Job tetap `queued` atau panel menyatakan unavailable. Anda masih dapat membaca evidence Calendar dan Gmail metadata.
+
+## 2. Bridge Observasi Linux Lama
+
+Bridge Node mempertahankan fungsi observasi lokal dan Storage read-only. Pasang bila Anda memerlukan Dashboard system state, Process control allowlist, atau workdir observer.
 
 ```bash
 cd /path/to/dashboard-os-linux-mint
@@ -21,7 +28,7 @@ node --version
 bash companion/install-user-service.sh
 ```
 
-Installer menyalin bridge ke `~/.local/share/mintdesk`, membuat `~/.config/mintdesk/bridge.env`, dan mengaktifkan user service. Buka file environment tersebut lalu set workdir dan konfigurasi 9router pada perangkat lokal saja.
+Edit `~/.config/mintdesk/bridge.env` hanya pada perangkat tersebut.
 
 ```bash
 MINTDESK_WORKDIR=/media/abelion/Isaf/ican/project
@@ -30,76 +37,86 @@ MINTDESK_9ROUTER_TOKEN=PASTE_LOCAL_BEARER_TOKEN
 MINTDESK_9ROUTER_MODEL=claude-work
 ```
 
-> Nilai `MINTDESK_9ROUTER_TOKEN` dan `MINTDESK_TOKEN` adalah secret lokal. Jangan memasukkannya ke chat, repository, browser URL, screenshot, atau deployment Mintdesk.
+Bridge harus tetap bind pada `127.0.0.1`. Jangan memasukkan `MINTDESK_TOKEN` atau token 9router ke chat, deployment, URL browser, atau screenshot.
 
-Restart service dan verifikasi endpoint hanya pada loopback.
+## 3. Companion Bun Hybrid untuk Laptop dan Server
 
-```bash
-systemctl --user restart mintdesk-bridge.service
-systemctl --user status mintdesk-bridge.service --no-pager
-journalctl --user -u mintdesk-bridge.service -n 50 --no-pager
-
-TOKEN="$(sed -n 's/^MINTDESK_TOKEN=//p' ~/.config/mintdesk/bridge.env)"
-curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/health
-curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/v1/metrics
-curl -sS -H "Authorization: Bearer ${TOKEN}" http://127.0.0.1:18765/v1/storage/workdir
-```
-
-Respons health harus memiliki `ok: true`. Endpoint Storage hanya boleh melaporkan metadata entry yang berada langsung dalam `MINTDESK_WORKDIR` dan statistik kapasitas mount. Bridge harus tetap bind ke `127.0.0.1`; jangan mengubahnya menjadi `0.0.0.0`.
-
-## 2. Hubungkan Browser dan Uji Batas Bridge
-
-Buka dashboard production di browser milik Anda sendiri. Masukkan token bridge yang telah dibuat secara lokal melalui Console browser, lalu reload sekali.
-
-```js
-localStorage.setItem("mintdesk_bridge_token", "PASTE_TOKEN_DARI_bridge.env")
-location.reload()
-```
-
-Halaman **Dashboard**, **Storage**, **Activity**, dan **Connections** harus beralih dari unavailable ke state lokal yang nyata. Bila domain publik berubah, tambahkan domain baru ke `MINTDESK_ALLOWED_ORIGINS` pada `bridge.env`, lalu restart service. Jangan menyimpan token pada komputer bersama.
-
-Untuk menguji Process control, gunakan proses disposable yang termasuk allowlist. Jangan menggunakan proses kerja atau sistem.
+Pasang companion ini pada Linux laptop, Linux server, atau keduanya. Keduanya dapat terdaftar sebagai device berbeda. Daily Focus memilih device yang Anda pilih di UI; job hanya diproses oleh device tersebut.
 
 ```bash
-node -e 'setInterval(() => {}, 600000)' &
-TEST_PID=$!
-curl -sS -X POST \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  --data "{\"pid\":${TEST_PID}}" \
-  http://127.0.0.1:18765/v1/processes/terminate
+curl -fsSL https://bun.sh/install | bash
+cd /path/to/dashboard-os-linux-mint
+bun --version
+bash companion/install-hybrid-bun-companion.sh
 ```
 
-Respons yang benar adalah `SIGTERM` untuk `TEST_PID`. Jangan mencoba terminasi PID 1, bridge service, desktop session, network manager, atau command di luar allowlist.
+Di Daily Focus, pilih **Add a reasoning device**, masukkan nama dan tipe device, lalu simpan credential satu kali ke `~/.config/mintdesk/hybrid-companion.env`:
 
-## 3. Verifikasi Daily Focus dan 9router
+```bash
+MINTDESK_API_BASE_URL=https://mintdash-khcj34hp.manus.space
+MINTDESK_DEVICE_ID=PASTE_ONE_TIME_DEVICE_ID
+MINTDESK_DEVICE_SECRET=PASTE_ONE_TIME_DEVICE_SECRET
+MINTDESK_9ROUTER_URL=http://127.0.0.1:20128/v1
+MINTDESK_9ROUTER_TOKEN=PASTE_LOCAL_BEARER_TOKEN
+MINTDESK_9ROUTER_MODEL=claude-work
+MINTDESK_TIME_ZONE=Asia/Jakarta
+```
 
-Daily Focus selalu membangun evidence terlebih dahulu dari Calendar read-only, Gmail metadata tanpa body, dan audit aplikasi yang didukung. Jejak historis `gmail.draft.*` tidak dikirim sebagai evidence. Pilih **Refine priorities** hanya bila Anda ingin reasoning lokal; Mintdesk tidak menjalankan AI terjadwal dan tidak menyimpan respons AI mentah.
+Aktifkan service user:
 
-| Kondisi | Perilaku yang benar |
-|---|---|
-| Companion atau 9router offline | Evidence tetap tampil dan panel menyatakan local reasoning unavailable. Tidak ada rekomendasi fallback. |
-| 9router merespons | Hanya JSON tervalidasi dengan `evidenceRefs` yang benar dapat dirender. |
-| Pengguna menandai done/deprioritized | Override hanya terjadi di browser. Tidak mengubah Google, Linux, atau evidence asal. |
+```bash
+systemctl --user enable --now mintdesk-hybrid-companion.service
+systemctl --user status mintdesk-hybrid-companion.service --no-pager
+journalctl --user -u mintdesk-hybrid-companion.service -n 50 --no-pager
+```
 
-## 4. Re-consent Google Workspace dengan Scope Read-Only
+Untuk server tanpa sesi login, aktifkan lingering untuk user service yang menjalankan companion:
 
-Halaman **Connections** akan menampilkan **re-consent required** jika token yang tersimpan masih memuat `https://www.googleapis.com/auth/gmail.compose`. Token itu berasal dari capability Drafts yang telah dicabut. Mintdesk tidak lagi mengekspos route Draft atau meminta scope tersebut, tetapi scope lama tidak dapat dicabut dari token secara otomatis.
+```bash
+sudo loginctl enable-linger "$USER"
+```
 
-1. Buka [Google Account permissions](https://myaccount.google.com/permissions) pada akun `agen.salva@gmail.com`.
-2. Pilih akses Mintdesk, lalu pilih **Remove access**.
-3. Kembali ke `/connections` dan klik **Connect Google Workspace**.
-4. Selesaikan consent hanya untuk scope berikut, kemudian buka `/briefing` dan pilih **Refresh sources**.
+Companion melakukan polling HTTPS keluar menuju Mintdesk. Ia tidak membuka port publik, tidak memegang refresh token Google, dan tidak pernah memanggil Google API.
 
-| Fitur MVP | Scope |
+## 4. Daily Focus Action Contract
+
+| Aksi | Asal proposal | Batas | Konfirmasi |
+|---|---|---|---|
+| Buat Google Task | Teks bebas → 9router lokal → schema | Satu task per proposal | Preview task sebelum create |
+| Buat Calendar event | Teks bebas → 9router lokal → schema | Waktu harus lengkap dan tidak ambigu | Preview title, waktu, timezone, dan attendee |
+| Hapus Calendar event | Evidence Calendar yang dipilih | Hanya `organizer.self=true` | Preview event spesifik sebelum delete |
+| Bersihkan inbox Gmail | Metadata Gmail yang dipilih | Maks. 25 message per action | Pindahkan ke Trash, **bukan** delete permanen |
+
+Proposal memiliki masa berlaku 10 menit. Job yang ditolak, error, atau kedaluwarsa tidak dapat dikonfirmasi. Audit hanya mencatat tipe action, resource ID, status, dan count. Body email, secret device, refresh token, serta raw prompt 9router tidak dicatat dalam audit.
+
+## 5. Re-consent Google Workspace untuk Action Daily Focus
+
+Setelah release capability action, buka **Connections** dari menu profile dan pilih **Reconnect with Daily Focus actions**. Google akan meminta scope berikut. `gmail.compose` tidak pernah diminta kembali.
+
+| Fungsi | Scope |
 |---|---|
 | Daftar kalender | `https://www.googleapis.com/auth/calendar.calendarlist.readonly` |
-| Event kalender | `https://www.googleapis.com/auth/calendar.events.readonly` |
-| Metadata Gmail | `https://www.googleapis.com/auth/gmail.metadata` |
+| Evidence event Calendar | `https://www.googleapis.com/auth/calendar.events.readonly` |
+| Buat dan hapus event milik pengguna | `https://www.googleapis.com/auth/calendar.events.owned` |
+| Metadata Gmail untuk evidence | `https://www.googleapis.com/auth/gmail.metadata` |
+| Move message terpilih ke Trash | `https://www.googleapis.com/auth/gmail.modify` |
+| Create Google Task | `https://www.googleapis.com/auth/tasks` |
 
-Mintdesk tidak meminta `gmail.compose`, `gmail.modify`, atau `gmail.full_access`. Bila satu sumber tidak dapat direfresh, Daily Focus harus tetap memperlihatkan state `unavailable`, `partial`, atau `error`, bukan nilai contoh.
+Jika consent belum selesai, Morning Briefing tetap read-only dan action panel tetap dapat menampilkan preview. Namun, tombol confirm akan gagal secara eksplisit tanpa menjalankan perubahan apa pun.
+
+## 6. Verification Checklist
+
+1. Dari HP, buka `/briefing` dan pastikan device status tampak online atau offline secara jujur.
+2. Kirim satu teks task dengan device laptop online. Pastikan status berubah `queued → processing → ready` dan preview muncul.
+3. Tekan **Reject**. Pastikan tidak ada Google action dan audit mencatat rejection.
+4. Ulangi dengan event uji, lalu periksa preview sebelum menekan confirmation.
+5. Pilih satu metadata Gmail uji. Pastikan preview menyebut **Trash**, bukan permanent delete.
+6. Pastikan delete event hanya ditawarkan untuk event dengan organizer akun sendiri.
+7. Setelah re-consent, gunakan satu action disposable per provider dan periksa audit tanpa body email atau secret.
 
 ## References
 
-[1]: https://developers.google.com/identity/protocols/oauth2 "Using OAuth 2.0 to Access Google APIs"
-[2]: https://developers.google.com/identity/protocols/oauth2/scopes "OAuth 2.0 Scopes for Google APIs"
+[1]: https://bun.com/docs/guides/ecosystem/systemd "Run a Bun application as a systemd service"
+[2]: https://developers.google.com/workspace/tasks/auth "Google Tasks authorization"
+[3]: https://developers.google.com/workspace/gmail/api/auth/scopes "Gmail API scopes"
+[4]: https://developers.google.com/workspace/calendar/api/auth "Calendar API scopes"

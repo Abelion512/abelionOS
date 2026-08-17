@@ -16,6 +16,7 @@ export type CalendarBriefingEvent = {
   start: string;
   end: string;
   organizer: string | null;
+  organizerSelf: boolean;
   attendees: string[];
   location: string | null;
   description: string | null;
@@ -51,7 +52,7 @@ type GoogleCalendarEvent = {
   summary?: string;
   start?: { dateTime?: string; date?: string };
   end?: { dateTime?: string; date?: string };
-  organizer?: { displayName?: string; email?: string };
+  organizer?: { displayName?: string; email?: string; self?: boolean };
   attendees?: Array<{ displayName?: string; email?: string }>;
   location?: string;
   description?: string;
@@ -92,7 +93,7 @@ function normalizeCalendarEvents(items: GoogleCalendarEvent[], window: { from: D
     const organizer = event.organizer?.displayName || event.organizer?.email || null;
     const attendees = (event.attendees ?? []).map((attendee) => attendee.displayName || attendee.email).filter((value): value is string => Boolean(value));
     const meetingUrl = event.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video" && entry.uri)?.uri || event.hangoutLink || null;
-    return [{ id: event.id, summary: event.summary || "Untitled event", start, end, organizer, attendees, location: event.location || null, description: event.description || null, meetingUrl, htmlLink: event.htmlLink || null }];
+    return [{ id: event.id, summary: event.summary || "Untitled event", start, end, organizer, organizerSelf: event.organizer?.self === true, attendees, location: event.location || null, description: event.description || null, meetingUrl, htmlLink: event.htmlLink || null }];
   });
 }
 
@@ -103,7 +104,7 @@ function normalizeInboxMessage(message: GmailMessageResource): InboxBriefingMess
   return { id: message.id, sender: headers.get("from") || null, subject: headers.get("subject") || null, receivedAt };
 }
 
-async function refreshGoogleAccessToken(connection: GoogleConnection) {
+export async function refreshGoogleAccessToken(connection: GoogleConnection) {
   if (!ENV.googleOAuthClientId || !ENV.googleOAuthClientSecret) throw new Error("Google OAuth is not configured");
   const refreshToken = decryptGoogleRefreshToken(connection.encryptedRefreshToken);
   const response = await fetch("https://oauth2.googleapis.com/token", {

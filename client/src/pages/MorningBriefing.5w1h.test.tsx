@@ -3,16 +3,44 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getBridgeConfig: vi.fn(), health: vi.fn(), dailyFocus: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  getBridgeConfig: vi.fn(), health: vi.fn(), dailyFocus: vi.fn(),
+  enroll: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
+}));
 
 vi.mock("@/lib/bridge", () => ({ bridgeApi: { health: mocks.health, dailyFocus: mocks.dailyFocus }, getBridgeConfig: mocks.getBridgeConfig }));
-vi.mock("@/lib/trpc", () => ({ trpc: { briefing: { get: { useQuery: () => ({ data: {
-  generatedAt: new Date("2026-08-17T01:00:00.000Z"),
-  window: { from: new Date("2026-08-17T01:00:00.000Z"), until: new Date("2026-08-18T01:00:00.000Z"), label: "Next 24 hours" },
-  workspace: { calendarEvents: [{ id: "event-1", summary: "Launch review", start: "2026-08-17T02:00:00.000Z", end: "2026-08-17T02:30:00.000Z", organizer: "Abelion", attendees: ["Team"], location: "Studio", description: null, meetingUrl: null, htmlLink: null }], unreadInboxCount: 1, inboxMessages: [{ id: "mail-1", sender: "Project <project@example.com>", subject: "Launch checklist", receivedAt: "2026-08-17T01:30:00.000Z" }], source: { status: "ready", detail: "Calendar and Gmail metadata refreshed." } },
-  activity: { events: [], source: { status: "ready", detail: "No application activity has been recorded yet." } },
-  files: { recent: [], source: { status: "ready", detail: "No file metadata has been recorded yet." } },
-}, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }) } } } }));
+vi.mock("@/lib/trpc", () => ({
+  trpc: {
+    useUtils: () => ({ companionDevices: { list: { invalidate: mocks.invalidate } }, dailyFocusActions: { list: { invalidate: mocks.invalidate } } }),
+    briefing: { get: { useQuery: () => ({
+      data: {
+        generatedAt: new Date("2026-08-17T01:00:00.000Z"),
+        window: { from: new Date("2026-08-17T01:00:00.000Z"), until: new Date("2026-08-18T01:00:00.000Z"), label: "Next 24 hours" },
+        workspace: {
+          calendarEvents: [{ id: "event-1", summary: "Launch review", start: "2026-08-17T02:00:00.000Z", end: "2026-08-17T02:30:00.000Z", organizer: "Abelion", organizerSelf: true, attendees: ["Team"], location: "Studio", description: null, meetingUrl: null, htmlLink: null }],
+          unreadInboxCount: 1,
+          inboxMessages: [{ id: "mail-1", sender: "Project <project@example.com>", subject: "Launch checklist", receivedAt: "2026-08-17T01:30:00.000Z" }],
+          source: { status: "ready", detail: "Calendar and Gmail metadata refreshed." },
+        },
+        activity: { events: [], source: { status: "ready", detail: "No application activity has been recorded yet." } },
+        files: { recent: [], source: { status: "ready", detail: "No file metadata has been recorded yet." } },
+      },
+      isLoading: false, isFetching: false, error: null, refetch: vi.fn(),
+    }) } },
+    companionDevices: {
+      list: { useQuery: () => ({ data: [] }) },
+      enroll: { useMutation: () => ({ mutate: mocks.enroll, isPending: false }) },
+    },
+    dailyFocusActions: {
+      list: { useQuery: () => ({ data: [] }) },
+      requestProposal: { useMutation: () => ({ mutate: mocks.requestProposal, isPending: false }) },
+      prepareGmailTrash: { useMutation: () => ({ mutate: mocks.prepareTrash, isPending: false }) },
+      prepareCalendarDelete: { useMutation: () => ({ mutate: mocks.prepareDelete, isPending: false }) },
+      confirm: { useMutation: () => ({ mutate: mocks.confirm, isPending: false }) },
+      reject: { useMutation: () => ({ mutate: mocks.reject, isPending: false }) },
+    },
+  },
+}));
 
 import MorningBriefing from "./MorningBriefing";
 
@@ -22,7 +50,6 @@ describe("Morning Briefing 5W1H", () => {
   it("separates Calendar and Gmail and exposes facts without rendering an email body", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     render(<MorningBriefing />);
-
     expect(screen.getByText("Google Calendar")).toBeTruthy();
     expect(screen.getByText("Gmail metadata")).toBeTruthy();
     expect(screen.getAllByText("Launch review").length).toBeGreaterThan(1);
@@ -40,6 +67,15 @@ describe("Morning Briefing 5W1H", () => {
     render(<MorningBriefing />);
     expect(screen.getByText(/Local reasoning unavailable\. Add the Linux companion token/)).toBeTruthy();
     expect(screen.getByRole("button", { name: /Refine priorities/i })).toHaveProperty("disabled", true);
+  });
+
+  it("keeps action capability in Daily Focus and asks for a reasoning device before any proposal is requested", () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    render(<MorningBriefing />);
+    expect(screen.getByText("Turn intention into a reviewed change")).toBeTruthy();
+    expect(screen.getByText("Add a reasoning device")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Register/i })).toBeTruthy();
+    expect(mocks.requestProposal).not.toHaveBeenCalled();
   });
 
   it("lets the user mark a structured priority as done without changing the source evidence", async () => {

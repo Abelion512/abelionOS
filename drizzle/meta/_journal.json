@@ -22,6 +22,20 @@
       "when": 1786970427729,
       "tag": "0002_milky_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787007192358,
+      "tag": "0003_mushy_korath",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1787007349536,
+      "tag": "0004_thankful_hardball",
+      "breakpoints": true
     }
   ]
 }

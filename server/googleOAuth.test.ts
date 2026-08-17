@@ -21,8 +21,11 @@ describe("Google OAuth security helpers", () => {
     expect(__googleOAuthInternals.decryptSecret(encrypted)).toBe("refresh-token-value");
   });
 
-  it("keeps Gmail access limited to metadata for Morning Briefing", () => {
+  it("requests only the declared Daily Focus scopes and never restores Gmail Drafts", () => {
     expect(__googleOAuthInternals.googleScopes).toContain("https://www.googleapis.com/auth/gmail.metadata");
+    expect(__googleOAuthInternals.googleScopes).toContain("https://www.googleapis.com/auth/gmail.modify");
+    expect(__googleOAuthInternals.googleScopes).toContain("https://www.googleapis.com/auth/tasks");
+    expect(__googleOAuthInternals.googleScopes).toContain("https://www.googleapis.com/auth/calendar.events.owned");
     expect(__googleOAuthInternals.googleScopes).not.toContain("https://www.googleapis.com/auth/gmail.compose");
   });
 
