@@ -31,3 +31,9 @@
 - [x] Implementasikan route P0 secara nyata satu per satu. Routes `/`, `/processes`, `/activity`, `/files`, `/connections`, dan `/settings` sekarang nyata; file upload end-to-end tetap membutuhkan authenticated runtime + S3 availability, Workspace tetap unavailable sampai OAuth scope tersedia.
 - [x] Tambahkan test untuk setiap vertical slice sebelum lanjut. Bridge dan file validation tercakup; 4 test files dan 7 tests lulus.
 - [x] Simpan checkpoint hanya setelah acceptance criteria fase terpenuhi. Checkpoint P0 tersedia; runtime blockers Workspace OAuth dan Linux E2E tetap terdokumentasi.
+
+# Runtime Verification Runbook
+
+- [x] Dokumentasikan prosedur Linux companion, termasuk health, metrics, process listing, audit lokal, dan terminasi proses disposable. Eksekusi aktual memerlukan laptop Linux pengguna.
+- [x] Dokumentasikan prosedur login dan uji upload File Storage hingga metadata serta URL S3 dapat diverifikasi. Eksekusi aktual memerlukan session login pengguna.
+- [x] Dokumentasikan konfigurasi OAuth Google scope-minimal dan pekerjaan callback/server adapter yang masih harus diimplementasikan sebelum Gmail atau Calendar diaktifkan.
