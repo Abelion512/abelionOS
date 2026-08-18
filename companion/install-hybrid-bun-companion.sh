@@ -11,6 +11,7 @@ cp "$(dirname "$0")/dailyFocusPolicy.mjs" "$APP_DIR/dailyFocusPolicy.mjs"
 cp "$(dirname "$0")/actionProposalPolicy.mjs" "$APP_DIR/actionProposalPolicy.mjs"
 cp "$(dirname "$0")/reasonerResponsePolicy.mjs" "$APP_DIR/reasonerResponsePolicy.mjs"
 cp "$(dirname "$0")/reasonerRetryPolicy.mjs" "$APP_DIR/reasonerRetryPolicy.mjs"
+cp "$(dirname "$0")/loopbackPairingPolicy.mjs" "$APP_DIR/loopbackPairingPolicy.mjs"
 cp "$(dirname "$0")/pair-companion-credential.sh" "$APP_DIR/pair-companion-credential.sh"
 chmod 700 "$APP_DIR/pair-companion-credential.sh"
 
@@ -48,5 +49,5 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
-echo "Copy the one-time pairing code from Mintdesk Daily Focus, then run:"
-echo "$APP_DIR/pair-companion-credential.sh"
+echo "Start the companion, then select Pair this browser in Mintdesk Daily Focus."
+echo "systemctl --user enable --now mintdesk-hybrid-companion.service"

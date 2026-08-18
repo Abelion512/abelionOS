@@ -180,3 +180,5 @@
 - [ ] Pulihkan pasangan device ID dan secret yang benar pada runtime companion setelah restart mengembalikan 401, tanpa memindahkan credential ke chat.
 - [x] Ganti pengeditan file credential manual dengan helper pairing terminal yang meminta secret tersembunyi, menulis dua field aman, mengunci izin, dan me-restart service. Test helper, UI, parser/retry, typecheck, build, syntax script, serta checksum CDN lulus.
 - [x] Tambahkan pairing dari clipboard dengan fallback input tersembunyi agar credential hasil tombol Copy pairing code tidak perlu diketik ulang di terminal. Helper memprioritaskan wl-paste, xclip, atau xsel; test, build, syntax, dan checksum paket lulus.
+- [x] Selaraskan path helper pairing yang dipublikasikan dengan APP_DIR installer agar perintah satu-langkah tidak gagal karena direktori drift. Installer kini menampilkan lokasi `mintdesk-hybrid` yang benar.
+- [x] Tambahkan pairing browser-ke-loopback yang hanya menerima credential di 127.0.0.1, memvalidasi Origin Mintdesk, menulis file atomik, dan me-restart companion tanpa clipboard atau input terminal. Policy test, typecheck, build, syntax, dan checksum paket lulus.

@@ -2,6 +2,11 @@ import { assertLoopbackRouterUrl } from "./dailyFocusPolicy.mjs";
 import { parseActionProposal, parseProposalJson } from "./actionProposalPolicy.mjs";
 import { extractReasonerCompletion, ReasonerProviderLimitedError } from "./reasonerResponsePolicy.mjs";
 import { retryForProviderRotation } from "./reasonerRetryPolicy.mjs";
+import { applyLoopbackPairing, isValidLoopbackPairing } from "./loopbackPairingPolicy.mjs";
+import { createServer } from "node:http";
+import { chmod, readFile, rename, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { dirname, join } from "node:path";
 
 const apiBase = (process.env.MINTDESK_API_BASE_URL || "").replace(/\/$/, "");
 const deviceId = process.env.MINTDESK_DEVICE_ID || "";
@@ -13,12 +18,83 @@ const defaultTimeZone = process.env.MINTDESK_TIME_ZONE || "Asia/Jakarta";
 const pollMilliseconds = Math.max(5_000, Number(process.env.MINTDESK_POLL_MS || 15_000));
 const reasonerMaxAttempts = Math.min(10, Math.max(1, Number(process.env.MINTDESK_REASONER_MAX_ATTEMPTS || 10)));
 const reasonerRetryDelayMilliseconds = Math.min(15_000, Math.max(0, Number(process.env.MINTDESK_REASONER_RETRY_DELAY_MS || 3_000)));
+const pairingPort = Math.min(65_535, Math.max(1_024, Number(process.env.MINTDESK_PAIRING_PORT || 20_129)));
+const pairingConfigPath = join(process.env.XDG_CONFIG_HOME || join(process.env.HOME || "", ".config"), "mintdesk", "hybrid-companion.env");
 
-if (!apiBase || !deviceId || !deviceSecret || !routerUrl || !routerToken) {
-  throw new Error("MINTDESK_API_BASE_URL, MINTDESK_DEVICE_ID, MINTDESK_DEVICE_SECRET, MINTDESK_9ROUTER_URL, and MINTDESK_9ROUTER_TOKEN are required");
+if (!apiBase) throw new Error("MINTDESK_API_BASE_URL is required");
+
+const pairingOrigin = new URL(apiBase).origin;
+const validatedRouterUrl = routerUrl ? assertLoopbackRouterUrl(routerUrl) : null;
+
+function pairingHeaders(response: import("node:http").ServerResponse, origin: string | undefined) {
+  if (origin === pairingOrigin) {
+    response.setHeader("Access-Control-Allow-Origin", pairingOrigin);
+    response.setHeader("Access-Control-Allow-Private-Network", "true");
+    response.setHeader("Vary", "Origin");
+  }
+  response.setHeader("Content-Type", "application/json; charset=utf-8");
 }
 
-const validatedRouterUrl = assertLoopbackRouterUrl(routerUrl);
+async function writeLoopbackPairing(payload: { deviceId: string; deviceSecret: string }) {
+  const current = await readFile(pairingConfigPath, "utf8");
+  const temporaryPath = join(dirname(pairingConfigPath), `.hybrid-companion-${randomUUID()}.tmp`);
+  await writeFile(temporaryPath, applyLoopbackPairing(current, payload), { encoding: "utf8", mode: 0o600 });
+  await chmod(temporaryPath, 0o600);
+  await rename(temporaryPath, pairingConfigPath);
+  await chmod(pairingConfigPath, 0o600);
+}
+
+function startLoopbackPairingServer() {
+  const server = createServer((request, response) => {
+    const origin = request.headers.origin;
+    pairingHeaders(response, origin);
+    if (origin !== pairingOrigin) {
+      response.statusCode = 403;
+      response.end(JSON.stringify({ error: "pairing_origin_denied" }));
+      return;
+    }
+    if (request.method === "OPTIONS" && request.url === "/v1/pair") {
+      response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+      response.setHeader("Access-Control-Allow-Headers", "content-type");
+      response.statusCode = 204;
+      response.end();
+      return;
+    }
+    if (request.method !== "POST" || request.url !== "/v1/pair") {
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: "pairing_not_found" }));
+      return;
+    }
+    let body = "";
+    request.setEncoding("utf8");
+    request.on("data", (chunk: string) => {
+      body += chunk;
+      if (body.length > 2_048) request.destroy();
+    });
+    request.on("end", () => {
+      let parsed: unknown;
+      try { parsed = JSON.parse(body); } catch { parsed = null; }
+      if (!isValidLoopbackPairing(parsed)) {
+        response.statusCode = 400;
+        response.end(JSON.stringify({ error: "pairing_payload_invalid" }));
+        return;
+      }
+      void writeLoopbackPairing(parsed).then(() => {
+        response.statusCode = 202;
+        response.end(JSON.stringify({ status: "paired_restart_pending" }));
+        console.info("[Mintdesk] loopback pairing accepted; restarting companion");
+        setTimeout(() => process.exit(0), 250);
+      }).catch(() => {
+        response.statusCode = 500;
+        response.end(JSON.stringify({ error: "pairing_write_failed" }));
+      });
+    });
+  });
+  server.listen(pairingPort, "127.0.0.1", () => console.info(`[Mintdesk] loopback pairing ready on 127.0.0.1:${pairingPort}`));
+  server.on("error", () => console.warn("[Mintdesk] loopback pairing endpoint unavailable"));
+}
+
+startLoopbackPairingServer();
 
 function headers() {
   return {
@@ -57,6 +133,7 @@ function proposalPrompt(kind: string, input: string) {
 }
 
 async function generateProposal(kind: "task.create" | "calendar.create", input: string) {
+  if (!validatedRouterUrl || !routerToken) throw new Error("9router is not configured");
   const completionUrl = new URL("chat/completions", validatedRouterUrl);
   return retryForProviderRotation(async (attempt) => {
     if (attempt > 1) console.info(`[Mintdesk] waiting for provider rotation (${attempt}/${reasonerMaxAttempts})`);
@@ -114,4 +191,8 @@ async function tick() {
   }
 }
 
-void tick();
+if (!deviceId || !deviceSecret) {
+  console.info("[Mintdesk] waiting for loopback pairing");
+} else {
+  void tick();
+}
