@@ -35,6 +35,17 @@ function actionErrorCopy(code: string) {
   return `Reason: ${code}`;
 }
 
+function createdCalendarDeleteInput(action: { kind?: string; status?: string; providerResourceId?: string | null; proposalPayload?: string | null }) {
+  if (action.kind !== "calendar.create" || action.status !== "executed" || !action.providerResourceId || !action.proposalPayload) return null;
+  try {
+    const proposal = JSON.parse(action.proposalPayload) as { kind?: string; calendarId?: string; title?: string; start?: string };
+    if (proposal.kind !== "calendar.create" || !proposal.calendarId || !proposal.title || !proposal.start) return null;
+    return { calendarId: proposal.calendarId, eventId: action.providerResourceId, title: proposal.title, start: proposal.start, organizerSelf: true as const };
+  } catch {
+    return null;
+  }
+}
+
 export function DailyFocusActions({ readInboxMessages = null, calendarEvents }: { readInboxMessages?: InboxMessage[] | null; calendarEvents: CalendarEvent[] | null }) {
   const utils = trpc.useUtils();
   const devices = trpc.companionDevices.list.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -117,6 +128,9 @@ export function DailyFocusActions({ readInboxMessages = null, calendarEvents }: 
 
     {calendarEvents !== null && calendarEvents.some((event) => event.organizerSelf) && <div className="action-evidence-list"><div><strong>Calendar deletion</strong><span>Only events organized by your connected Google account can be prepared here.</span></div><div className="action-select-list">{calendarEvents.filter((event) => event.organizerSelf).map((event) => <div className="action-record" key={event.id}><span><b>{event.summary}</b><small>{formatDate(event.start)}</small></span><Button type="button" variant="outline" onClick={() => prepareDelete.mutate({ calendarId: "primary", eventId: event.id, title: event.summary, start: new Date(event.start).toISOString(), organizerSelf: true })} disabled={prepareDelete.isPending}><Trash2 size={15} /> Review deletion</Button></div>)}</div></div>}
 
-    {(actions.data ?? []).length > 0 && <div className="action-history"><strong>Action review</strong>{actions.data?.map((action) => <article key={action.id} className={`action-history-record status-${action.status}`}><div><span className="action-status">{action.status}</span><p>{proposalCopy(action.proposalPayload)}</p><small>{action.errorCode ? actionErrorCopy(action.errorCode) : `Expires ${formatDate(action.expiresAt)}`}</small></div>{action.status === "ready" && <div className="action-history-buttons"><AlertDialog><AlertDialogTrigger asChild><Button type="button"><Check size={15} /> Confirm</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm this Google change?</AlertDialogTitle><AlertDialogDescription>{proposalCopy(action.proposalPayload)}. Mintdesk will execute only this reviewed action.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => confirm.mutate({ actionId: action.id })}>Confirm change</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog><Button type="button" variant="outline" onClick={() => reject.mutate({ actionId: action.id })}><X size={15} /> Reject</Button></div>}</article>)}</div>}
+    {(actions.data ?? []).length > 0 && <div className="action-history"><strong>Action review</strong>{actions.data?.map((action) => {
+      const createdEvent = createdCalendarDeleteInput(action);
+      return <article key={action.id} className={`action-history-record status-${action.status}`}><div><span className="action-status">{action.status}</span><p>{proposalCopy(action.proposalPayload)}</p><small>{action.errorCode ? actionErrorCopy(action.errorCode) : `Expires ${formatDate(action.expiresAt)}`}</small></div>{createdEvent && <div className="action-history-buttons"><Button type="button" variant="outline" onClick={() => prepareDelete.mutate(createdEvent)} disabled={prepareDelete.isPending}><Trash2 size={15} /> Review deletion</Button></div>}{action.status === "ready" && <div className="action-history-buttons"><AlertDialog><AlertDialogTrigger asChild><Button type="button"><Check size={15} /> Confirm</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm this Google change?</AlertDialogTitle><AlertDialogDescription>{proposalCopy(action.proposalPayload)}. Mintdesk will execute only this reviewed action.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => confirm.mutate({ actionId: action.id })}>Confirm change</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog><Button type="button" variant="outline" onClick={() => reject.mutate({ actionId: action.id })}><X size={15} /> Reject</Button></div>}</article>;
+    })}</div>}
   </section>;
 }

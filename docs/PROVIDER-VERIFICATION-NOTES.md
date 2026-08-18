@@ -13,3 +13,7 @@ The next safe verification path is the existing reviewed Gmail Trash flow using 
 The Gmail Trash verification succeeded. Action `120002` reached `executed` after an explicit review and confirmation, with a provider resource identifier, confirmation timestamp, and execution timestamp. Exactly one read newsletter candidate was moved to Gmail Trash. The message was not permanently deleted and its content is not recorded here.
 
 Calendar create/delete is not yet provider-verified because the event proposal depends on local 9router output and the companion returned `reasoner_unavailable`. The Google Calendar provider itself was never called for this test. This is a dependency failure in the proposal path, not an OAuth or Calendar-write failure.
+
+After the deterministic fallback deployment, the same explicitly structured event draft produced a `ready` Calendar proposal in production without calling local reasoning. The preview renders the intended ten-minute time window in Asia/Jakarta and remains subject to the existing explicit confirmation step.
+
+The Calendar create preview is action `120003`. It is explicitly titled as a verification event and has no attendees. At this point it has not been confirmed or sent to Google.

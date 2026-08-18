@@ -125,6 +125,15 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.queryByText(/prevent abuse of free resources/i)).toBeNull();
   });
 
+  it("prepares a deletion review from an event Mintdesk created, even outside the current briefing window", () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    mocks.actions.mockReturnValue([{ id: 3, kind: "calendar.create", status: "executed", providerResourceId: "created-event-1", proposalPayload: JSON.stringify({ kind: "calendar.create", calendarId: "primary", title: "Mintdesk verification event", start: "2026-08-19T07:00:00.000Z" }), errorCode: null, expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
+    render(<MorningBriefing />);
+    const deletionButtons = screen.getAllByRole("button", { name: "Review deletion" });
+    fireEvent.click(deletionButtons.at(-1)!);
+    expect(mocks.prepareDelete).toHaveBeenCalledWith({ calendarId: "primary", eventId: "created-event-1", title: "Mintdesk verification event", start: "2026-08-19T07:00:00.000Z", organizerSelf: true });
+  });
+
   it("lets the user mark a structured priority as done without changing the source evidence", async () => {
     mocks.getBridgeConfig.mockReturnValue({ baseUrl: "http://127.0.0.1", token: "test" });
     mocks.health.mockResolvedValue({ ok: true, service: "mintdesk", version: "test" });
