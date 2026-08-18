@@ -65,9 +65,13 @@ Notifikasi harus menjadi **user-scoped inbox**, bukan mekanisme untuk melakukan 
 
 Notifikasi browser harus meminta izin hanya dari interaksi pengguna yang jelas. Bila izin ditolak atau API tidak tersedia, inbox in-app tetap menjadi fallback utama. Push owner bawaan platform hanya digunakan untuk alert operasional yang relevan bagi pemilik, bukan sebagai saluran pesan produk bagi pengguna lain.
 
-## Pola UI dan aksesibilitas
+## Pola UI, anti-slop, dan aksesibilitas
 
 Gunakan gaya **Mint Atelier**: warm parchment, mint status signals, DM Sans untuk display, dan Source Sans 3 untuk body. Terapkan prinsip Apple HIG dan disclosure bertahap: ringkas di card, detail di dialog, bukan halaman yang memaksa scrolling panjang. Gunakan Lucide icons, bukan emoji.
+
+Gunakan [docs/ANTI-SLOP-GUARDRAILS.md](./docs/ANTI-SLOP-GUARDRAILS.md) sebagai kontrak desain sebelum perubahan visual. Taste Skill `design-taste-frontend` dipakai hanya untuk audit-first redesign, anti-default discipline, responsive fallback, state interaktif, serta pre-flight check. Ia bukan sistem desain dashboard dan aturan landing page seperti hero/CTA marketing, bento, atau variasi layout wajib tidak boleh diterapkan secara mekanis. Untuk setiap perubahan visual, tulis satu kalimat *design read*, pertahankan Dashboard V1 sebagai baseline, dan jelaskan alasan setiap primary surface atau card.
+
+Gunakan grid 4/8px, satu accent interaktif mint, radius card konsisten 12–16px, dan shadow ambient tipis sesuai warm background. Amber serta rose hanya untuk status semantik. Asimetri hanya boleh ketika memperjelas hirarki keputusan. Hindari kartu SaaS seragam, eyebrow yang tidak menjelaskan provenance, border atau glass effect dekoratif, gradient multicolor, dan copy pseudo-intelligent. Semua state tetap harus menggunakan data nyata atau status unavailable yang eksplisit.
 
 Dialog harus dapat ditutup dengan Escape, mengembalikan fokus ke trigger, memiliki label aksesibel, dan tetap muat pada viewport 375px. Animasi menggunakan transform/opacity di bawah 300 ms dan menghormati `prefers-reduced-motion`. Sidebar expanded/collapsed harus mempertahankan transisi serempak serta state `mintdesk.sidebar.collapsed`.
 

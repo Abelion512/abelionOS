@@ -4,8 +4,9 @@ import { initialBridgeHealthState } from "@/lib/bridgeHealthState";
 import { pollBridgeHealth } from "@/lib/bridgeHealthPolling";
 import { getGoogleConnectionScopeState } from "@/lib/googleConnectionScopeState";
 import { trpc } from "@/lib/trpc";
-import { Cpu, Gauge, HardDrive, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, CircleAlert, Cpu, Gauge, HardDrive, ShieldCheck } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "wouter";
 
 function formatUptime(seconds: number) {
   const days = Math.floor(seconds / 86400);
@@ -50,27 +51,25 @@ export default function Home() {
   const bridgeStatus = bridgeOnline ? "Online" : "Unavailable";
 
   return <main className="main-canvas">
-    <div className="content-wrap dashboard-content">
+    <div className="content-wrap dashboard-content dashboard-atelier">
       <h1 className="sr-only">Dashboard</h1>
-      <section className="runtime-grid" aria-label="System status">
-        <article className="panel runtime-panel">
-          <header className="runtime-panel-header"><span className="runtime-icon"><Cpu size={21} /></span><span className={`source-state ${bridgeOnline ? "ready" : "unavailable"}`}>{bridgeStatus}</span></header>
-          <div className="runtime-heading"><div><h2>{bridgeTitle}</h2>{!bridgeOnline && <p>{bridgeError || healthState.detail || "No measurement"}</p>}</div></div>
-          <dl className="runtime-facts"><div><dt>Uptime</dt><dd>{metrics ? formatUptime(metrics.uptimeSeconds) : "—"}</dd></div><div><dt>Platform</dt><dd>{metrics?.platform || "—"}</dd></div></dl>
-          <div className="runtime-metrics" aria-label="Current Linux measurements">
-            <div><span><Cpu size={14} /> CPU</span><strong>{metrics ? `${metrics.cpuPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.cpuPercent ?? 0}%` }} /></i></div>
-            <div><span><HardDrive size={14} /> Memory</span><strong>{metrics ? `${metrics.memory.usedPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.memory.usedPercent ?? 0}%` }} /></i></div>
-            <div><span><Gauge size={14} /> Load</span><strong>{metrics ? metrics.loadAverage[0]?.toFixed(2) : "—"}</strong><i><b style={{ width: `${Math.min((metrics?.loadAverage[0] ?? 0) * 25, 100)}%` }} /></i></div>
+      <section className="dashboard-hero-grid" aria-label="System status">
+        <article className="panel system-hero dashboard-runtime-hero">
+          <div className="hero-art" aria-hidden="true" />
+          <div className="hero-content">
+            <div className="hero-topline"><span className={`status-chip ${bridgeOnline ? "" : "status-unavailable"}`}><span />{bridgeStatus}</span><span className="dashboard-hero-caption">Linux companion · system overview</span></div>
+            <div className="hero-heading"><p className="panel-kicker">Local workspace</p><h2>{bridgeTitle}</h2><p className="hero-runtime-line">{bridgeOnline ? "Ready for the work ahead." : "Waiting for its companion."}</p><p className="hero-description">{bridgeOnline ? `The Linux companion last reported at ${formatUpdatedAt(metrics?.checkedAt || healthState.checkedAt)}.` : bridgeError || healthState.detail || "No measurement is available until the companion reconnects."}</p></div>
+            <div><dl className="hero-meta"><div><dt>Uptime</dt><dd>{metrics ? formatUptime(metrics.uptimeSeconds) : "—"}</dd></div><div><dt>Platform</dt><dd>{metrics?.platform || "—"}</dd></div><div><dt>Observed</dt><dd>{formatUpdatedAt(metrics?.checkedAt || healthState.checkedAt)}</dd></div></dl><div className="system-metrics" aria-label="Current Linux measurements"><div><span><Cpu size={13} /> CPU</span><strong>{metrics ? `${metrics.cpuPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.cpuPercent ?? 0}%` }} /></i></div><div><span><HardDrive size={13} /> Memory</span><strong>{metrics ? `${metrics.memory.usedPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.memory.usedPercent ?? 0}%` }} /></i></div><div><span><Gauge size={13} /> Load</span><strong>{metrics ? metrics.loadAverage[0]?.toFixed(2) : "—"}</strong><i><b style={{ width: `${Math.min((metrics?.loadAverage[0] ?? 0) * 25, 100)}%` }} /></i></div></div></div>
           </div>
-          <p className="runtime-freshness">{formatUpdatedAt(metrics?.checkedAt || healthState.checkedAt)}</p>
         </article>
-        <article className="panel workspace-source-panel">
-          <header className="runtime-panel-header"><span className="runtime-icon"><ShieldCheck size={21} /></span><span className={`source-state ${googleScopeState.status === "connected" ? "ready" : "unavailable"}`}>{google.isLoading ? "Checking" : googleScopeState.status}</span></header>
-          <div className="workspace-source-heading"><div><h2>Google</h2></div></div>
-          {googleScopeState.status === "connected" && <div className="source-capabilities" aria-label="Available Google Workspace sources"><span>Calendar</span><span>Gmail</span><span>Tasks</span></div>}
-        </article>
+        <aside className="panel workspace-context-panel">
+          <div className="workspace-context-icon"><ShieldCheck size={19} /></div><span className={`source-state ${googleScopeState.status === "connected" ? "ready" : "unavailable"}`}>{google.isLoading ? "Checking" : googleScopeState.status}</span>
+          <div><p className="panel-kicker">Connected workspace</p><h2>Google</h2><p>{googleScopeState.detail}</p></div>
+          {googleScopeState.status === "connected" ? <div className="workspace-capabilities" aria-label="Available Google Workspace sources"><span>Calendar</span><span>Gmail</span><span>Tasks</span></div> : <div className="workspace-context-empty"><CircleAlert size={16} /><span>No Workspace source is inferred while its connection is unavailable.</span></div>}
+          <Link href="/briefing" className="workspace-context-link">Open Daily Focus <ArrowUpRight size={14} /></Link>
+        </aside>
       </section>
-      <section className="dashboard-process" aria-label="Process controls"><ProcessPanel /></section>
+      <section className="dashboard-process-stage" aria-label="Process controls"><header className="dashboard-section-intro"><div><p className="panel-kicker">Intervention</p><h2>Controlled processes</h2></div><p>Only processes returned by the allowlisted Linux companion can be reviewed or terminated here.</p></header><ProcessPanel /></section>
     </div>
   </main>;
 }

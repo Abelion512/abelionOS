@@ -2,6 +2,16 @@
 
 # Dashboard and Shell Rework
 
+- [x] Audit dan dokumentasikan karakter visual Dashboard V1 sebagai baseline tanpa menghapus capability backend, OAuth, companion, Daily Focus, Storage, Activity, atau notifikasi yang sudah ada.
+- [x] Tetapkan design constitution Mintdesk yang melarang pola kartu SaaS seragam, copy AI-slop, dan modal yang dipaksakan, lalu terapkan pada shell serta halaman Dashboard, Daily Focus, Storage, dan Activity.
+- [x] Verifikasi ulang fungsi dan visual desktop/mobile setelah rebaseline UI tanpa menambah data dummy atau mengubah security boundary.
+- [x] Tambahkan panduan sinkronisasi GitHub dari Manus ke clone Linux lokal, termasuk dependency, migration, secrets, dan systemd companion tanpa pernah memasukkan credential ke Git.
+- [x] Terapkan rebaseline pada Workspace Shell dan buktikan dengan regression serta screenshot bahwa navigasi mempertahankan ritme Mint Atelier tanpa memperluas informasi.
+- [x] Selidiki dan hilangkan error runtime `notificationPreferences`, lalu ulangi visual verification dari sesi dev server yang bersih.
+- [x] Ulangi screenshot desktop/mobile pada sesi dev server bersih untuk Dashboard, Daily Focus, Storage, dan Activity, serta verifikasi console tidak menghasilkan error `notificationPreferences` baru.
+- [x] Tinjau dan pasang Taste Skill dari sumber yang disetujui pengguna, lalu selaraskan guardrail anti-slopnya dengan design constitution Mintdesk.
+- [x] Integrasikan prinsip yang relevan dari `design.md` ke checklist anti-slop Mintdesk, termasuk clarity, deference, depth, grid 8pt, restraint warna, dan verifikasi aksesibilitas tanpa menyalin aturan yang bertentangan dengan identitas Mint Atelier.
+
 - [x] Tetapkan event notifikasi Mintdesk yang aman: companion online/offline, action Daily Focus siap review atau gagal, dan perubahan koneksi Google tanpa memasukkan isi Gmail atau token.
 - [x] Tambahkan database, API, dan inbox notifikasi user-scoped dengan status read/unread serta preference delivery.
 - [x] Tambahkan pengaturan notifikasi kustom di menu profil, termasuk izin browser eksplisit dan fallback inbox in-app.

@@ -46,6 +46,10 @@ vi.mock("@/lib/trpc", () => ({
 
 import MorningBriefing from "./MorningBriefing";
 
+function openActionDesk() {
+  fireEvent.click(screen.getByRole("button", { name: "Review actions" }));
+}
+
 describe("Morning Briefing 5W1H", () => {
   afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.devices.mockReturnValue([]); mocks.actions.mockReturnValue([]); });
 
@@ -74,7 +78,8 @@ describe("Morning Briefing 5W1H", () => {
   it("keeps action capability in Daily Focus and asks for a reasoning device before any proposal is requested", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     render(<MorningBriefing />);
-    expect(screen.getByText("Turn intention into a reviewed change")).toBeTruthy();
+    openActionDesk();
+    expect(screen.getAllByText("Turn intention into a reviewed change")).toHaveLength(2);
     expect(screen.getByText("Add a reasoning device")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Register/i })).toBeTruthy();
     expect(mocks.requestProposal).not.toHaveBeenCalled();
@@ -84,6 +89,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.devices.mockReturnValue([{ deviceId: "existing-device", name: "Mint laptop", deviceType: "laptop", online: true }]);
     render(<MorningBriefing />);
+    openActionDesk();
     fireEvent.click(screen.getByRole("button", { name: "Add device" }));
     expect(screen.getByText("Add another reasoning device")).toBeTruthy();
     expect(screen.getByPlaceholderText("e.g. Mint laptop")).toBeTruthy();
@@ -94,6 +100,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.devices.mockReturnValue([{ deviceId: "active-device", name: "Mint laptop", deviceType: "laptop", online: true }]);
     render(<MorningBriefing />);
+    openActionDesk();
     expect(screen.getByText("Mint laptop · laptop · online")).toBeTruthy();
     expect(screen.queryByRole("combobox", { name: "Reasoning device" })).toBeNull();
   });
@@ -102,6 +109,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.devices.mockReturnValue([{ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52", name: "Mint laptop", deviceType: "laptop", online: false, pendingPairing: true, pairingExpiresAt: new Date("2026-08-17T01:10:00.000Z") }]);
     render(<MorningBriefing />);
+    openActionDesk();
     expect(screen.getByText(/Finish pairing Mint laptop/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Pair this browser" })).toBeTruthy();
     expect(screen.queryByText(/MINTDESK_DEVICE_SECRET/i)).toBeNull();
@@ -112,6 +120,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.devices.mockReturnValue([{ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52", name: "Mint laptop", deviceType: "laptop", online: false, pendingPairing: true, pairingExpiresAt: new Date("2026-08-17T01:10:00.000Z") }]);
     mocks.resumePairing.mockImplementation((_input: unknown) => undefined);
     render(<MorningBriefing />);
+    openActionDesk();
     fireEvent.click(screen.getByRole("button", { name: "Pair this browser" }));
     expect(mocks.resumePairing).toHaveBeenCalledWith({ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52" });
   });
@@ -120,6 +129,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.actions.mockReturnValue([{ id: 1, status: "error", proposalPayload: null, errorCode: "reasoner_provider_limited", expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
     render(<MorningBriefing />);
+    openActionDesk();
     fireEvent.click(screen.getByRole("button", { name: "Open history" }));
     expect(screen.getByText(/selected local provider has no available quota/i)).toBeTruthy();
     expect(screen.queryByText(/prevent abuse of free resources/i)).toBeNull();
@@ -129,6 +139,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.actions.mockReturnValue([{ id: 3, kind: "calendar.create", status: "executed", providerResourceId: "created-event-1", proposalPayload: JSON.stringify({ kind: "calendar.create", calendarId: "primary", title: "Mintdesk verification event", start: "2026-08-19T07:00:00.000Z" }), errorCode: null, expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
     render(<MorningBriefing />);
+    openActionDesk();
     fireEvent.click(screen.getByRole("button", { name: "Open history" }));
     const deletionButtons = screen.getAllByRole("button", { name: "Review deletion" });
     fireEvent.click(deletionButtons.at(-1)!);

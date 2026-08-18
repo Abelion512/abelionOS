@@ -37,6 +37,13 @@ describe("Workspace profile menu", () => {
     expect(screen.getByRole("button", { name: "Collapse navigation" })).toBeTruthy();
   });
 
+  it("marks the navigation shell as the dedicated Mint Atelier surface", () => {
+    const { container } = render(<WorkspaceShell><main>Workspace content</main></WorkspaceShell>);
+    expect(container.querySelector(".mint-atelier-sidebar")?.getAttribute("data-design-surface")).toBe("mint-atelier-navigation");
+    expect(container.querySelector(".mint-atelier-nav")).toBeTruthy();
+    expect(container.querySelector(".mint-atelier-profile")).toBeTruthy();
+  });
+
   it("opens the mobile drawer without losing the active workspace route", () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
     const { container } = render(<WorkspaceShell><main>Workspace content</main></WorkspaceShell>);

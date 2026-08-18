@@ -98,6 +98,8 @@ Setiap proposal action memiliki masa berlaku, preview, riwayat audit, serta tomb
 
 ## Pengembangan lokal
 
+Panduan sinkronisasi yang aman dari checkpoint Mintdesk ke clone Linux lokal tersedia di [docs/LOCAL-LINUX-SYNC.md](./docs/LOCAL-LINUX-SYNC.md). Panduan tersebut membedakan pekerjaan UI lokal dari environment production serta companion Bun yang tetap berjalan terpisah.
+
 ## Notifikasi kustom
 
 Mintdesk menyediakan **inbox notifikasi user-scoped** yang dapat dibuka dari kontrol bell di shell aplikasi. Inbox hanya mencatat event operasional nyata dan tidak diisi dengan data contoh. Event saat ini berasal dari proposal Daily Focus yang siap atau gagal, action Daily Focus yang selesai setelah konfirmasi, companion Linux yang kembali online atau terobservasi offline, serta koneksi atau disconnect Google Workspace.
@@ -164,4 +166,4 @@ Mintdesk dirancang untuk mengurangi blast radius, bukan memberikan otomasi tanpa
 
 ## Referensi desain
 
-UI Mintdesk mengikuti prinsip minimising chrome dan disclosure bertahap: navigasi inti di sidebar, detail audit melalui dialog, dan metadata Storage dipaginasi di popup. Rujukan desain utamanya adalah [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), [Radix UI](https://www.radix-ui.com/), dan [shadcn/ui](https://ui.shadcn.com/).
+UI Mintdesk mengikuti prinsip minimising chrome dan disclosure bertahap: navigasi inti di sidebar, detail audit melalui dialog, dan metadata Storage dipaginasi di popup. Rujukan desain utamanya adalah [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), [Radix UI](https://www.radix-ui.com/), dan [shadcn/ui](https://ui.shadcn.com/). Taste Skill dipasang sebagai helper audit anti-template, tetapi diterapkan secara kontekstual karena Mintdesk adalah dashboard operasional, bukan landing page. Guardrail lengkap tersedia di [docs/ANTI-SLOP-GUARDRAILS.md](./docs/ANTI-SLOP-GUARDRAILS.md).

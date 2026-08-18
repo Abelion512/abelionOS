@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { OnDemandDetail } from "@/components/OnDemandDetail";
 import "./dailyFocusActions.css";
 
@@ -105,7 +106,7 @@ export function DailyFocusActions({ readInboxMessages = null, calendarEvents }: 
   const confirm = trpc.dailyFocusActions.confirm.useMutation({ onSuccess: () => { setActionError(null); void refresh(); }, onError: (error) => { setActionError(error.message); void refresh(); } });
   const reject = trpc.dailyFocusActions.reject.useMutation({ onSuccess: () => { setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
 
-  return <section className="daily-action-panel panel" aria-label="Daily Focus actions">
+  return <Dialog><article className="daily-action-launch panel" aria-label="Daily Focus actions"><div><p className="panel-kicker">Actions, on confirmation</p><h2>Turn intention into a reviewed change</h2><p>Prepare a Task, Calendar event, inbox cleanup, or deletion review. Nothing changes until you confirm a provider preview.</p></div><DialogTrigger asChild><button className="daily-action-open" type="button">Review actions <ClipboardPlus size={15} /></button></DialogTrigger></article><DialogContent className="detail-dialog action-desk-dialog"><DialogHeader><DialogTitle>Daily Focus actions</DialogTitle><DialogDescription>Each proposal remains reviewable and requires human confirmation before a Google Workspace change.</DialogDescription></DialogHeader><section className="daily-action-panel" aria-label="Daily Focus action desk">
     <div className="daily-action-heading">
       <div><p className="panel-kicker">Actions, on confirmation</p><h2>Turn intention into a reviewed change</h2><p>Only Daily Focus can create a proposal. No Google change occurs until you confirm its preview.</p></div>
     </div>
@@ -134,5 +135,5 @@ export function DailyFocusActions({ readInboxMessages = null, calendarEvents }: 
       const createdEvent = createdCalendarDeleteInput(action);
       return <article key={action.id} className={`action-history-record status-${action.status}`}><div><span className="action-status">{action.status}</span><p>{proposalCopy(action.proposalPayload)}</p><small>{action.errorCode ? actionErrorCopy(action.errorCode) : `Expires ${formatDate(action.expiresAt)}`}</small></div>{createdEvent && <div className="action-history-buttons"><Button type="button" variant="outline" onClick={() => prepareDelete.mutate(createdEvent)} disabled={prepareDelete.isPending}><Trash2 size={15} /> Review deletion</Button></div>}{action.status === "ready" && <div className="action-history-buttons"><AlertDialog><AlertDialogTrigger asChild><Button type="button"><Check size={15} /> Confirm</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm this Google change?</AlertDialogTitle><AlertDialogDescription>{proposalCopy(action.proposalPayload)}. Mintdesk will execute only this reviewed action.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => confirm.mutate({ actionId: action.id })}>Confirm change</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog><Button type="button" variant="outline" onClick={() => reject.mutate({ actionId: action.id })}><X size={15} /> Reject</Button></div>}</article>;
     })}</div></OnDemandDetail></div>}
-  </section>;
+  </section></DialogContent></Dialog>;
 }

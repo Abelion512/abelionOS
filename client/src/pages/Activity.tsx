@@ -14,7 +14,7 @@ export default function Activity() {
   const localPreview = localEvents?.slice(0, 2) ?? [];
 
   return <main className="feature-page operational-page activity-page">
-    <header className="operational-header"><h1>Activity</h1></header>
+    <header className="operational-header activity-header"><div><p className="panel-kicker">Evidence trail</p><h1>Activity</h1><p>Recent actions from Mintdesk and the Linux companion, kept separate by source.</p></div></header>
     <section className="audit-grid">
       <article className="panel audit-panel">
       <div className="section-header"><h2>Application</h2><span className="source-state ready">{audit.isLoading ? "Loading" : `${serverEvents.length} events`}</span></div>

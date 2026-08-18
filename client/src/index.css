@@ -1,6 +1,7 @@
 /* Mint Atelier: warm editorial desktop UI, parchment surfaces, mint health signals, asymmetric utility layout. */
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./ui-rebaseline.css";
 
 @custom-variant dark (&:is(.dark *));
 
