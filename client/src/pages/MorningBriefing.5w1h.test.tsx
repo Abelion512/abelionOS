@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getBridgeConfig: vi.fn(), health: vi.fn(), dailyFocus: vi.fn(),
-  enroll: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
+  devices: vi.fn(), enroll: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
 }));
 
 vi.mock("@/lib/bridge", () => ({ bridgeApi: { health: mocks.health, dailyFocus: mocks.dailyFocus }, getBridgeConfig: mocks.getBridgeConfig }));
@@ -28,7 +28,7 @@ vi.mock("@/lib/trpc", () => ({
       isLoading: false, isFetching: false, error: null, refetch: vi.fn(),
     }) } },
     companionDevices: {
-      list: { useQuery: () => ({ data: [] }) },
+      list: { useQuery: () => ({ data: mocks.devices() }) },
       enroll: { useMutation: () => ({ mutate: mocks.enroll, isPending: false }) },
     },
     dailyFocusActions: {
@@ -45,7 +45,7 @@ vi.mock("@/lib/trpc", () => ({
 import MorningBriefing from "./MorningBriefing";
 
 describe("Morning Briefing 5W1H", () => {
-  afterEach(() => { cleanup(); vi.clearAllMocks(); });
+  afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.devices.mockReturnValue([]); });
 
   it("separates Calendar and Gmail and exposes facts without rendering an email body", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
@@ -76,6 +76,16 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.getByText("Add a reasoning device")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Register/i })).toBeTruthy();
     expect(mocks.requestProposal).not.toHaveBeenCalled();
+  });
+
+  it("allows a replacement or server device to be registered without removing an existing device", () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    mocks.devices.mockReturnValue([{ deviceId: "existing-device", name: "Mint laptop", deviceType: "laptop", online: true }]);
+    render(<MorningBriefing />);
+    fireEvent.click(screen.getByRole("button", { name: "Add device" }));
+    expect(screen.getByText("Add another reasoning device")).toBeTruthy();
+    expect(screen.getByPlaceholderText("e.g. Mint laptop")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeTruthy();
   });
 
   it("lets the user mark a structured priority as done without changing the source evidence", async () => {

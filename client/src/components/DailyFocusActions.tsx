@@ -34,6 +34,7 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
   const actions = trpc.dailyFocusActions.list.useQuery(undefined, { refetchOnWindowFocus: false });
   const [deviceName, setDeviceName] = useState("");
   const [deviceType, setDeviceType] = useState<"laptop" | "server">("laptop");
+  const [showEnrollment, setShowEnrollment] = useState(false);
   const [credential, setCredential] = useState<{ deviceId: string; deviceSecret: string; name: string; deviceType: "laptop" | "server" } | null>(null);
   const [actionKind, setActionKind] = useState<"task.create" | "calendar.create">("task.create");
   const [text, setText] = useState("");
@@ -45,7 +46,7 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
   const selectedDevice = selectedDeviceId || activeDevices.find((device) => device.online)?.deviceId || activeDevices[0]?.deviceId || "";
   const selectedInbox = useMemo(() => (inboxMessages ?? []).filter((message) => selectedInboxIds.includes(message.id)), [inboxMessages, selectedInboxIds]);
   const refresh = () => Promise.all([utils.companionDevices.list.invalidate(), utils.dailyFocusActions.list.invalidate()]);
-  const enroll = trpc.companionDevices.enroll.useMutation({ onSuccess: (result) => { setCredential(result); setDeviceName(""); void refresh(); }, onError: (error) => setActionError(error.message) });
+  const enroll = trpc.companionDevices.enroll.useMutation({ onSuccess: (result) => { setCredential(result); setDeviceName(""); setShowEnrollment(false); void refresh(); }, onError: (error) => setActionError(error.message) });
   const requestProposal = trpc.dailyFocusActions.requestProposal.useMutation({ onSuccess: () => { setText(""); setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
   const prepareTrash = trpc.dailyFocusActions.prepareGmailTrash.useMutation({ onSuccess: () => { setSelectedInboxIds([]); setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
   const prepareDelete = trpc.dailyFocusActions.prepareCalendarDelete.useMutation({ onSuccess: () => { setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
@@ -59,9 +60,11 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
 
     {actionError && <div className="daily-focus-error"><CircleAlert size={18} /><span>{actionError}</span></div>}
 
-    {activeDevices.length === 0 && <div className="action-enrollment">
-      <div><strong>Add a reasoning device</strong><span>Register your Linux laptop or server once. The device secret stays local and is shown only now.</span></div>
-      <div className="action-enrollment-controls"><Input value={deviceName} onChange={(event) => setDeviceName(event.target.value)} placeholder="e.g. Mint laptop" maxLength={120} /><select value={deviceType} onChange={(event) => setDeviceType(event.target.value as "laptop" | "server")} aria-label="Device type"><option value="laptop">Linux laptop</option><option value="server">Linux server</option></select><Button type="button" onClick={() => enroll.mutate({ name: deviceName.trim(), deviceType })} disabled={!deviceName.trim() || enroll.isPending}>{enroll.isPending ? <Loader2 className="spin" size={16} /> : deviceType === "server" ? <Server size={16} /> : <Laptop size={16} />} Register</Button></div>
+    {activeDevices.length > 0 && !showEnrollment && <Button type="button" variant="outline" className="add-device-button" onClick={() => setShowEnrollment(true)}><Laptop size={16} /> Add device</Button>}
+
+    {(activeDevices.length === 0 || showEnrollment) && <div className="action-enrollment">
+      <div><strong>{activeDevices.length === 0 ? "Add a reasoning device" : "Add another reasoning device"}</strong><span>Register a Linux laptop or server once. The device secret stays local and is shown only now.</span></div>
+      <div className="action-enrollment-controls"><Input value={deviceName} onChange={(event) => setDeviceName(event.target.value)} placeholder="e.g. Mint laptop" maxLength={120} /><select value={deviceType} onChange={(event) => setDeviceType(event.target.value as "laptop" | "server")} aria-label="Device type"><option value="laptop">Linux laptop</option><option value="server">Linux server</option></select><Button type="button" onClick={() => enroll.mutate({ name: deviceName.trim(), deviceType })} disabled={!deviceName.trim() || enroll.isPending}>{enroll.isPending ? <Loader2 className="spin" size={16} /> : deviceType === "server" ? <Server size={16} /> : <Laptop size={16} />} Register</Button>{activeDevices.length > 0 && <Button type="button" variant="outline" onClick={() => { setShowEnrollment(false); setDeviceName(""); }}>Cancel</Button>}</div>
     </div>}
 
     {credential && <div className="action-credential"><ShieldAlert size={18} /><div><strong>Save this device credential now.</strong><span>Copy it into `~/.config/mintdesk/hybrid-companion.env`; it will not be shown again.</span><code>MINTDESK_DEVICE_ID={credential.deviceId}{"\n"}MINTDESK_DEVICE_SECRET={credential.deviceSecret}</code></div><button className="icon-button" aria-label="Dismiss device credential" onClick={() => setCredential(null)}><X size={16} /></button></div>}

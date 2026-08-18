@@ -171,3 +171,5 @@
 - [ ] Jalankan E2E nyata setelah user memasang Bun companion pada Linux laptop/server dan menyelesaikan re-consent scope action Google; gunakan task dan event disposable serta satu Gmail test message.
 - [x] Buat paket companion Bun mandiri beserta panduan instalasi singkat agar Linux laptop/server tidak memerlukan source penuh Mintdesk.
 - [x] Perbaiki parser respons 9router agar JSON dalam markdown fence dapat diekstrak dan tetap ditolak bila tidak memenuhi schema proposal ketat.
+- [ ] Buat credential companion pengganti setelah device lama mengembalikan 401, lalu gunakan alur unduh dan pemasangan yang seluruhnya berawal dari workdir `/media/abelion/Isaf/ican/project`.
+- [x] Izinkan pendaftaran device companion tambahan dari Daily Focus saat device lain sudah ada, sehingga laptop dan server atau credential pengganti dapat dikelola bersamaan.

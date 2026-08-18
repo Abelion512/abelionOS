@@ -3,6 +3,7 @@
 .daily-action-heading p:not(.panel-kicker) { max-width: 620px; margin: .55rem 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
 .action-enrollment, .action-credential, .action-device-row, .action-compose, .action-evidence-list, .action-history { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .action-enrollment { display: grid; gap: .75rem; }
+.add-device-button { align-self: flex-start; margin: 0 0 .75rem; }
 .action-enrollment strong, .action-evidence-list strong, .action-history > strong { display: block; font-size: .86rem; }
 .action-enrollment span, .action-evidence-list > div:first-child > span { display: block; margin-top: .22rem; color: var(--muted); font-size: .78rem; line-height: 1.45; }
 .action-enrollment-controls { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto; gap: .55rem; }
