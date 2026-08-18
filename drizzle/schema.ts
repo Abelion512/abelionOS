@@ -74,6 +74,8 @@ export const companionDevices = mysqlTable("companion_devices", {
   deviceType: mysqlEnum("deviceType", ["laptop", "server"]).notNull(),
   capabilities: text("capabilities").notNull(),
   secretHash: varchar("secretHash", { length: 128 }).notNull(),
+  encryptedPairingSecret: text("encryptedPairingSecret"),
+  pairingExpiresAt: timestamp("pairingExpiresAt"),
   isDefaultReasoner: boolean("isDefaultReasoner").notNull().default(false),
   lastSeenAt: timestamp("lastSeenAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

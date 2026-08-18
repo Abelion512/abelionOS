@@ -179,7 +179,7 @@ export async function getCompanionDevice(deviceId: string): Promise<CompanionDev
 export async function markCompanionDeviceSeen(deviceId: string): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  await db.update(companionDevices).set({ lastSeenAt: new Date() }).where(eq(companionDevices.deviceId, deviceId));
+  await db.update(companionDevices).set({ lastSeenAt: new Date(), encryptedPairingSecret: null, pairingExpiresAt: null }).where(eq(companionDevices.deviceId, deviceId));
 }
 
 export async function createDailyFocusAction(action: InsertDailyFocusAction): Promise<DailyFocusAction> {

@@ -42,8 +42,8 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
   const [deviceName, setDeviceName] = useState("");
   const [deviceType, setDeviceType] = useState<"laptop" | "server">("laptop");
   const [showEnrollment, setShowEnrollment] = useState(false);
-  const [credential, setCredential] = useState<{ deviceId: string; deviceSecret: string; name: string; deviceType: "laptop" | "server" } | null>(null);
   const [pairingStatus, setPairingStatus] = useState<"idle" | "pairing" | "paired">("idle");
+  const [pairingDeviceId, setPairingDeviceId] = useState<string | null>(null);
   const [actionKind, setActionKind] = useState<"task.create" | "calendar.create">("task.create");
   const [text, setText] = useState("");
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
@@ -53,8 +53,22 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
   const activeDevices = devices.data ?? [];
   const selectedDevice = selectedDeviceId || activeDevices.find((device) => device.online)?.deviceId || activeDevices[0]?.deviceId || "";
   const selectedInbox = useMemo(() => (inboxMessages ?? []).filter((message) => selectedInboxIds.includes(message.id)), [inboxMessages, selectedInboxIds]);
+  const pendingPairingDevices = activeDevices.filter((device) => device.pendingPairing);
   const refresh = () => Promise.all([utils.companionDevices.list.invalidate(), utils.dailyFocusActions.list.invalidate()]);
-  const enroll = trpc.companionDevices.enroll.useMutation({ onSuccess: (result) => { setCredential(result); setPairingStatus("idle"); setDeviceName(""); setShowEnrollment(false); void refresh(); }, onError: (error) => setActionError(error.message) });
+  const sendPairingToLoopback = (credential: { deviceId: string; deviceSecret: string }) => {
+    setPairingStatus("pairing");
+    setActionError(null);
+    void fetch("http://127.0.0.1:20129/v1/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(credential) }).then(async (response) => {
+      if (!response.ok) throw new Error("Local companion pairing endpoint was unavailable.");
+      setPairingStatus("paired");
+      setTimeout(() => { setPairingDeviceId(null); void refresh(); }, 6_000);
+    }).catch(() => {
+      setPairingStatus("idle");
+      setActionError("Local pairing endpoint is unavailable. Start or update the companion, then try again.");
+    });
+  };
+  const enroll = trpc.companionDevices.enroll.useMutation({ onSuccess: (result) => { setPairingDeviceId(result.deviceId); setPairingStatus("idle"); setDeviceName(""); setShowEnrollment(false); void refresh(); }, onError: (error) => setActionError(error.message) });
+  const resumePairing = trpc.companionDevices.resumePairing.useMutation({ onSuccess: sendPairingToLoopback, onError: (error) => { setPairingStatus("idle"); setActionError(error.message); } });
   const requestProposal = trpc.dailyFocusActions.requestProposal.useMutation({ onSuccess: () => { setText(""); setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
   const prepareTrash = trpc.dailyFocusActions.prepareGmailTrash.useMutation({ onSuccess: () => { setSelectedInboxIds([]); setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
   const prepareDelete = trpc.dailyFocusActions.prepareCalendarDelete.useMutation({ onSuccess: () => { setActionError(null); void refresh(); }, onError: (error) => setActionError(error.message) });
@@ -75,7 +89,7 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
       <div className="action-enrollment-controls"><Input value={deviceName} onChange={(event) => setDeviceName(event.target.value)} placeholder="e.g. Mint laptop" maxLength={120} /><select value={deviceType} onChange={(event) => setDeviceType(event.target.value as "laptop" | "server")} aria-label="Device type"><option value="laptop">Linux laptop</option><option value="server">Linux server</option></select><Button type="button" onClick={() => enroll.mutate({ name: deviceName.trim(), deviceType })} disabled={!deviceName.trim() || enroll.isPending}>{enroll.isPending ? <Loader2 className="spin" size={16} /> : deviceType === "server" ? <Server size={16} /> : <Laptop size={16} />} Register</Button>{activeDevices.length > 0 && <Button type="button" variant="outline" onClick={() => { setShowEnrollment(false); setDeviceName(""); }}>Cancel</Button>}</div>
     </div>}
 
-    {credential && <div className="action-credential"><ShieldAlert size={18} /><div><strong>Pair this browser with the local companion.</strong><span>This sends the one-time credential directly to a loopback-only endpoint on this computer. It is not copied to the clipboard or sent back to Mintdesk.</span><Button type="button" variant="outline" className="pairing-copy-button" disabled={pairingStatus === "pairing" || pairingStatus === "paired"} onClick={() => { setPairingStatus("pairing"); setActionError(null); void fetch("http://127.0.0.1:20129/v1/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: credential.deviceId, deviceSecret: credential.deviceSecret }) }).then(async (response) => { if (!response.ok) throw new Error("Local companion pairing endpoint was unavailable."); setPairingStatus("paired"); setTimeout(() => { setCredential(null); void refresh(); }, 6_000); }).catch(() => { setPairingStatus("idle"); setActionError("Local pairing endpoint is unavailable. Start or update the companion, then try again."); }); }}>{pairingStatus === "pairing" ? <Loader2 className="spin" size={16} /> : <Laptop size={16} />}{pairingStatus === "paired" ? "Paired. Restarting companion…" : pairingStatus === "pairing" ? "Pairing local companion…" : "Pair this browser"}</Button></div><button className="icon-button" aria-label="Dismiss device credential" onClick={() => setCredential(null)}><X size={16} /></button></div>}
+    {pendingPairingDevices.map((device) => <div className="action-credential" key={device.deviceId}><ShieldAlert size={18} /><div><strong>Finish pairing {device.name}.</strong><span>Pairing stays available for ten minutes, even after a reload. The credential is encrypted on the server and is never shown or copied.</span><Button type="button" variant="outline" className="pairing-copy-button" disabled={pairingStatus === "pairing" || pairingStatus === "paired"} onClick={() => { setPairingDeviceId(device.deviceId); resumePairing.mutate({ deviceId: device.deviceId }); }}>{pairingStatus === "pairing" && pairingDeviceId === device.deviceId ? <Loader2 className="spin" size={16} /> : <Laptop size={16} />}{pairingStatus === "paired" && pairingDeviceId === device.deviceId ? "Paired. Restarting companion…" : pairingStatus === "pairing" && pairingDeviceId === device.deviceId ? "Pairing local companion…" : "Pair this browser"}</Button></div></div>)}
 
     {activeDevices.length > 0 && <>
       <div className="action-device-row"><label htmlFor="action-device">Reasoning device</label><select id="action-device" value={selectedDevice} onChange={(event) => setSelectedDeviceId(event.target.value)}>{activeDevices.map((device) => <option key={device.deviceId} value={device.deviceId}>{device.name} · {device.deviceType} · {device.online ? "online" : "last seen offline"}</option>)}</select><span>{activeDevices.find((device) => device.deviceId === selectedDevice)?.online ? "Ready to receive a proposal." : "The proposal remains queued until this device is online."}</span></div>

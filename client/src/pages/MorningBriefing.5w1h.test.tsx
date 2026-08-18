@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getBridgeConfig: vi.fn(), health: vi.fn(), dailyFocus: vi.fn(),
-  devices: vi.fn(), actions: vi.fn(), enroll: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
+  devices: vi.fn(), actions: vi.fn(), enroll: vi.fn(), resumePairing: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
 }));
 
 vi.mock("@/lib/bridge", () => ({ bridgeApi: { health: mocks.health, dailyFocus: mocks.dailyFocus }, getBridgeConfig: mocks.getBridgeConfig }));
@@ -30,6 +30,7 @@ vi.mock("@/lib/trpc", () => ({
     companionDevices: {
       list: { useQuery: () => ({ data: mocks.devices() }) },
       enroll: { useMutation: () => ({ mutate: mocks.enroll, isPending: false }) },
+      resumePairing: { useMutation: () => ({ mutate: mocks.resumePairing, isPending: false }) },
     },
     dailyFocusActions: {
       list: { useQuery: () => ({ data: mocks.actions() }) },
@@ -86,6 +87,15 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.getByText("Add another reasoning device")).toBeTruthy();
     expect(screen.getByPlaceholderText("e.g. Mint laptop")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeTruthy();
+  });
+
+  it("keeps a pending browser pairing available after a reload without rendering its credential", () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    mocks.devices.mockReturnValue([{ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52", name: "Mint laptop", deviceType: "laptop", online: false, pendingPairing: true, pairingExpiresAt: new Date("2026-08-17T01:10:00.000Z") }]);
+    render(<MorningBriefing />);
+    expect(screen.getByText(/Finish pairing Mint laptop/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Pair this browser" })).toBeTruthy();
+    expect(screen.queryByText(/MINTDESK_DEVICE_SECRET/i)).toBeNull();
   });
 
   it("explains a provider-limited action without rendering the provider response", () => {

@@ -7,7 +7,7 @@ import { createAuditEvent, createCompanionDevice, createDailyFocusAction, create
 import { storageCreatePresignedUpload } from "./storage";
 import { buildMorningBriefing } from "./morningBriefing";
 import { disconnectGoogleWorkspace } from "./googleOAuth";
-import { encryptActionInput, hashDeviceSecret } from "./dailyFocusActionCrypto";
+import { decryptPendingPairingSecret, encryptActionInput, encryptPendingPairingSecret, hashDeviceSecret } from "./dailyFocusActionCrypto";
 import { dailyFocusActionKindSchema, parseDailyFocusProposal } from "./dailyFocusActionPolicy";
 import { executeDailyFocusGoogleAction } from "./googleDailyFocusActions";
 import { z } from "zod";
@@ -45,10 +45,12 @@ export const appRouter = router({
   companionDevices: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const devices = await listCompanionDevices(ctx.user.id);
-      return devices.map(({ secretHash: _secretHash, ...device }) => ({
+      return devices.map(({ secretHash: _secretHash, encryptedPairingSecret, pairingExpiresAt, ...device }) => ({
         ...device,
         capabilities: JSON.parse(device.capabilities) as string[],
         online: device.lastSeenAt ? Date.now() - device.lastSeenAt.getTime() < 90_000 : false,
+        pendingPairing: Boolean(encryptedPairingSecret && pairingExpiresAt && pairingExpiresAt.getTime() > Date.now()),
+        pairingExpiresAt: pairingExpiresAt && pairingExpiresAt.getTime() > Date.now() ? pairingExpiresAt : null,
       }));
     }),
     enroll: protectedProcedure.input(z.object({
@@ -57,6 +59,7 @@ export const appRouter = router({
     })).mutation(async ({ ctx, input }) => {
       const deviceId = crypto.randomUUID();
       const deviceSecret = crypto.randomBytes(32).toString("base64url");
+      const pairingExpiresAt = new Date(Date.now() + 10 * 60_000);
       const device = await createCompanionDevice({
         userId: ctx.user.id,
         deviceId,
@@ -64,10 +67,20 @@ export const appRouter = router({
         deviceType: input.deviceType,
         capabilities: JSON.stringify(["reasoning"]),
         secretHash: hashDeviceSecret(deviceSecret),
+        encryptedPairingSecret: encryptPendingPairingSecret(deviceSecret),
+        pairingExpiresAt,
         isDefaultReasoner: false,
       });
       await createAuditEvent({ userId: ctx.user.id, action: "companion.enrolled", resourceType: "companion_device", resourceId: deviceId, status: "accepted", details: JSON.stringify({ deviceType: input.deviceType }) });
-      return { deviceId: device.deviceId, deviceSecret, name: device.name, deviceType: device.deviceType };
+      return { deviceId: device.deviceId, name: device.name, deviceType: device.deviceType, pairingExpiresAt };
+    }),
+    resumePairing: protectedProcedure.input(z.object({ deviceId: z.string().uuid() })).mutation(async ({ ctx, input }) => {
+      const device = await getCompanionDeviceForUser(ctx.user.id, input.deviceId);
+      if (!device || !device.encryptedPairingSecret || !device.pairingExpiresAt || device.pairingExpiresAt.getTime() <= Date.now()) {
+        throw new Error("This pairing request expired. Register a new device to pair it.");
+      }
+      await createAuditEvent({ userId: ctx.user.id, action: "companion.pairing.resumed", resourceType: "companion_device", resourceId: device.deviceId, status: "accepted", details: null });
+      return { deviceId: device.deviceId, deviceSecret: decryptPendingPairingSecret(device.encryptedPairingSecret) };
     }),
   }),
   dailyFocusActions: router({
