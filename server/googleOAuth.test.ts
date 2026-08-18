@@ -54,7 +54,7 @@ describe("Google OAuth security helpers", () => {
     expect(ENV.googleOAuthRedirectUri).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
     const response = await fetch(ENV.googleOAuthRedirectUri, { redirect: "manual" });
     expect([301, 302, 303, 307, 308]).toContain(response.status);
-  });
+  }, 15_000);
 
   it("removes only the current user connection and records a token-free audit even when provider revoke fails", async () => {
     const encryptedRefreshToken = __googleOAuthInternals.encryptSecret("refresh-token-value");

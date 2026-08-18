@@ -2,6 +2,11 @@
 
 # Dashboard and Shell Rework
 
+- [x] Stabilkan smoke test callback OAuth produksi terhadap latensi cold-start jaringan tanpa menurunkan assertion endpoint HTTPS atau menutupi kegagalan nyata. Assertion redirect HTTPS dipertahankan dengan batas waktu test khusus 15 detik; suite penuh lulus.
+
+- [x] Tambahkan pagination lokal di modal metadata Storage dengan ukuran halaman kecil, count/range nyata, dan tombol previous/next yang disabled pada batas.
+- [x] Tambahkan regression eksplisit Storage untuk dialog pagination pada 375px serta dokumentasikan kontrol Previous/Next sebelum checkpoint. Test memverifikasi dialog `detail-dialog` dan kedua kontrol pada 375px; keputusan serta batas verifikasi sumber nyata dicatat di `docs/OPERATIONAL-PAGES-AUDIT.md`.
+
 - [x] Batasi preview Activity dan Storage pada halaman utama ke kartu ringkasan dengan jumlah serta state sumber nyata.
 - [x] Tambahkan modal detail untuk seluruh audit event dan daftar metadata workdir yang tidak dimuat penuh pada halaman utama.
 - [x] Tambahkan regression dialog dan verifikasi desktop/mobile untuk Activity serta Storage setelah pemadatan scrolling. Screenshot desktop/mobile, 31 file / 93 test, typecheck, dan build lulus.

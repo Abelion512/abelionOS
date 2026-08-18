@@ -15,3 +15,5 @@ Desktop and 375px mobile views of `/activity`, `/storage`, and `/briefing` must 
 ## Card-and-modal follow-up
 
 Activity now shows two application audit previews and the exact source count; the remaining audit history is available through one explicit modal. Storage keeps capacity and workdir summary cards on the page, while its metadata entry list is exposed only from `Browse entries`. The desktop review confirms that an unavailable Linux companion produces one bounded state card rather than a fabricated storage listing.
+
+Storage metadata pagination renders eight returned entries per dialog page, reports the current range, and disables Previous or Next at the relevant boundary. Regression fixtures verify page one, page two, and a constrained 375px dialog that retains both pagination controls. The production screenshot cannot display those controls while the real companion is unavailable, so this dialog-specific fixture is the repeatable verification mechanism.
