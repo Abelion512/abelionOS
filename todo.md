@@ -170,6 +170,8 @@
 - [x] Tambahkan test otomatis untuk scope, ownership, preview, failure policy, audit boundary, responsive layout, serta verifikasi build sebelum checkpoint.
 - [x] Jalankan E2E nyata proposal task disposable setelah Bun companion Linux aktif dan re-consent scope action Google selesai. Lifecycle `queued` → `processing` → `ready` → `rejected` terverifikasi pada action `90001`, tanpa aksi Google dieksekusi.
 - [ ] Validasi Calendar create/delete dan Gmail Trash terhadap data Google nyata hanya setelah persetujuan eksplisit untuk perubahan provider tersebut.
+- [x] Tambahkan kemampuan Gmail content-aware untuk Daily Focus: baca isi pesan secara scoped, rangkum secara evidence-first, dan siapkan pembersihan email terbaca melalui preview serta konfirmasi manusia. Preview dibatasi lima unread email, tidak disimpan, dan pembersihan hanya menampilkan kandidat `is:read` untuk review Trash.
+- [x] Evaluasi Google OAuth untuk capability Gmail content-aware dan dokumentasikan retention serta batas data. Scope `gmail.modify` yang sudah diberikan mendukung `format=full`, sehingga tidak meminta re-consent baru atau `gmail.compose`; tradeoff allowlist dicatat di `docs/RUNTIME-DECISIONS.md`.
 - [x] Dokumentasikan keputusan runtime: pnpm tetap untuk web app dan Bun hanya untuk companion; Gmail draft/send tetap di luar scope karena `gmail.compose` tidak diizinkan. Lihat `docs/RUNTIME-DECISIONS.md`.
 - [x] Buat paket companion Bun mandiri beserta panduan instalasi singkat agar Linux laptop/server tidak memerlukan source penuh Mintdesk.
 - [x] Perbaiki parser respons 9router agar JSON dalam markdown fence dapat diekstrak dan tetap ditolak bila tidak memenuhi schema proposal ketat.

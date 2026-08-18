@@ -19,8 +19,9 @@ vi.mock("@/lib/trpc", () => ({
         workspace: {
           calendarEvents: [{ id: "event-1", summary: "Launch review", start: "2026-08-17T02:00:00.000Z", end: "2026-08-17T02:30:00.000Z", organizer: "Abelion", organizerSelf: true, attendees: ["Team"], location: "Studio", description: null, meetingUrl: null, htmlLink: null }],
           unreadInboxCount: 1,
-          inboxMessages: [{ id: "mail-1", sender: "Project <project@example.com>", subject: "Launch checklist", receivedAt: "2026-08-17T01:30:00.000Z" }],
-          source: { status: "ready", detail: "Calendar and Gmail metadata refreshed." },
+          inboxMessages: [{ id: "mail-1", sender: "Project <project@example.com>", subject: "Launch checklist", receivedAt: "2026-08-17T01:30:00.000Z", isRead: false, bodyExcerpt: "Review the launch checklist before noon." }],
+          readInboxMessages: [{ id: "mail-2", sender: "Archive <archive@example.com>", subject: "Completed notice", receivedAt: "2026-08-16T01:30:00.000Z", isRead: true, bodyExcerpt: null }],
+          source: { status: "ready", detail: "Calendar and bounded Gmail content previews refreshed. Bodies are not stored." },
         },
         activity: { events: [], source: { status: "ready", detail: "No application activity has been recorded yet." } },
         files: { recent: [], source: { status: "ready", detail: "No file metadata has been recorded yet." } },
@@ -48,11 +49,11 @@ import MorningBriefing from "./MorningBriefing";
 describe("Morning Briefing 5W1H", () => {
   afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.devices.mockReturnValue([]); mocks.actions.mockReturnValue([]); });
 
-  it("separates Calendar and Gmail and exposes facts without rendering an email body", () => {
+  it("separates Calendar and Gmail and exposes a bounded on-open content preview", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     render(<MorningBriefing />);
     expect(screen.getByText("Google Calendar")).toBeTruthy();
-    expect(screen.getByText("Gmail metadata")).toBeTruthy();
+    expect(screen.getByText("Gmail context")).toBeTruthy();
     expect(screen.getAllByText("Launch review").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Launch checklist").length).toBeGreaterThan(1);
     expect(screen.getAllByText("What").length).toBeGreaterThan(1);
@@ -60,7 +61,8 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.getAllByText("Who").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Where").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Why / How").length).toBeGreaterThan(1);
-    expect(screen.getByText(/Message bodies are not read\./)).toBeTruthy();
+    expect(screen.getByText("Review the launch checklist before noon.")).toBeTruthy();
+    expect(screen.getByText(/previews are fetched on open, not stored/i)).toBeTruthy();
   });
 
   it("states local reasoning is unavailable before a request when the companion is not configured", () => {

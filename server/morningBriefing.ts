@@ -29,12 +29,15 @@ export type InboxBriefingMessage = {
   sender: string | null;
   subject: string | null;
   receivedAt: string | null;
+  isRead: boolean;
+  bodyExcerpt: string | null;
 };
 
 export type WorkspaceBriefing = {
   calendarEvents: CalendarBriefingEvent[] | null;
   unreadInboxCount: number | null;
   inboxMessages: InboxBriefingMessage[] | null;
+  readInboxMessages: InboxBriefingMessage[] | null;
   source: BriefingSource;
 };
 
@@ -60,12 +63,25 @@ type GoogleCalendarEvent = {
   htmlLink?: string;
   conferenceData?: { entryPoints?: Array<{ entryPointType?: string; uri?: string }> };
 };
-type GmailMessageResource = { id?: string; internalDate?: string; payload?: { headers?: Array<{ name?: string; value?: string }> } };
+type GmailPayloadPart = { mimeType?: string; body?: { data?: string }; parts?: GmailPayloadPart[] };
+type GmailMessageResource = {
+  id?: string;
+  internalDate?: string;
+  labelIds?: string[];
+  payload?: {
+    mimeType?: string;
+    headers?: Array<{ name?: string; value?: string }>;
+    body?: { data?: string };
+    parts?: GmailPayloadPart[];
+  };
+};
 
 const REQUIRED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events.readonly",
-  "https://www.googleapis.com/auth/gmail.metadata",
+  "https://www.googleapis.com/auth/gmail.modify",
 ];
+const GMAIL_PREVIEW_LIMIT = 5;
+const GMAIL_EXCERPT_LIMIT = 600;
 
 function providerFailureMessage(error: unknown) {
   const message = error instanceof Error ? error.message : "Google Workspace request failed";
@@ -97,11 +113,42 @@ function normalizeCalendarEvents(items: GoogleCalendarEvent[], window: { from: D
   });
 }
 
+function decodeBase64Url(value: string) {
+  return Buffer.from(value, "base64url").toString("utf8");
+}
+
+function flattenGmailPayload(payload: GmailMessageResource["payload"] | GmailPayloadPart | undefined): Array<{ mimeType: string; data: string }> {
+  if (!payload) return [];
+  const current = payload.body?.data && payload.mimeType ? [{ mimeType: payload.mimeType.toLowerCase(), data: payload.body.data }] : [];
+  return [...current, ...(payload.parts ?? []).flatMap((part) => flattenGmailPayload(part))];
+}
+
+function textExcerpt(message: GmailMessageResource) {
+  const parts = flattenGmailPayload(message.payload);
+  const preferred = parts.find((part) => part.mimeType === "text/plain") ?? parts.find((part) => part.mimeType === "text/html");
+  if (!preferred) return null;
+  try {
+    const decoded = decodeBase64Url(preferred.data);
+    const plain = preferred.mimeType === "text/html" ? decoded.replace(/<[^>]*>/g, " ") : decoded;
+    const normalized = plain.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
+    return normalized ? normalized.slice(0, GMAIL_EXCERPT_LIMIT) : null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeInboxMessage(message: GmailMessageResource): InboxBriefingMessage | null {
   if (!message.id) return null;
   const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name?.toLowerCase(), header.value]));
   const receivedAt = message.internalDate && Number.isFinite(Number(message.internalDate)) ? new Date(Number(message.internalDate)).toISOString() : null;
-  return { id: message.id, sender: headers.get("from") || null, subject: headers.get("subject") || null, receivedAt };
+  return {
+    id: message.id,
+    sender: headers.get("from") || null,
+    subject: headers.get("subject") || null,
+    receivedAt,
+    isRead: !message.labelIds?.includes("UNREAD"),
+    bodyExcerpt: textExcerpt(message),
+  };
 }
 
 export async function refreshGoogleAccessToken(connection: GoogleConnection) {
@@ -124,7 +171,7 @@ export async function refreshGoogleAccessToken(connection: GoogleConnection) {
 
 export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, window: { from: Date; until: Date }): Promise<WorkspaceBriefing> {
   if (!hasRequiredScopes(connection)) {
-    return { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "unavailable", detail: "Required Calendar or Gmail scope was not granted." } };
+    return { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, readInboxMessages: null, source: { status: "unavailable", detail: "Required Calendar or Gmail scope was not granted." } };
   }
 
   try {
@@ -141,9 +188,13 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
     const inboxUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
     inboxUrl.searchParams.set("labelIds", "INBOX");
     inboxUrl.searchParams.set("q", "is:unread");
-    inboxUrl.searchParams.set("maxResults", "1");
+    inboxUrl.searchParams.set("maxResults", String(GMAIL_PREVIEW_LIMIT));
+    const readInboxUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
+    readInboxUrl.searchParams.set("labelIds", "INBOX");
+    readInboxUrl.searchParams.set("q", "is:read");
+    readInboxUrl.searchParams.set("maxResults", "10");
 
-    const [calendarResult, inboxResult] = await Promise.allSettled([
+    const [calendarResult, inboxResult, readInboxResult] = await Promise.allSettled([
       fetch(calendarUrl, { headers: auth }).then(async (response) => {
         if (!response.ok) throw new Error(`Calendar request failed (${response.status})`);
         return response.json() as Promise<{ items?: GoogleCalendarEvent[] }>;
@@ -151,11 +202,20 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
       fetch(inboxUrl, { headers: auth }).then(async (response) => {
         if (!response.ok) throw new Error(`Gmail request failed (${response.status})`);
         const payload = await response.json() as { resultSizeEstimate?: number; messages?: Array<{ id?: string }> };
-        const detailResults = await Promise.allSettled((payload.messages ?? []).slice(0, 3).flatMap((message) => message.id ? [fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(message.id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`, { headers: auth }).then(async (detailResponse) => {
-          if (!detailResponse.ok) throw new Error(`Gmail message metadata request failed (${detailResponse.status})`);
+        const detailResults = await Promise.allSettled((payload.messages ?? []).slice(0, GMAIL_PREVIEW_LIMIT).flatMap((message) => message.id ? [fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(message.id)}?format=full`, { headers: auth }).then(async (detailResponse) => {
+          if (!detailResponse.ok) throw new Error(`Gmail message preview request failed (${detailResponse.status})`);
           return detailResponse.json() as Promise<GmailMessageResource>;
         })] : []));
         return { unreadInboxCount: payload.resultSizeEstimate ?? 0, inboxMessages: detailResults.flatMap((result) => result.status === "fulfilled" ? [normalizeInboxMessage(result.value)].filter((message): message is InboxBriefingMessage => Boolean(message)) : []) };
+      }),
+      fetch(readInboxUrl, { headers: auth }).then(async (response) => {
+        if (!response.ok) throw new Error(`Gmail read inbox request failed (${response.status})`);
+        const payload = await response.json() as { messages?: Array<{ id?: string }> };
+        const detailResults = await Promise.allSettled((payload.messages ?? []).slice(0, 10).flatMap((message) => message.id ? [fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(message.id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`, { headers: auth }).then(async (detailResponse) => {
+          if (!detailResponse.ok) throw new Error(`Gmail read message metadata request failed (${detailResponse.status})`);
+          return detailResponse.json() as Promise<GmailMessageResource>;
+        })] : []));
+        return detailResults.flatMap((result) => result.status === "fulfilled" ? [normalizeInboxMessage(result.value)].filter((message): message is InboxBriefingMessage => Boolean(message)) : []);
       }),
     ]);
 
@@ -164,14 +224,15 @@ export async function readGoogleWorkspaceBriefing(connection: GoogleConnection, 
       : null;
     const unreadInboxCount = inboxResult.status === "fulfilled" ? inboxResult.value.unreadInboxCount : null;
     const inboxMessages = inboxResult.status === "fulfilled" ? inboxResult.value.inboxMessages : null;
+    const readInboxMessages = readInboxResult.status === "fulfilled" ? readInboxResult.value : null;
 
     if (calendarEvents === null && unreadInboxCount === null) throw new Error("Calendar and Gmail were both unavailable");
     if (calendarEvents === null || unreadInboxCount === null) {
-      return { calendarEvents, unreadInboxCount, inboxMessages, source: { status: "partial", detail: "One Google Workspace source could not be refreshed." } };
+      return { calendarEvents, unreadInboxCount, inboxMessages, readInboxMessages, source: { status: "partial", detail: "One Google Workspace source could not be refreshed." } };
     }
-    return { calendarEvents, unreadInboxCount, inboxMessages, source: { status: "ready", detail: "Calendar and Gmail metadata refreshed." } };
+    return { calendarEvents, unreadInboxCount, inboxMessages, readInboxMessages, source: { status: readInboxMessages === null ? "partial" : "ready", detail: readInboxMessages === null ? "Gmail read-message cleanup candidates could not be refreshed." : "Calendar and bounded Gmail content previews refreshed. Bodies are not stored." } };
   } catch (error) {
-    return { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "error", detail: providerFailureMessage(error) } };
+    return { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, readInboxMessages: null, source: { status: "error", detail: providerFailureMessage(error) } };
   }
 }
 
@@ -208,9 +269,9 @@ export async function buildMorningBriefing(
 
   let workspace: WorkspaceBriefing;
   if (connectionResult.status !== "fulfilled") {
-    workspace = { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "error", detail: "Google Workspace connection status could not be loaded." } };
+    workspace = { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, readInboxMessages: null, source: { status: "error", detail: "Google Workspace connection status could not be loaded." } };
   } else if (!connectionResult.value) {
-    workspace = { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, source: { status: "unavailable", detail: "Google Workspace is not connected." } };
+    workspace = { calendarEvents: null, unreadInboxCount: null, inboxMessages: null, readInboxMessages: null, source: { status: "unavailable", detail: "Google Workspace is not connected." } };
   } else {
     workspace = await readWorkspace(connectionResult.value, window);
   }
@@ -218,4 +279,4 @@ export async function buildMorningBriefing(
   return { generatedAt: now, window, workspace, activity, files };
 }
 
-export const __morningBriefingInternals = { normalizeCalendarEvents, normalizeInboxMessage, filterDailyFocusActivity };
+export const __morningBriefingInternals = { normalizeCalendarEvents, normalizeInboxMessage, filterDailyFocusActivity, textExcerpt };

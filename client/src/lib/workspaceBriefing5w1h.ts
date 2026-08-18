@@ -10,7 +10,7 @@ type CalendarInput = {
   htmlLink: string | null;
 };
 
-type InboxInput = { sender: string | null; subject: string | null; receivedAt: string | null };
+type InboxInput = { sender: string | null; subject: string | null; receivedAt: string | null; bodyExcerpt: string | null };
 
 export type BriefingFact = { label: "What" | "When" | "Who" | "Where" | "Why / How"; value: string | null; href?: string | null };
 
@@ -32,6 +32,6 @@ export function getInboxFiveWOneH(message: InboxInput): BriefingFact[] {
     { label: "When", value: message.receivedAt },
     { label: "Who", value: message.sender },
     { label: "Where", value: "Gmail Inbox" },
-    { label: "Why / How", value: "Unread metadata only" },
+    { label: "Why / How", value: message.bodyExcerpt || "No readable plain-text preview was returned." },
   ];
 }

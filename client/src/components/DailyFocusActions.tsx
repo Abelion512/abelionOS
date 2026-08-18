@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import "./dailyFocusActions.css";
 
-type InboxMessage = { id: string; sender: string | null; subject: string | null; receivedAt: string | null };
+type InboxMessage = { id: string; sender: string | null; subject: string | null; receivedAt: string | null; isRead: boolean; bodyExcerpt: string | null };
 type CalendarEvent = { id: string; summary: string; start: string; organizerSelf: boolean };
 
 function formatDate(value: string | Date | null) {
@@ -35,7 +35,7 @@ function actionErrorCopy(code: string) {
   return `Reason: ${code}`;
 }
 
-export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMessages: InboxMessage[] | null; calendarEvents: CalendarEvent[] | null }) {
+export function DailyFocusActions({ readInboxMessages = null, calendarEvents }: { readInboxMessages?: InboxMessage[] | null; calendarEvents: CalendarEvent[] | null }) {
   const utils = trpc.useUtils();
   const devices = trpc.companionDevices.list.useQuery(undefined, { refetchOnWindowFocus: false });
   const actions = trpc.dailyFocusActions.list.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -52,7 +52,7 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
 
   const activeDevices = (devices.data ?? []).filter((device) => device.isDefaultReasoner !== false || device.pendingPairing);
   const selectedDevice = selectedDeviceId || activeDevices.find((device) => device.online)?.deviceId || activeDevices[0]?.deviceId || "";
-  const selectedInbox = useMemo(() => (inboxMessages ?? []).filter((message) => selectedInboxIds.includes(message.id)), [inboxMessages, selectedInboxIds]);
+  const selectedInbox = useMemo(() => (readInboxMessages ?? []).filter((message) => selectedInboxIds.includes(message.id)), [readInboxMessages, selectedInboxIds]);
   const pendingPairingDevices = activeDevices.filter((device) => device.pendingPairing);
   const refresh = () => Promise.all([utils.companionDevices.list.invalidate(), utils.dailyFocusActions.list.invalidate()]);
   const sendPairingToLoopback = (credential: { deviceId: string; deviceSecret: string }) => {
@@ -113,7 +113,7 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
       <div className="action-compose"><div className="action-kind-toggle" role="group" aria-label="Proposal type"><button type="button" className={actionKind === "task.create" ? "is-selected" : ""} onClick={() => setActionKind("task.create")}><ClipboardPlus size={15} /> Task</button><button type="button" className={actionKind === "calendar.create" ? "is-selected" : ""} onClick={() => setActionKind("calendar.create")}><CalendarPlus size={15} /> Event</button></div><Textarea value={text} onChange={(event) => setText(event.target.value)} placeholder={actionKind === "task.create" ? "Paste an intention or task. The companion will create a proposal only." : "Paste a message or schedule. Include date, time, and duration for a reviewable event."} maxLength={5_000} /><Button type="button" onClick={() => requestProposal.mutate({ deviceId: selectedDevice, kind: actionKind, text: text.trim() })} disabled={!text.trim() || requestProposal.isPending}>{requestProposal.isPending ? <Loader2 className="spin" size={16} /> : <Check size={16} />} {requestProposal.isPending ? "Requesting" : "Request proposal"}</Button></div>
     </>}
 
-    {inboxMessages !== null && inboxMessages.length > 0 && <div className="action-evidence-list"><div><strong>Inbox cleanup</strong><span>Select visible metadata only. This moves messages to Trash, not permanent deletion.</span></div><div className="action-select-list">{inboxMessages.map((message) => <label key={message.id}><input type="checkbox" checked={selectedInboxIds.includes(message.id)} onChange={(event) => setSelectedInboxIds((current) => event.target.checked ? [...current, message.id] : current.filter((id) => id !== message.id))} /><span><b>{message.subject || "Subject unavailable"}</b><small>{message.sender || "Sender unavailable"} · {formatDate(message.receivedAt)}</small></span></label>)}</div><Button type="button" variant="outline" onClick={() => prepareTrash.mutate({ messages: selectedInbox })} disabled={!selectedInbox.length || prepareTrash.isPending}>{prepareTrash.isPending ? <Loader2 className="spin" size={16} /> : <Inbox size={16} />} Review move to Trash</Button></div>}
+    {readInboxMessages !== null && readInboxMessages.length > 0 && <div className="action-evidence-list"><div><strong>Read inbox cleanup</strong><span>Select read messages for review. This moves messages to Trash, not permanent deletion.</span></div><div className="action-select-list">{readInboxMessages.map((message) => <label key={message.id}><input type="checkbox" checked={selectedInboxIds.includes(message.id)} onChange={(event) => setSelectedInboxIds((current) => event.target.checked ? [...current, message.id] : current.filter((id) => id !== message.id))} /><span><b>{message.subject || "Subject unavailable"}</b><small>{message.sender || "Sender unavailable"} · {formatDate(message.receivedAt)}</small></span></label>)}</div><Button type="button" variant="outline" onClick={() => prepareTrash.mutate({ messages: selectedInbox })} disabled={!selectedInbox.length || prepareTrash.isPending}>{prepareTrash.isPending ? <Loader2 className="spin" size={16} /> : <Inbox size={16} />} Review move to Trash</Button></div>}
 
     {calendarEvents !== null && calendarEvents.some((event) => event.organizerSelf) && <div className="action-evidence-list"><div><strong>Calendar deletion</strong><span>Only events organized by your connected Google account can be prepared here.</span></div><div className="action-select-list">{calendarEvents.filter((event) => event.organizerSelf).map((event) => <div className="action-record" key={event.id}><span><b>{event.summary}</b><small>{formatDate(event.start)}</small></span><Button type="button" variant="outline" onClick={() => prepareDelete.mutate({ calendarId: "primary", eventId: event.id, title: event.summary, start: new Date(event.start).toISOString(), organizerSelf: true })} disabled={prepareDelete.isPending}><Trash2 size={15} /> Review deletion</Button></div>)}</div></div>}
 

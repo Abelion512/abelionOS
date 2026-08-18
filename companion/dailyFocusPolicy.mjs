@@ -36,7 +36,7 @@ export function sanitizeDailyFocusEvidence(input) {
   const inbox = list(source.inbox?.messages, (message) => {
     const id = text(message?.id, 120);
     if (!id) return null;
-    return { ref: `gmail:${id}`, sender: text(message?.sender), subject: text(message?.subject), receivedAt: text(message?.receivedAt, 80) };
+    return { ref: `gmail:${id}`, sender: text(message?.sender), subject: text(message?.subject), receivedAt: text(message?.receivedAt, 80), untrustedExcerpt: text(message?.untrustedExcerpt) };
   });
   const activity = list(source.activity?.events, (event, index) => {
     const action = text(event?.action, 120);

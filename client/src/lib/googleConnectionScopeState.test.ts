@@ -19,6 +19,6 @@ describe("Google connection scope presentation", () => {
       "https://www.googleapis.com/auth/tasks",
       "https://www.googleapis.com/auth/calendar.events.owned",
     ]);
-    expect(state.status).toBe("connected");
+    expect(state).toMatchObject({ status: "connected", detail: expect.stringContaining("Gmail previews are bounded") });
   });
 });
