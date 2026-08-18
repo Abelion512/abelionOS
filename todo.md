@@ -2,6 +2,13 @@
 
 # Dashboard and Shell Rework
 
+- [x] Audit `/activity`, `/storage`, dan `/briefing` pada desktop/mobile untuk memetakan copy, kartu, dan grid yang masih tidak konsisten dengan Dashboard. Temuan disimpan di `docs/OPERATIONAL-PAGES-AUDIT.md`.
+- [x] Rapikan hierarchy, densitas, empty/unavailable state, serta breakpoint `/activity`, `/storage`, dan `/briefing` tanpa membuat data atau status dummy.
+- [x] Perbaiki transisi sidebar collapse/expand agar rail, canvas, dan konten navigation beranimasi serempak serta menghormati prefers-reduced-motion.
+- [x] Lengkapi automated regression `/activity` dengan assertion error asynchronous untuk source lokal atau server sebelum menandai coverage loading/error/empty/filled selesai. Test menunggu dan memverifikasi `Local audit unavailable.` serta pesan sumber nyata.
+- [x] Lengkapi regression sidebar collapse/expand untuk memastikan class state dan label trigger berganti, lalu dokumentasikan bahwa motion visual diverifikasi secara manual melalui klik produksi.
+- [x] Selesaikan regresi dan verifikasi visual desktop/mobile untuk tiga halaman operasional dan transisi sidebar setelah coverage error `/activity` benar-benar lengkap. Desktop/mobile screenshot, klik produksi, 31 file / 90 test, typecheck, dan build lulus; regression error Activity tersendiri juga lulus.
+
 - [x] Tambahkan dan dokumentasikan minimal satu referensi dashboard produk nyata yang dipakai sebagai acuan komposisi dan status, lalu selaraskan `docs/DASHBOARD-UI-RESEARCH.md`. Vercel Observability dipakai sebagai referensi pemisahan monitoring ringkas dan detail investigasi.
 - [x] Buang copy penjelas yang tidak memandu keputusan pada Dashboard dan gunakan status singkat yang hanya menjelaskan nilai operasional saat ini.
 - [x] Terapkan sidebar expand-collapse yang menyimpan preferensi, memiliki target interaksi jelas, dan tidak mengubah perilaku navigasi mobile.

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, CircleAlert, Clock3, Lightbulb, Mail, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-react";
+import { CalendarDays, Check, CircleAlert, Clock3, Lightbulb, Mail, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { getBriefingViewState } from "@/lib/briefingState";
@@ -76,9 +76,9 @@ export default function MorningBriefing() {
   const overridePriority = (id: string, value: "done" | "deprioritized") => setOverrides((current) => ({ ...current, [id]: value }));
 
   return <main className="feature-page briefing-page">
-    <header className="feature-header briefing-header">
-      <div><p className="eyebrow"><span className="eyebrow-line" /> Evidence-first daily assistant</p><h1>Daily Focus</h1><p>Today, tomorrow, and lessons from recent activity. Missing evidence stays unavailable; no action is automated.</p></div>
-      <div className="briefing-actions"><Link href="/" className="back-link"><ArrowLeft size={15} /> Dashboard</Link><button className="power-button" onClick={refreshAll} disabled={briefing.isFetching || bridgeLoading}><RefreshCw size={16} className={briefing.isFetching || bridgeLoading ? "spin" : ""} /><span>{briefing.isFetching || bridgeLoading ? "Refreshing" : "Refresh sources"}</span></button></div>
+    <header className="operational-header briefing-header">
+      <h1>Daily Focus</h1>
+      <div className="briefing-actions"><button className="power-button" onClick={refreshAll} disabled={briefing.isFetching || bridgeLoading}><RefreshCw size={16} className={briefing.isFetching || bridgeLoading ? "spin" : ""} /><span>{briefing.isFetching || bridgeLoading ? "Refreshing" : "Refresh"}</span></button></div>
     </header>
 
     {viewState === "loading" && <section className="briefing-loading panel"><Clock3 size={22} /><div><strong>Preparing briefing from connected sources.</strong><span>No prior result is shown while the current request is loading.</span></div></section>}

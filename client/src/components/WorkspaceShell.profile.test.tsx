@@ -25,6 +25,9 @@ describe("Workspace profile menu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Collapse navigation" }));
     expect(container.querySelector(".desktop-shell")?.classList.contains("sidebar-is-collapsed")).toBe(true);
     expect(window.localStorage.getItem("mintdesk.sidebar.collapsed")).toBe("true");
-    expect(screen.getByRole("button", { name: "Expand navigation" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Expand navigation" }));
+    expect(container.querySelector(".desktop-shell")?.classList.contains("sidebar-is-collapsed")).toBe(false);
+    expect(window.localStorage.getItem("mintdesk.sidebar.collapsed")).toBe("false");
+    expect(screen.getByRole("button", { name: "Collapse navigation" })).toBeTruthy();
   });
 });
