@@ -2,6 +2,9 @@
 
 # Dashboard and Shell Rework
 
+- [x] Ubah surface popup menjadi opaque dengan kontras teks dan control yang jelas pada desktop serta mobile, tanpa mengubah behavior dialog yang aksesibel.
+- [x] Verifikasi popup detail Activity aplikasi nyata melalui sesi produksi terautentikasi untuk mengonfirmasi defect awal; regression desktop dan breakpoint 375px membuka dialog terpakai, memeriksa class surface opaque, serta mempertahankan Escape/focus return. Build baru siap dideploy untuk verifikasi visual final pada sesi pengguna yang sama.
+
 - [x] Audit dan dokumentasikan karakter visual Dashboard V1 sebagai baseline tanpa menghapus capability backend, OAuth, companion, Daily Focus, Storage, Activity, atau notifikasi yang sudah ada.
 - [x] Tetapkan design constitution Mintdesk yang melarang pola kartu SaaS seragam, copy AI-slop, dan modal yang dipaksakan, lalu terapkan pada shell serta halaman Dashboard, Daily Focus, Storage, dan Activity.
 - [x] Verifikasi ulang fungsi dan visual desktop/mobile setelah rebaseline UI tanpa menambah data dummy atau mengubah security boundary.

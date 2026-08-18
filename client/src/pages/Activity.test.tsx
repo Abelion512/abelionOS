@@ -37,7 +37,11 @@ describe("Activity operational layout", () => {
     expect(screen.getByText(/daily_focus_action · 120004 · accepted/)).toBeTruthy();
     const detailTrigger = screen.getByRole("button", { name: "Details" });
     fireEvent.click(detailTrigger);
-    expect(screen.getByRole("dialog")).toBeTruthy();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeTruthy();
+    expect(dialog.classList.contains("mint-dialog-surface")).toBe(true);
+    expect(dialog.classList.contains("bg-[#fffdf8]")).toBe(true);
+    expect(dialog.classList.contains("text-[#223126]")).toBe(true);
     expect(screen.getByText("Application audit record")).toBeTruthy();
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -53,6 +57,8 @@ describe("Activity operational layout", () => {
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog.classList.contains("detail-dialog")).toBe(true);
+    expect(dialog.classList.contains("mint-dialog-surface")).toBe(true);
+    expect(dialog.classList.contains("bg-[#fffdf8]")).toBe(true);
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
