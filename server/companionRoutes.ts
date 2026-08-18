@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAuditEvent, claimNextDeviceAction, getCompanionDevice, getDailyFocusActionForDevice, markCompanionDeviceSeen, updateDailyFocusActionForDevice } from "./db";
 import { decryptActionInput, safeDeviceSecretEquals } from "./dailyFocusActionCrypto";
 import { dailyFocusProposalSchema, proposalSummary } from "./dailyFocusActionPolicy";
+import { publishUserNotification } from "./notifications";
 
 type AuthenticatedDevice = Awaited<ReturnType<typeof getCompanionDevice>>;
 
@@ -18,7 +19,11 @@ async function authenticateDevice(req: Request, res: Response): Promise<NonNulla
     res.status(401).json({ error: "device_auth_invalid" });
     return null;
   }
+  const wasOffline = !device.lastSeenAt || Date.now() - device.lastSeenAt.getTime() >= 90_000;
   await markCompanionDeviceSeen(device.deviceId);
+  if (wasOffline) {
+    await publishUserNotification({ userId: device.userId, event: "companion.online", resourceType: "companion_device", resourceId: device.deviceId });
+  }
   return device;
 }
 
@@ -90,6 +95,7 @@ export function registerCompanionRoutes(app: Express) {
         errorCode: null,
       });
       await createAuditEvent({ userId: device.userId, action: "daily_focus.proposal.ready", resourceType: "daily_focus_action", resourceId: String(actionId), status: "accepted", details: JSON.stringify({ deviceId: device.deviceId, summary: proposalSummary(proposal) }) });
+      await publishUserNotification({ userId: device.userId, event: "daily_focus.proposal.ready", resourceType: "daily_focus_action", resourceId: String(actionId) });
       res.json({ actionId, status: "ready" });
     } catch (error) {
       console.error("[Companion] proposal failed", error);
@@ -114,6 +120,7 @@ export function registerCompanionRoutes(app: Express) {
       }
       await updateDailyFocusActionForDevice(device.deviceId, actionId, { status: "error", errorCode: code, encryptedInput: null });
       await createAuditEvent({ userId: device.userId, action: "daily_focus.proposal.error", resourceType: "daily_focus_action", resourceId: String(actionId), status: "error", details: JSON.stringify({ deviceId: device.deviceId, code }) });
+      await publishUserNotification({ userId: device.userId, event: "daily_focus.proposal.error", resourceType: "daily_focus_action", resourceId: String(actionId) });
       res.json({ actionId, status: "error" });
     } catch (error) {
       console.error("[Companion] action error failed", error);

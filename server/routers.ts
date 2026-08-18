@@ -3,13 +3,15 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import crypto from "node:crypto";
-import { createAuditEvent, createCompanionDevice, createDailyFocusAction, createFileRecord, getCompanionDeviceForUser, getDailyFocusAction, getGoogleConnection, listAuditEvents, listCompanionDevices, listDailyFocusActions, listUserFiles, updateDailyFocusAction } from "./db";
+import { countUnreadNotifications, createAuditEvent, createCompanionDevice, createDailyFocusAction, createFileRecord, getCompanionDeviceForUser, getDailyFocusAction, getGoogleConnection, getNotificationPreferences, listAuditEvents, listCompanionDevices, listDailyFocusActions, listNotifications, listUserFiles, markAllNotificationsRead, markNotificationRead, updateDailyFocusAction, upsertNotificationPreferences } from "./db";
 import { storageCreatePresignedUpload } from "./storage";
 import { buildMorningBriefing } from "./morningBriefing";
 import { disconnectGoogleWorkspace } from "./googleOAuth";
 import { decryptPendingPairingSecret, encryptActionInput, encryptPendingPairingSecret, hashDeviceSecret } from "./dailyFocusActionCrypto";
 import { dailyFocusActionKindSchema, parseDailyFocusProposal, parseExplicitCalendarDraft } from "./dailyFocusActionPolicy";
 import { executeDailyFocusGoogleAction } from "./googleDailyFocusActions";
+import { publishUserNotification } from "./notifications";
+import { observeUserCompanionStatus } from "./companionStatus";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -30,6 +32,47 @@ export const appRouter = router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(50) }).optional()).query(({ ctx, input }) =>
       listAuditEvents(ctx.user.id, input?.limit ?? 50)
     ),
+  }),
+  notifications: router({
+    list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(20) }).optional()).query(async ({ ctx, input }) => {
+      const [items, unreadCount] = await Promise.all([
+        listNotifications(ctx.user.id, input?.limit ?? 20),
+        countUnreadNotifications(ctx.user.id),
+      ]);
+      return { items, unreadCount };
+    }),
+    preferences: protectedProcedure.query(async ({ ctx }) => {
+      const preferences = await getNotificationPreferences(ctx.user.id);
+      return preferences
+        ? {
+            inAppEnabled: preferences.inAppEnabled,
+            browserEnabled: preferences.browserEnabled,
+            dailyFocusEnabled: preferences.dailyFocusEnabled,
+            companionEnabled: preferences.companionEnabled,
+            googleEnabled: preferences.googleEnabled,
+          }
+        : { inAppEnabled: true, browserEnabled: false, dailyFocusEnabled: true, companionEnabled: true, googleEnabled: true };
+    }),
+    updatePreferences: protectedProcedure.input(z.object({
+      inAppEnabled: z.boolean(),
+      browserEnabled: z.boolean(),
+      dailyFocusEnabled: z.boolean(),
+      companionEnabled: z.boolean(),
+      googleEnabled: z.boolean(),
+    })).mutation(async ({ ctx, input }) => {
+      const saved = await upsertNotificationPreferences(ctx.user.id, input);
+      return {
+        inAppEnabled: saved.inAppEnabled,
+        browserEnabled: saved.browserEnabled,
+        dailyFocusEnabled: saved.dailyFocusEnabled,
+        companionEnabled: saved.companionEnabled,
+        googleEnabled: saved.googleEnabled,
+      };
+    }),
+    markRead: protectedProcedure.input(z.object({ notificationId: z.number().int().positive() })).mutation(({ ctx, input }) =>
+      markNotificationRead(ctx.user.id, input.notificationId)
+    ),
+    markAllRead: protectedProcedure.mutation(({ ctx }) => markAllNotificationsRead(ctx.user.id)),
   }),
   google: router({
     status: protectedProcedure.query(async ({ ctx }) => {
@@ -82,6 +125,7 @@ export const appRouter = router({
       await createAuditEvent({ userId: ctx.user.id, action: "companion.pairing.resumed", resourceType: "companion_device", resourceId: device.deviceId, status: "accepted", details: null });
       return { deviceId: device.deviceId, deviceSecret: decryptPendingPairingSecret(device.encryptedPairingSecret) };
     }),
+    observeStatus: protectedProcedure.mutation(({ ctx }) => observeUserCompanionStatus(ctx.user.id)),
   }),
   dailyFocusActions: router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(25) }).optional()).query(({ ctx, input }) =>
@@ -177,10 +221,12 @@ export const appRouter = router({
       try {
         const result = await executeDailyFocusGoogleAction(ctx.user.id, input.actionId, proposal);
         await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "executed", providerResourceId: result.providerResourceId, executedAt: new Date(), encryptedInput: null });
+        await publishUserNotification({ userId: ctx.user.id, event: "daily_focus.action.executed", resourceType: "daily_focus_action", resourceId: String(input.actionId) });
         return { id: input.actionId, status: "executed" as const, providerResourceId: result.providerResourceId };
       } catch (error) {
         await updateDailyFocusAction(ctx.user.id, input.actionId, { status: "error", errorCode: "provider_action_failed", encryptedInput: null });
         await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.action.error", resourceType: "daily_focus_action", resourceId: String(input.actionId), status: "error", details: JSON.stringify({ kind: action.kind, reason: error instanceof Error ? error.message : "unknown" }) });
+        await publishUserNotification({ userId: ctx.user.id, event: "daily_focus.proposal.error", resourceType: "daily_focus_action", resourceId: String(input.actionId) });
         throw error;
       }
     }),

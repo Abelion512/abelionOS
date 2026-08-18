@@ -1,4 +1,4 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -79,6 +79,7 @@ export const companionDevices = mysqlTable("companion_devices", {
   isDefaultReasoner: boolean("isDefaultReasoner").notNull().default(false),
   isArchived: boolean("isArchived").notNull().default(false),
   lastSeenAt: timestamp("lastSeenAt"),
+  lastOfflineNotifiedAt: timestamp("lastOfflineNotifiedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -105,3 +106,41 @@ export const dailyFocusActions = mysqlTable("daily_focus_actions", {
 
 export type DailyFocusAction = typeof dailyFocusActions.$inferSelect;
 export type InsertDailyFocusAction = typeof dailyFocusActions.$inferInsert;
+
+export const notificationPreferences = mysqlTable("notification_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  inAppEnabled: boolean("inAppEnabled").notNull().default(true),
+  browserEnabled: boolean("browserEnabled").notNull().default(false),
+  dailyFocusEnabled: boolean("dailyFocusEnabled").notNull().default(true),
+  companionEnabled: boolean("companionEnabled").notNull().default(true),
+  googleEnabled: boolean("googleEnabled").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+export const notifications = mysqlTable(
+  "notifications",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    category: mysqlEnum("category", ["daily_focus", "companion", "google"]).notNull(),
+    severity: mysqlEnum("severity", ["info", "success", "warning", "error"]).notNull().default("info"),
+    title: varchar("title", { length: 160 }).notNull(),
+    body: varchar("body", { length: 1000 }).notNull(),
+    resourceType: varchar("resourceType", { length: 80 }),
+    resourceId: varchar("resourceId", { length: 160 }),
+    readAt: timestamp("readAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("notifications_user_created_idx").on(table.userId, table.createdAt),
+    index("notifications_user_read_idx").on(table.userId, table.readAt),
+  ],
+);
+
+export type NotificationRecord = typeof notifications.$inferSelect;
+export type InsertNotificationRecord = typeof notifications.$inferInsert;

@@ -7,6 +7,10 @@ vi.mock("@/_core/hooks/useAuth", () => ({
   useAuth: () => ({ user: { name: "Abelion", email: "agen.salva@gmail.com" }, isAuthenticated: true }),
 }));
 
+vi.mock("@/components/NotificationCenter", () => ({
+  NotificationCenter: () => <div data-testid="notification-center" />,
+}));
+
 import { WorkspaceShell } from "./WorkspaceShell";
 
 describe("Workspace profile menu", () => {

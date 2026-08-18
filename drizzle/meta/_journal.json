@@ -50,6 +50,27 @@
       "when": 1787021641152,
       "tag": "0006_burly_morbius",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1787034684253,
+      "tag": "0007_clumsy_thundra",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1787034709002,
+      "tag": "0008_gifted_daimon_hellstrom",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1787035335838,
+      "tag": "0009_uneven_enchantress",
+      "breakpoints": true
     }
   ]
 }

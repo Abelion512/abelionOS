@@ -62,12 +62,14 @@ describe("Google OAuth security helpers", () => {
     const revoke = vi.fn().mockRejectedValue(new Error("Google unavailable"));
     const deleteConnection = vi.fn().mockResolvedValue(true);
     const createAudit = vi.fn().mockResolvedValue(undefined);
+    const publishNotification = vi.fn().mockResolvedValue(null);
 
-    const result = await disconnectGoogleWorkspace(9, { getConnection: async () => connection, revoke, deleteConnection, createAudit });
+    const result = await disconnectGoogleWorkspace(9, { getConnection: async () => connection, revoke, deleteConnection, createAudit, publishNotification });
 
     expect(result).toEqual({ disconnected: true, providerRevoke: "failed" });
     expect(deleteConnection).toHaveBeenCalledWith(9);
     expect(createAudit).toHaveBeenCalledWith(expect.objectContaining({ userId: 9, action: "google.oauth.disconnected", status: "accepted" }));
+    expect(publishNotification).toHaveBeenCalledWith({ userId: 9, event: "google.disconnected", resourceType: "google_connection" });
     expect(JSON.stringify(createAudit.mock.calls)).not.toContain("refresh-token-value");
   });
 });

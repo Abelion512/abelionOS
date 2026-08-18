@@ -6,6 +6,7 @@ import { createAuditEvent, deleteGoogleConnection, getGoogleConnection, upsertGo
 import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
 import { sdk } from "./_core/sdk";
+import { publishUserNotification } from "./notifications";
 
 const GOOGLE_STATE_COOKIE = "mintdesk_google_oauth";
 const GOOGLE_SCOPES = [
@@ -87,6 +88,7 @@ type DisconnectDependencies = {
   deleteConnection?: (userId: number) => Promise<boolean>;
   createAudit?: (event: InsertAuditEvent) => ReturnType<typeof createAuditEvent>;
   revoke?: (refreshToken: string) => Promise<void>;
+  publishNotification?: typeof publishUserNotification;
 };
 
 async function revokeGoogleToken(refreshToken: string) {
@@ -103,6 +105,7 @@ export async function disconnectGoogleWorkspace(userId: number, dependencies: Di
   const deleteConnection = dependencies.deleteConnection ?? deleteGoogleConnection;
   const createAudit = dependencies.createAudit ?? createAuditEvent;
   const revoke = dependencies.revoke ?? revokeGoogleToken;
+  const publishNotification = dependencies.publishNotification ?? publishUserNotification;
   const connection = await getConnection(userId);
   if (!connection) return { disconnected: false as const, providerRevoke: "not_needed" as const };
 
@@ -117,6 +120,7 @@ export async function disconnectGoogleWorkspace(userId: number, dependencies: Di
   const deleted = await deleteConnection(userId);
   if (!deleted) throw new Error("Google connection could not be removed locally");
   await createAudit({ userId, action: "google.oauth.disconnected", resourceType: "google_connection", status: "accepted", details: JSON.stringify({ providerRevoke }) });
+  await publishNotification({ userId, event: "google.disconnected", resourceType: "google_connection" });
   return { disconnected: true as const, providerRevoke };
 }
 
@@ -196,6 +200,7 @@ export function registerGoogleOAuthRoutes(app: Express) {
       const tokenExpiry = token.expires_in ? new Date(Date.now() + token.expires_in * 1000) : null;
       await upsertGoogleConnection({ userId: user.id, encryptedRefreshToken: encryptSecret(token.refresh_token), grantedScopes: scopes, tokenExpiry });
       await createAuditEvent({ userId: user.id, action: "google.oauth.connected", resourceType: "google_connection", status: "accepted", details: JSON.stringify({ scopes: scopes.split(" ") }) });
+      await publishUserNotification({ userId: user.id, event: "google.connected", resourceType: "google_connection" });
       redirectHome(res, "connected");
     } catch (error) {
       console.error("[Google OAuth] Callback failed", error);

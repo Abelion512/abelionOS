@@ -2,6 +2,13 @@
 
 # Dashboard and Shell Rework
 
+- [x] Tetapkan event notifikasi Mintdesk yang aman: companion online/offline, action Daily Focus siap review atau gagal, dan perubahan koneksi Google tanpa memasukkan isi Gmail atau token.
+- [x] Tambahkan database, API, dan inbox notifikasi user-scoped dengan status read/unread serta preference delivery.
+- [x] Tambahkan pengaturan notifikasi kustom di menu profil, termasuk izin browser eksplisit dan fallback inbox in-app.
+- [x] Tambahkan test untuk delivery, preference, read/unread, serta state izin browser tanpa notifikasi dummy.
+- [x] Perbarui README.md dan AGENTS.md dengan arsitektur notifikasi, workflow GitHub, dan guardrail proyek aktual.
+- [x] Tambahkan event `companion.offline` dari observasi status nyata tanpa timer server, deduplikasi transisi, dan regression metadata-only.
+
 - [x] Stabilkan smoke test callback OAuth produksi terhadap latensi cold-start jaringan tanpa menurunkan assertion endpoint HTTPS atau menutupi kegagalan nyata. Assertion redirect HTTPS dipertahankan dengan batas waktu test khusus 15 detik; suite penuh lulus.
 
 - [x] Tambahkan pagination lokal di modal metadata Storage dengan ukuran halaman kecil, count/range nyata, dan tombol previous/next yang disabled pada batas.

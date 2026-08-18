@@ -1,6 +1,6 @@
-import { and, desc, eq, gt, ne } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, lt, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { AuditEvent, CompanionDevice, DailyFocusAction, FileRecord, GoogleConnection, InsertAuditEvent, InsertCompanionDevice, InsertDailyFocusAction, InsertFileRecord, InsertGoogleConnection, InsertUser, auditEvents, companionDevices, dailyFocusActions, files, googleConnections, users } from "../drizzle/schema";
+import { AuditEvent, CompanionDevice, DailyFocusAction, FileRecord, GoogleConnection, InsertAuditEvent, InsertCompanionDevice, InsertDailyFocusAction, InsertFileRecord, InsertGoogleConnection, InsertNotificationRecord, InsertUser, NotificationPreference, NotificationRecord, auditEvents, companionDevices, dailyFocusActions, files, googleConnections, notificationPreferences, notifications, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -182,7 +182,28 @@ export async function markCompanionDeviceSeen(deviceId: string): Promise<void> {
   const current = await getCompanionDevice(deviceId);
   if (!current || current.isArchived) return;
   await db.update(companionDevices).set({ isArchived: true, isDefaultReasoner: false }).where(and(eq(companionDevices.userId, current.userId), eq(companionDevices.deviceType, current.deviceType), ne(companionDevices.deviceId, deviceId), eq(companionDevices.isArchived, false)));
-  await db.update(companionDevices).set({ lastSeenAt: new Date(), encryptedPairingSecret: null, pairingExpiresAt: null, isDefaultReasoner: true, isArchived: false }).where(eq(companionDevices.deviceId, deviceId));
+  await db.update(companionDevices).set({ lastSeenAt: new Date(), lastOfflineNotifiedAt: null, encryptedPairingSecret: null, pairingExpiresAt: null, isDefaultReasoner: true, isArchived: false }).where(eq(companionDevices.deviceId, deviceId));
+}
+
+export async function markStaleCompanionDevicesOffline(userId: number, now = new Date(), staleAfterMs = 90_000): Promise<CompanionDevice[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const cutoff = new Date(now.getTime() - staleAfterMs);
+  const candidates = await db.select().from(companionDevices).where(and(
+    eq(companionDevices.userId, userId),
+    eq(companionDevices.isArchived, false),
+    lt(companionDevices.lastSeenAt, cutoff),
+    isNull(companionDevices.lastOfflineNotifiedAt),
+  ));
+  const transitioned: CompanionDevice[] = [];
+  for (const device of candidates) {
+    const update = await db.update(companionDevices).set({ lastOfflineNotifiedAt: now }).where(and(
+      eq(companionDevices.deviceId, device.deviceId),
+      isNull(companionDevices.lastOfflineNotifiedAt),
+    ));
+    if ((update[0]?.affectedRows ?? 0) === 1) transitioned.push(device);
+  }
+  return transitioned;
 }
 
 export async function createDailyFocusAction(action: InsertDailyFocusAction): Promise<DailyFocusAction> {
@@ -248,4 +269,85 @@ export async function getDailyFocusActionForDevice(deviceId: string, actionId: n
   if (!db) throw new Error("Database unavailable");
   const action = await db.select().from(dailyFocusActions).where(and(eq(dailyFocusActions.id, actionId), eq(dailyFocusActions.deviceId, deviceId))).limit(1);
   return action[0];
+}
+
+export type NotificationPreferenceValues = {
+  inAppEnabled: boolean;
+  browserEnabled: boolean;
+  dailyFocusEnabled: boolean;
+  companionEnabled: boolean;
+  googleEnabled: boolean;
+};
+
+export const defaultNotificationPreferences: NotificationPreferenceValues = {
+  inAppEnabled: true,
+  browserEnabled: false,
+  dailyFocusEnabled: true,
+  companionEnabled: true,
+  googleEnabled: true,
+};
+
+export async function getNotificationPreferences(userId: number): Promise<NotificationPreference | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function getEffectiveNotificationPreferences(userId: number) {
+  const saved = await getNotificationPreferences(userId);
+  return saved
+    ? {
+        inAppEnabled: saved.inAppEnabled,
+        browserEnabled: saved.browserEnabled,
+        dailyFocusEnabled: saved.dailyFocusEnabled,
+        companionEnabled: saved.companionEnabled,
+        googleEnabled: saved.googleEnabled,
+      }
+    : defaultNotificationPreferences;
+}
+
+export async function upsertNotificationPreferences(userId: number, preferences: NotificationPreferenceValues): Promise<NotificationPreference> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(notificationPreferences).values({ userId, ...preferences }).onDuplicateKeyUpdate({ set: preferences });
+  const saved = await getNotificationPreferences(userId);
+  if (!saved) throw new Error("Notification preferences were not saved");
+  return saved;
+}
+
+export async function createNotification(notification: InsertNotificationRecord): Promise<NotificationRecord> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(notifications).values(notification);
+  const saved = await db.select().from(notifications).where(eq(notifications.id, result[0].insertId)).limit(1);
+  if (!saved[0]) throw new Error("Notification was not created");
+  return saved[0];
+}
+
+export async function listNotifications(userId: number, limit = 25): Promise<NotificationRecord[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(Math.min(limit, 50));
+}
+
+export async function countUnreadNotifications(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.select({ total: count(notifications.id) }).from(notifications).where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+  return Number(result[0]?.total ?? 0);
+}
+
+export async function markNotificationRead(userId: number, notificationId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.update(notifications).set({ readAt: new Date() }).where(and(eq(notifications.userId, userId), eq(notifications.id, notificationId), isNull(notifications.readAt)));
+  return (result[0]?.affectedRows ?? 0) > 0;
+}
+
+export async function markAllNotificationsRead(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.update(notifications).set({ readAt: new Date() }).where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+  return Number(result[0]?.affectedRows ?? 0);
 }
