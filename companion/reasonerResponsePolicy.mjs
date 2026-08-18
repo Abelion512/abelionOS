@@ -12,6 +12,26 @@ export class ReasonerProtocolError extends Error {
   }
 }
 
+export async function readReasonerResponseBody(response) {
+  if (!response.body) return response.text();
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      raw += decoder.decode(value, { stream: true });
+      if (raw.length > 100_000) throw new ReasonerProtocolError("9router returned an oversized response");
+      if (raw.includes("data: [DONE]")) return raw;
+    }
+    raw += decoder.decode();
+    return raw;
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+}
+
 function jsonObjects(raw) {
   const values = [];
   let cursor = 0;

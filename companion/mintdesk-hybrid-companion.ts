@@ -1,6 +1,6 @@
 import { assertLoopbackRouterUrl } from "./dailyFocusPolicy.mjs";
 import { parseActionProposal, parseProposalJson } from "./actionProposalPolicy.mjs";
-import { extractReasonerCompletion, ReasonerProviderLimitedError } from "./reasonerResponsePolicy.mjs";
+import { extractReasonerCompletion, readReasonerResponseBody, ReasonerProviderLimitedError } from "./reasonerResponsePolicy.mjs";
 import { retryForProviderRotation } from "./reasonerRetryPolicy.mjs";
 import { applyLoopbackPairing, isValidLoopbackPairing } from "./loopbackPairingPolicy.mjs";
 import { createServer } from "node:http";
@@ -155,7 +155,7 @@ async function generateProposal(kind: "task.create" | "calendar.create", input: 
       }),
     });
     if (!response.ok) throw new Error(`9router request failed (${response.status})`);
-    const content = extractReasonerCompletion(await response.text());
+    const content = extractReasonerCompletion(await readReasonerResponseBody(response));
     return parseActionProposal(parseProposalJson(content), kind);
     } finally {
       clearTimeout(timer);

@@ -185,3 +185,4 @@
 - [x] Simpan pending pairing device secara terenkripsi dan user-scoped dengan masa berlaku singkat agar reload browser dapat melanjutkan Pair this browser tanpa menampilkan token. Migration database, UI regression test, companion policy test, typecheck, dan build lulus.
 - [x] Diagnosa endpoint pairing loopback yang tidak merespons di Linux pengguna dan tambahkan timeout eksplisit agar UI tidak menampilkan spinner tanpa batas. Service dan endpoint tervalidasi aktif; UI kini mengajukan izin loopback, target address space, serta abort enam detik.
 - [ ] Tambahkan observabilitas request loopback dan tangani kegagalan browser-ke-loopback secara bounded agar respons CORS atau private-network tidak mengunci UI pairing.
+- [x] Hentikan pembacaan respons 9router streaming segera setelah penanda SSE `[DONE]` agar action tidak macet dalam status processing saat koneksi tetap hidup. Reader SSE, regression test koneksi terbuka, build, dan paket CDN tervalidasi.
