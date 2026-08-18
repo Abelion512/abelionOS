@@ -50,7 +50,7 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
   const [selectedInboxIds, setSelectedInboxIds] = useState<string[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const activeDevices = devices.data ?? [];
+  const activeDevices = (devices.data ?? []).filter((device) => device.isDefaultReasoner !== false || device.pendingPairing);
   const selectedDevice = selectedDeviceId || activeDevices.find((device) => device.online)?.deviceId || activeDevices[0]?.deviceId || "";
   const selectedInbox = useMemo(() => (inboxMessages ?? []).filter((message) => selectedInboxIds.includes(message.id)), [inboxMessages, selectedInboxIds]);
   const pendingPairingDevices = activeDevices.filter((device) => device.pendingPairing);
