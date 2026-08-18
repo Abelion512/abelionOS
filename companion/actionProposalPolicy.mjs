@@ -25,6 +25,23 @@ function array(value, field, limit) {
   return value;
 }
 
+export function parseProposalJson(content) {
+  if (typeof content !== "string" || !content.trim() || content.length > 20_000) {
+    throw new Error("9router returned no usable JSON proposal");
+  }
+  const trimmed = content.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
+  const candidate = (fenced?.[1] ?? trimmed).trim();
+  const first = candidate.indexOf("{");
+  const last = candidate.lastIndexOf("}");
+  if (first < 0 || last <= first) throw new Error("9router returned no JSON object");
+  try {
+    return JSON.parse(candidate.slice(first, last + 1));
+  } catch {
+    throw new Error("9router returned malformed JSON");
+  }
+}
+
 export function parseActionProposal(raw, expectedKind) {
   if (!raw || typeof raw !== "object" || raw.kind !== expectedKind) throw new Error("Action proposal kind does not match the requested action");
   if (expectedKind === "task.create") {

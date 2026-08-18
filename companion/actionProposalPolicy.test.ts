@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseActionProposal } from "./actionProposalPolicy.mjs";
+import { parseActionProposal, parseProposalJson } from "./actionProposalPolicy.mjs";
 
 describe("Bun companion action proposal policy", () => {
   it("accepts a bounded task proposal without a due date", () => {
@@ -12,5 +12,14 @@ describe("Bun companion action proposal policy", () => {
 
   it("rejects action kinds the companion is not allowed to propose", () => {
     expect(() => parseActionProposal({ kind: "gmail.trash", messages: [] }, "gmail.trash")).toThrow("only propose");
+  });
+
+  it("extracts a single JSON proposal from a markdown fence before schema validation", () => {
+    const result = parseProposalJson("```json\n{\"kind\":\"task.create\",\"title\":\"Review architecture\",\"notes\":null,\"due\":null}\n```");
+    expect(parseActionProposal(result, "task.create")).toMatchObject({ title: "Review architecture" });
+  });
+
+  it("still rejects content that does not contain a valid JSON object", () => {
+    expect(() => parseProposalJson("I cannot make a proposal.")) .toThrow("no JSON object");
   });
 });

@@ -170,3 +170,4 @@
 - [x] Tambahkan test otomatis untuk scope, ownership, preview, failure policy, audit boundary, responsive layout, serta verifikasi build sebelum checkpoint.
 - [ ] Jalankan E2E nyata setelah user memasang Bun companion pada Linux laptop/server dan menyelesaikan re-consent scope action Google; gunakan task dan event disposable serta satu Gmail test message.
 - [x] Buat paket companion Bun mandiri beserta panduan instalasi singkat agar Linux laptop/server tidak memerlukan source penuh Mintdesk.
+- [x] Perbaiki parser respons 9router agar JSON dalam markdown fence dapat diekstrak dan tetap ditolak bila tidak memenuhi schema proposal ketat.

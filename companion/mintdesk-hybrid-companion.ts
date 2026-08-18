@@ -1,5 +1,5 @@
 import { assertLoopbackRouterUrl } from "./dailyFocusPolicy.mjs";
-import { parseActionProposal } from "./actionProposalPolicy.mjs";
+import { parseActionProposal, parseProposalJson } from "./actionProposalPolicy.mjs";
 
 const apiBase = (process.env.MINTDESK_API_BASE_URL || "").replace(/\/$/, "");
 const deviceId = process.env.MINTDESK_DEVICE_ID || "";
@@ -74,7 +74,7 @@ async function generateProposal(kind: "task.create" | "calendar.create", input: 
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     const content = payload.choices?.[0]?.message?.content;
     if (typeof content !== "string") throw new Error("9router returned no text completion");
-    return parseActionProposal(JSON.parse(content), kind);
+    return parseActionProposal(parseProposalJson(content), kind);
   } finally {
     clearTimeout(timer);
   }
