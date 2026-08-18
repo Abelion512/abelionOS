@@ -2,6 +2,10 @@
 
 # Dashboard and Shell Rework
 
+- [x] Batasi preview Activity dan Storage pada halaman utama ke kartu ringkasan dengan jumlah serta state sumber nyata.
+- [x] Tambahkan modal detail untuk seluruh audit event dan daftar metadata workdir yang tidak dimuat penuh pada halaman utama.
+- [x] Tambahkan regression dialog dan verifikasi desktop/mobile untuk Activity serta Storage setelah pemadatan scrolling. Screenshot desktop/mobile, 31 file / 93 test, typecheck, dan build lulus.
+
 - [x] Tipiskan tinggi, padding, label, dan active treatment navigasi Workspace Shell agar rail expanded tidak terasa gemuk.
 - [x] Verifikasi Workspace Shell yang telah ditipiskan pada 375px dengan drawer terbuka dan active route tetap jelas, lalu dokumentasikan hasilnya sebelum checkpoint. Regression membuka/menutup drawer serta mempertahankan `aria-current`; screenshot 375px menjaga kontrol drawer ringkas.
 

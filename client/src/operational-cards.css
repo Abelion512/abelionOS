@@ -1,0 +1,7 @@
+.audit-preview-cards { display: grid; gap: 8px; margin-top: 14px; }
+.audit-preview-cards .activity-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; margin: 0; padding: 12px; border: 1px solid #ebe7db; border-radius: 10px; background: rgba(250, 249, 244, .72); }
+.audit-preview-cards .activity-row time { grid-column: 2; margin: 0; font-size: 9px; }
+.audit-preview-cards .activity-row .detail-trigger { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin: 0; }
+.storage-workdir-preview { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 78px; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--line); }
+.storage-workdir-preview > div { display: grid; gap: 4px; min-width: 0; }.storage-workdir-preview strong { color: var(--charcoal); font: 700 14px "DM Sans", sans-serif; }.storage-workdir-preview span, .storage-workdir-preview small { color: var(--muted); font-size: 11px; line-height: 1.35; }.storage-workdir-preview .detail-trigger { flex: none; margin: 0; }
+@media (max-width: 680px) { .audit-preview-cards .activity-row { grid-template-columns: 28px minmax(0, 1fr); }.audit-preview-cards .activity-row .detail-trigger { grid-column: 2; grid-row: auto; justify-self: start; margin-top: 2px; }.storage-workdir-preview { display: grid; gap: 12px; }.storage-workdir-preview .detail-trigger { justify-self: start; } }

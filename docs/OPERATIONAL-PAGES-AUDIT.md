@@ -11,3 +11,7 @@ Activity now uses two source-specific panels, with the application audit receivi
 ## Verification gate
 
 Desktop and 375px mobile views of `/activity`, `/storage`, and `/briefing` must be captured before the checkpoint. The collapse button is also exercised in the authenticated production session; its state remains a local preference and mobile continues to use an off-canvas drawer.
+
+## Card-and-modal follow-up
+
+Activity now shows two application audit previews and the exact source count; the remaining audit history is available through one explicit modal. Storage keeps capacity and workdir summary cards on the page, while its metadata entry list is exposed only from `Browse entries`. The desktop review confirms that an unavailable Linux companion produces one bounded state card rather than a fabricated storage listing.

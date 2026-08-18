@@ -8,6 +8,7 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 import "./navigation-density.css";
+import "./operational-cards.css";
 
 const queryClient = new QueryClient();
 
