@@ -49,18 +49,17 @@ import MorningBriefing from "./MorningBriefing";
 describe("Morning Briefing 5W1H", () => {
   afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.devices.mockReturnValue([]); mocks.actions.mockReturnValue([]); });
 
-  it("separates Calendar and Gmail and exposes a bounded on-open content preview", () => {
+  it("separates Calendar and Gmail and exposes bounded previews through on-demand detail", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     render(<MorningBriefing />);
     expect(screen.getByText("Google Calendar")).toBeTruthy();
     expect(screen.getByText("Gmail context")).toBeTruthy();
-    expect(screen.getAllByText("Launch review").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Launch checklist").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("What").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("When").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Who").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Where").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Why / How").length).toBeGreaterThan(1);
+    expect(screen.getByText("Launch review")).toBeTruthy();
+    expect(screen.getByText("Launch checklist")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Details" })).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole("button", { name: "Details" })[1]);
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByText("Why / How")).toBeTruthy();
     expect(screen.getByText("Review the launch checklist before noon.")).toBeTruthy();
     expect(screen.getByText(/previews are fetched on open, not stored/i)).toBeTruthy();
   });
@@ -121,6 +120,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.actions.mockReturnValue([{ id: 1, status: "error", proposalPayload: null, errorCode: "reasoner_provider_limited", expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
     render(<MorningBriefing />);
+    fireEvent.click(screen.getByRole("button", { name: "Open history" }));
     expect(screen.getByText(/selected local provider has no available quota/i)).toBeTruthy();
     expect(screen.queryByText(/prevent abuse of free resources/i)).toBeNull();
   });
@@ -129,6 +129,7 @@ describe("Morning Briefing 5W1H", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.actions.mockReturnValue([{ id: 3, kind: "calendar.create", status: "executed", providerResourceId: "created-event-1", proposalPayload: JSON.stringify({ kind: "calendar.create", calendarId: "primary", title: "Mintdesk verification event", start: "2026-08-19T07:00:00.000Z" }), errorCode: null, expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
     render(<MorningBriefing />);
+    fireEvent.click(screen.getByRole("button", { name: "Open history" }));
     const deletionButtons = screen.getAllByRole("button", { name: "Review deletion" });
     fireEvent.click(deletionButtons.at(-1)!);
     expect(mocks.prepareDelete).toHaveBeenCalledWith({ calendarId: "primary", eventId: "created-event-1", title: "Mintdesk verification event", start: "2026-08-19T07:00:00.000Z", organizerSelf: true });

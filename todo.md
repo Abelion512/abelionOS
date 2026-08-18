@@ -2,6 +2,13 @@
 
 # Dashboard and Shell Rework
 
+- [x] Riset pola dialog/sheet dan disclosure untuk data operasional panjang menggunakan referensi desain yang diberikan pengguna. Lihat `docs/ON_DEMAND_DETAIL_RESEARCH.md`.
+- [x] Ubah Activity menjadi ringkasan kartu dengan jumlah terbatas dan dialog detail audit yang dapat ditutup/diakses keyboard.
+- [x] Ubah bukti Daily Focus yang panjang menjadi kartu ringkasan dengan detail on-demand, tanpa menghapus evidence atau membuat konten dummy.
+- [x] Tambahkan regression dialog detail untuk Escape close dan fokus kembali ke trigger pada Activity atau Daily Focus.
+- [x] Verifikasi popup detail dibuka serta ditutup pada 375px mobile dan dokumentasikan hasilnya; gunakan Dialog yang responsif kecuali sheet terbukti lebih tepat setelah uji ini. Dialog viewport-constrained dipertahankan karena test 375px dan semantics keyboard lulus.
+- [x] Selesaikan verifikasi keyboard, mobile popup, dan regresi data on-demand detail sebelum checkpoint. Lihat `docs/ON_DEMAND_DETAIL_RESEARCH.md`.
+
 - [x] Audit `/activity`, `/storage`, dan `/briefing` pada desktop/mobile untuk memetakan copy, kartu, dan grid yang masih tidak konsisten dengan Dashboard. Temuan disimpan di `docs/OPERATIONAL-PAGES-AUDIT.md`.
 - [x] Rapikan hierarchy, densitas, empty/unavailable state, serta breakpoint `/activity`, `/storage`, dan `/briefing` tanpa membuat data atau status dummy.
 - [x] Perbaiki transisi sidebar collapse/expand agar rail, canvas, dan konten navigation beranimasi serempak serta menghormati prefers-reduced-motion.
