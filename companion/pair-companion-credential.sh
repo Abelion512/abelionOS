@@ -9,8 +9,23 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
   exit 1
 fi
 
-read -r -s -p "Paste the one-time Mintdesk pairing code: " PAIRING_CODE
-printf "\n"
+read_clipboard() {
+  if command -v wl-paste >/dev/null 2>&1; then
+    wl-paste --no-newline 2>/dev/null
+  elif command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard -o 2>/dev/null
+  elif command -v xsel >/dev/null 2>&1; then
+    xsel --clipboard --output 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+PAIRING_CODE="$(read_clipboard || true)"
+if [[ ! "$PAIRING_CODE" =~ ^[0-9a-fA-F-]{36}:[A-Za-z0-9_-]{32,256}$ ]]; then
+  read -r -s -p "Paste the one-time Mintdesk pairing code: " PAIRING_CODE
+  printf "\n"
+fi
 
 if [[ ! "$PAIRING_CODE" =~ ^([0-9a-fA-F-]{36}):([A-Za-z0-9_-]{32,256})$ ]]; then
   echo "The pairing code is invalid. Copy it again from Daily Focus and retry." >&2
