@@ -177,3 +177,5 @@
 - [ ] Selaraskan runtime companion Linux dengan parser fenced-JSON yang telah diperbaiki dan verifikasi proposal task disposable mencapai status siap review.
 - [x] Deteksi respons streaming dan penolakan kuota provider 9router secara eksplisit agar Daily Focus tidak mengklasifikasikannya sebagai kegagalan JSON yang ambigu. Regression test, typecheck, production build, dan syntax installer lulus.
 - [x] Terapkan retry bounded hingga 10 percobaan untuk alias 9router model kombinasi yang merotasi provider gratis, dengan jeda dan batas waktu sehingga tidak menjadi polling tanpa akhir atau menghasilkan aksi Google otomatis. Test parser/retry/UI, typecheck, build, syntax installer, serta checksum CDN lulus.
+- [ ] Pulihkan pasangan device ID dan secret yang benar pada runtime companion setelah restart mengembalikan 401, tanpa memindahkan credential ke chat.
+- [x] Ganti pengeditan file credential manual dengan helper pairing terminal yang meminta secret tersembunyi, menulis dua field aman, mengunci izin, dan me-restart service. Test helper, UI, parser/retry, typecheck, build, syntax script, serta checksum CDN lulus.

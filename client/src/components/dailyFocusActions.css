@@ -13,6 +13,7 @@
 .action-credential strong, .action-credential span { display: block; font-size: .8rem; }
 .action-credential span { margin-top: .2rem; line-height: 1.4; }
 .action-credential code { display: block; max-height: 7rem; margin-top: .65rem; padding: .65rem; overflow: auto; border: 1px solid #eadfbf; border-radius: .45rem; background: rgba(255,255,255,.46); color: #4b513f; font-size: .7rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pairing-copy-button { margin-top: .65rem; font-size: .76rem; }
 .action-device-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .55rem .75rem; }
 .action-device-row label { font-size: .8rem; font-weight: 700; }
 .action-device-row span { grid-column: 2; color: var(--muted); font-size: .74rem; }
