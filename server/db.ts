@@ -181,7 +181,7 @@ export async function markCompanionDeviceSeen(deviceId: string): Promise<void> {
   if (!db) throw new Error("Database unavailable");
   const current = await getCompanionDevice(deviceId);
   if (!current || current.isArchived) return;
-  if (current.encryptedPairingSecret && current.pairingExpiresAt && current.pairingExpiresAt.getTime() > Date.now()) {
+  if (!current.isDefaultReasoner || (current.encryptedPairingSecret && current.pairingExpiresAt && current.pairingExpiresAt.getTime() > Date.now())) {
     await db.update(companionDevices).set({ isArchived: true, isDefaultReasoner: false }).where(and(eq(companionDevices.userId, current.userId), eq(companionDevices.deviceType, current.deviceType), ne(companionDevices.deviceId, deviceId), eq(companionDevices.isArchived, false)));
   }
   await db.update(companionDevices).set({ lastSeenAt: new Date(), encryptedPairingSecret: null, pairingExpiresAt: null, isDefaultReasoner: true, isArchived: false }).where(eq(companionDevices.deviceId, deviceId));
