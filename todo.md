@@ -2,6 +2,10 @@
 
 # Dashboard and Shell Rework
 
+- [x] Audit seluruh dependency UI dan component source untuk membuktikan pemakaian aktual tanpa menghapus dependency runtime, test, atau tooling yang masih dibutuhkan.
+- [x] Hapus hanya dependency UI dan component yang terbukti tidak dipakai, lalu catat keputusan dan penghematan footprint bundel. Enam scaffold, 41 primitive UI, 30 dependency produksi, dan tiga dependency development dihapus; `next-themes` dipulihkan karena Toaster aktif menggunakannya.
+- [x] Jalankan regression penuh, typecheck, production build, dan bandingkan output bundel setelah cleanup UI. Suite 36 file / 104 test lulus; CSS produksi turun dari 151.53 kB menjadi 90.13 kB (40.5%), sementara JS route aktif tetap 920.14 kB karena scaffold sebelumnya sudah di-tree-shake.
+
 - [x] Tinjau, pasang, dan terapkan Ponytail secara kontekstual sebagai guardrail visual Mintdesk tanpa mengganti identitas Mint Atelier, security boundary, atau data nyata.
 - [x] Terapkan satu perbaikan UI nyata menggunakan ladder Ponytail, dokumentasikan solusi minimum dan yang sengaja tidak ditambahkan, lalu lindungi dengan regression yang sesuai. Notification Center memakai observasi companion dan invalidation query yang sudah ada saat dibuka; tombol Refresh redundan dihapus, Mark all read dipertahankan, dan regression mengunci kedua keputusan.
 
