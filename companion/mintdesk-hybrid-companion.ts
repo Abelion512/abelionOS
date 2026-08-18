@@ -1,5 +1,6 @@
 import { assertLoopbackRouterUrl } from "./dailyFocusPolicy.mjs";
 import { parseActionProposal, parseProposalJson } from "./actionProposalPolicy.mjs";
+import { extractReasonerCompletion, ReasonerProviderLimitedError } from "./reasonerResponsePolicy.mjs";
 
 const apiBase = (process.env.MINTDESK_API_BASE_URL || "").replace(/\/$/, "");
 const deviceId = process.env.MINTDESK_DEVICE_ID || "";
@@ -71,9 +72,7 @@ async function generateProposal(kind: "task.create" | "calendar.create", input: 
       }),
     });
     if (!response.ok) throw new Error(`9router request failed (${response.status})`);
-    const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-    const content = payload.choices?.[0]?.message?.content;
-    if (typeof content !== "string") throw new Error("9router returned no text completion");
+    const content = extractReasonerCompletion(await response.text());
     return parseActionProposal(parseProposalJson(content), kind);
   } finally {
     clearTimeout(timer);
@@ -88,7 +87,11 @@ async function consumeOne() {
     await api(`/api/companion/v2/actions/${job.actionId}/proposal`, { method: "POST", body: JSON.stringify({ proposal }) });
     console.info(`[Mintdesk] proposal ready for action ${job.actionId}`);
   } catch (error) {
-    const code = error instanceof Error && /invalid time range|missing start|invalid start|proposal/.test(error.message) ? "proposal_needs_clarification" : "reasoner_unavailable";
+    const code = error instanceof ReasonerProviderLimitedError
+      ? "reasoner_provider_limited"
+      : error instanceof Error && /invalid time range|missing start|invalid start|proposal/.test(error.message)
+        ? "proposal_needs_clarification"
+        : "reasoner_unavailable";
     await api(`/api/companion/v2/actions/${job.actionId}/error`, { method: "POST", body: JSON.stringify({ code }) });
     console.warn(`[Mintdesk] action ${job.actionId} failed:`, error instanceof Error ? error.message : "unknown error");
   }

@@ -173,3 +173,6 @@
 - [x] Perbaiki parser respons 9router agar JSON dalam markdown fence dapat diekstrak dan tetap ditolak bila tidak memenuhi schema proposal ketat.
 - [ ] Buat credential companion pengganti setelah device lama mengembalikan 401, lalu gunakan alur unduh dan pemasangan yang seluruhnya berawal dari workdir `/media/abelion/Isaf/ican/project`.
 - [x] Izinkan pendaftaran device companion tambahan dari Daily Focus saat device lain sudah ada, sehingga laptop dan server atau credential pengganti dapat dikelola bersamaan.
+- [x] Perbaiki distribusi paket companion agar URL workdir mengembalikan arsip gzip yang tervalidasi sebelum ekstraksi, bukan halaman respons deployment. CDN direct-download terbaru diverifikasi checksum dan memuat installer.
+- [ ] Selaraskan runtime companion Linux dengan parser fenced-JSON yang telah diperbaiki dan verifikasi proposal task disposable mencapai status siap review.
+- [x] Deteksi respons streaming dan penolakan kuota provider 9router secara eksplisit agar Daily Focus tidak mengklasifikasikannya sebagai kegagalan JSON yang ambigu. Regression test, typecheck, production build, dan syntax installer lulus.
