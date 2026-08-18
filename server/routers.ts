@@ -8,7 +8,7 @@ import { storageCreatePresignedUpload } from "./storage";
 import { buildMorningBriefing } from "./morningBriefing";
 import { disconnectGoogleWorkspace } from "./googleOAuth";
 import { decryptPendingPairingSecret, encryptActionInput, encryptPendingPairingSecret, hashDeviceSecret } from "./dailyFocusActionCrypto";
-import { dailyFocusActionKindSchema, parseDailyFocusProposal } from "./dailyFocusActionPolicy";
+import { dailyFocusActionKindSchema, parseDailyFocusProposal, parseExplicitCalendarDraft } from "./dailyFocusActionPolicy";
 import { executeDailyFocusGoogleAction } from "./googleDailyFocusActions";
 import { z } from "zod";
 
@@ -94,6 +94,19 @@ export const appRouter = router({
     })).mutation(async ({ ctx, input }) => {
       const device = await getCompanionDeviceForUser(ctx.user.id, input.deviceId);
       if (!device) throw new Error("Selected companion device was not found");
+      const deterministicProposal = input.kind === "calendar.create" ? parseExplicitCalendarDraft(input.text) : null;
+      if (deterministicProposal) {
+        const action = await createDailyFocusAction({
+          userId: ctx.user.id,
+          deviceId: device.deviceId,
+          kind: deterministicProposal.kind,
+          status: "ready",
+          proposalPayload: JSON.stringify(deterministicProposal),
+          expiresAt: new Date(Date.now() + 10 * 60_000),
+        });
+        await createAuditEvent({ userId: ctx.user.id, action: "daily_focus.calendar_create.prepared", resourceType: "daily_focus_action", resourceId: String(action.id), status: "accepted", details: JSON.stringify({ source: "explicit_structured_draft", deviceId: device.deviceId }) });
+        return { id: action.id, status: action.status, expiresAt: action.expiresAt };
+      }
       const action = await createDailyFocusAction({
         userId: ctx.user.id,
         deviceId: device.deviceId,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasActionScope, parseDailyFocusProposal, proposalSummary } from "./dailyFocusActionPolicy";
+import { hasActionScope, parseDailyFocusProposal, parseExplicitCalendarDraft, proposalSummary } from "./dailyFocusActionPolicy";
 
 describe("Daily Focus action policy", () => {
   it("accepts a bounded Calendar proposal with an explicit timezone", () => {
@@ -35,5 +35,20 @@ describe("Daily Focus action policy", () => {
     })).toThrow();
     expect(hasActionScope("https://www.googleapis.com/auth/gmail.metadata https://www.googleapis.com/auth/gmail.modify", "gmail.trash")).toBe(true);
     expect(hasActionScope("https://www.googleapis.com/auth/gmail.metadata", "gmail.trash")).toBe(false);
+  });
+
+  it("builds a Calendar proposal from an explicit structured draft without a reasoner", () => {
+    expect(parseExplicitCalendarDraft([
+      "Title: Mintdesk verification event",
+      "Start: 2026-08-19T07:00:00.000Z",
+      "End: 2026-08-19T07:10:00.000Z",
+      "Timezone: Asia/Jakarta",
+      "Description: Controlled provider verification",
+    ].join("\n"))).toMatchObject({ kind: "calendar.create", title: "Mintdesk verification event", attendees: [] });
+  });
+
+  it("keeps ambiguous Calendar prose on the companion path", () => {
+    expect(parseExplicitCalendarDraft("Tomorrow afternoon, schedule a review meeting.")).toBeNull();
+    expect(parseExplicitCalendarDraft("Title: Missing end\nStart: 2026-08-19T07:00:00.000Z\nTimezone: Asia/Jakarta")).toBeNull();
   });
 });

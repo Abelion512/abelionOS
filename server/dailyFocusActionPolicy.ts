@@ -69,6 +69,39 @@ export function parseDailyFocusProposal(value: unknown): DailyFocusProposal {
   return dailyFocusProposalSchema.parse(value);
 }
 
+/**
+ * Accepts only an explicit, line-oriented event draft. Ambiguous prose returns
+ * null so it remains on the companion reasoning path rather than guessing.
+ */
+export function parseExplicitCalendarDraft(text: string): DailyFocusProposal | null {
+  const fields = new Map<string, string>();
+  for (const line of text.split(/\r?\n/)) {
+    const match = line.match(/^(Title|Start|End|Timezone|Description):\s*(.*)$/i);
+    if (!match) continue;
+    const key = match[1].toLowerCase();
+    if (fields.has(key)) return null;
+    fields.set(key, match[2].trim());
+  }
+
+  const title = fields.get("title");
+  const start = fields.get("start");
+  const end = fields.get("end");
+  const timeZone = fields.get("timezone");
+  if (!title || !start || !end || !timeZone) return null;
+
+  return parseDailyFocusProposal({
+    kind: "calendar.create",
+    calendarId: "primary",
+    title,
+    description: fields.get("description") || null,
+    start,
+    end,
+    timeZone,
+    attendees: [],
+    reminderMinutes: [],
+  });
+}
+
 export function proposalSummary(proposal: DailyFocusProposal) {
   if (proposal.kind === "task.create") return `Create task: ${proposal.title}`;
   if (proposal.kind === "calendar.create") return `Create event: ${proposal.title}`;
