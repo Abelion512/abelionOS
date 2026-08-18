@@ -58,13 +58,30 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
   const sendPairingToLoopback = (credential: { deviceId: string; deviceSecret: string }) => {
     setPairingStatus("pairing");
     setActionError(null);
-    void fetch("http://127.0.0.1:20129/v1/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(credential) }).then(async (response) => {
-      if (!response.ok) throw new Error("Local companion pairing endpoint was unavailable.");
-      setPairingStatus("paired");
-      setTimeout(() => { setPairingDeviceId(null); void refresh(); }, 6_000);
-    }).catch(() => {
+    void (async () => {
+      const permissions = navigator.permissions as unknown as { query?: (descriptor: { name: "loopback-network" }) => Promise<PermissionStatus> };
+      const permission = await permissions.query?.({ name: "loopback-network" }).catch(() => null);
+      if (permission?.state === "denied") throw new Error("Browser permission for local network access is denied. Allow it for Mintdesk, then try again.");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 6_000);
+      try {
+        const init = { method: "POST", mode: "cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(credential), signal: controller.signal, targetAddressSpace: "loopback" } as RequestInit & { targetAddressSpace: "loopback" };
+        const response = await fetch("http://127.0.0.1:20129/v1/pair", init);
+        if (!response.ok) throw new Error("Local companion pairing endpoint was unavailable.");
+        setPairingStatus("paired");
+        setTimeout(() => { setPairingDeviceId(null); void refresh(); }, 6_000);
+      } catch (error) {
+        const message = error instanceof DOMException && error.name === "AbortError"
+          ? "Local pairing did not reply within six seconds. Check the companion status, then try again."
+          : error instanceof Error ? error.message : "Local pairing could not be completed.";
+        setPairingStatus("idle");
+        setActionError(message);
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    })().catch((error) => {
       setPairingStatus("idle");
-      setActionError("Local pairing endpoint is unavailable. Start or update the companion, then try again.");
+      setActionError(error instanceof Error ? error.message : "Local pairing could not be completed.");
     });
   };
   const enroll = trpc.companionDevices.enroll.useMutation({ onSuccess: (result) => { setPairingDeviceId(result.deviceId); setPairingStatus("idle"); setDeviceName(""); setShowEnrollment(false); void refresh(); }, onError: (error) => setActionError(error.message) });

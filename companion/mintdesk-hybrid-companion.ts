@@ -47,6 +47,7 @@ async function writeLoopbackPairing(payload: { deviceId: string; deviceSecret: s
 function startLoopbackPairingServer() {
   const server = createServer((request, response) => {
     const origin = request.headers.origin;
+    console.info(`[Mintdesk] loopback pairing request ${request.method ?? "unknown"} ${request.url ?? ""}`);
     pairingHeaders(response, origin);
     if (origin !== pairingOrigin) {
       response.statusCode = 403;

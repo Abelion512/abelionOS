@@ -98,6 +98,15 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.queryByText(/MINTDESK_DEVICE_SECRET/i)).toBeNull();
   });
 
+  it("does not leave browser pairing as an unbounded UI state when the local endpoint is unavailable", async () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    mocks.devices.mockReturnValue([{ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52", name: "Mint laptop", deviceType: "laptop", online: false, pendingPairing: true, pairingExpiresAt: new Date("2026-08-17T01:10:00.000Z") }]);
+    mocks.resumePairing.mockImplementation((_input: unknown) => undefined);
+    render(<MorningBriefing />);
+    fireEvent.click(screen.getByRole("button", { name: "Pair this browser" }));
+    expect(mocks.resumePairing).toHaveBeenCalledWith({ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52" });
+  });
+
   it("explains a provider-limited action without rendering the provider response", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.actions.mockReturnValue([{ id: 1, status: "error", proposalPayload: null, errorCode: "reasoner_provider_limited", expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
