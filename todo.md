@@ -2,6 +2,9 @@
 
 # Dashboard and Shell Rework
 
+- [x] Tipiskan tinggi, padding, label, dan active treatment navigasi Workspace Shell agar rail expanded tidak terasa gemuk.
+- [x] Verifikasi Workspace Shell yang telah ditipiskan pada 375px dengan drawer terbuka dan active route tetap jelas, lalu dokumentasikan hasilnya sebelum checkpoint. Regression membuka/menutup drawer serta mempertahankan `aria-current`; screenshot 375px menjaga kontrol drawer ringkas.
+
 - [x] Riset pola dialog/sheet dan disclosure untuk data operasional panjang menggunakan referensi desain yang diberikan pengguna. Lihat `docs/ON_DEMAND_DETAIL_RESEARCH.md`.
 - [x] Ubah Activity menjadi ringkasan kartu dengan jumlah terbatas dan dialog detail audit yang dapat ditutup/diakses keyboard.
 - [x] Ubah bukti Daily Focus yang panjang menjadi kartu ringkasan dengan detail on-demand, tanpa menghapus evidence atau membuat konten dummy.
