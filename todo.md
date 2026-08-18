@@ -176,3 +176,4 @@
 - [x] Perbaiki distribusi paket companion agar URL workdir mengembalikan arsip gzip yang tervalidasi sebelum ekstraksi, bukan halaman respons deployment. CDN direct-download terbaru diverifikasi checksum dan memuat installer.
 - [ ] Selaraskan runtime companion Linux dengan parser fenced-JSON yang telah diperbaiki dan verifikasi proposal task disposable mencapai status siap review.
 - [x] Deteksi respons streaming dan penolakan kuota provider 9router secara eksplisit agar Daily Focus tidak mengklasifikasikannya sebagai kegagalan JSON yang ambigu. Regression test, typecheck, production build, dan syntax installer lulus.
+- [x] Terapkan retry bounded hingga 10 percobaan untuk alias 9router model kombinasi yang merotasi provider gratis, dengan jeda dan batas waktu sehingga tidak menjadi polling tanpa akhir atau menghasilkan aksi Google otomatis. Test parser/retry/UI, typecheck, build, syntax installer, serta checksum CDN lulus.

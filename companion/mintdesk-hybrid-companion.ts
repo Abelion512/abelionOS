@@ -1,6 +1,7 @@
 import { assertLoopbackRouterUrl } from "./dailyFocusPolicy.mjs";
 import { parseActionProposal, parseProposalJson } from "./actionProposalPolicy.mjs";
 import { extractReasonerCompletion, ReasonerProviderLimitedError } from "./reasonerResponsePolicy.mjs";
+import { retryForProviderRotation } from "./reasonerRetryPolicy.mjs";
 
 const apiBase = (process.env.MINTDESK_API_BASE_URL || "").replace(/\/$/, "");
 const deviceId = process.env.MINTDESK_DEVICE_ID || "";
@@ -10,6 +11,8 @@ const routerToken = process.env.MINTDESK_9ROUTER_TOKEN || "";
 const routerModel = process.env.MINTDESK_9ROUTER_MODEL || "claude-work";
 const defaultTimeZone = process.env.MINTDESK_TIME_ZONE || "Asia/Jakarta";
 const pollMilliseconds = Math.max(5_000, Number(process.env.MINTDESK_POLL_MS || 15_000));
+const reasonerMaxAttempts = Math.min(10, Math.max(1, Number(process.env.MINTDESK_REASONER_MAX_ATTEMPTS || 10)));
+const reasonerRetryDelayMilliseconds = Math.min(15_000, Math.max(0, Number(process.env.MINTDESK_REASONER_RETRY_DELAY_MS || 3_000)));
 
 if (!apiBase || !deviceId || !deviceSecret || !routerUrl || !routerToken) {
   throw new Error("MINTDESK_API_BASE_URL, MINTDESK_DEVICE_ID, MINTDESK_DEVICE_SECRET, MINTDESK_9ROUTER_URL, and MINTDESK_9ROUTER_TOKEN are required");
@@ -55,9 +58,11 @@ function proposalPrompt(kind: string, input: string) {
 
 async function generateProposal(kind: "task.create" | "calendar.create", input: string) {
   const completionUrl = new URL("chat/completions", validatedRouterUrl);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20_000);
-  try {
+  return retryForProviderRotation(async (attempt) => {
+    if (attempt > 1) console.info(`[Mintdesk] waiting for provider rotation (${attempt}/${reasonerMaxAttempts})`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20_000);
+    try {
     const response = await fetch(completionUrl, {
       method: "POST",
       signal: controller.signal,
@@ -74,9 +79,10 @@ async function generateProposal(kind: "task.create" | "calendar.create", input: 
     if (!response.ok) throw new Error(`9router request failed (${response.status})`);
     const content = extractReasonerCompletion(await response.text());
     return parseActionProposal(parseProposalJson(content), kind);
-  } finally {
-    clearTimeout(timer);
-  }
+    } finally {
+      clearTimeout(timer);
+    }
+  }, { maxAttempts: reasonerMaxAttempts, delayMilliseconds: reasonerRetryDelayMilliseconds });
 }
 
 async function consumeOne() {

@@ -10,6 +10,7 @@ cp "$(dirname "$0")/mintdesk-hybrid-companion.ts" "$APP_DIR/mintdesk-hybrid-comp
 cp "$(dirname "$0")/dailyFocusPolicy.mjs" "$APP_DIR/dailyFocusPolicy.mjs"
 cp "$(dirname "$0")/actionProposalPolicy.mjs" "$APP_DIR/actionProposalPolicy.mjs"
 cp "$(dirname "$0")/reasonerResponsePolicy.mjs" "$APP_DIR/reasonerResponsePolicy.mjs"
+cp "$(dirname "$0")/reasonerRetryPolicy.mjs" "$APP_DIR/reasonerRetryPolicy.mjs"
 
 if [[ ! -f "$CONFIG_DIR/hybrid-companion.env" ]]; then
   cat > "$CONFIG_DIR/hybrid-companion.env" <<'EOF'
