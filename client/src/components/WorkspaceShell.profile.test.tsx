@@ -18,4 +18,13 @@ describe("Workspace profile menu", () => {
     expect(await screen.findByText("Connections")).toBeTruthy();
     expect(screen.getByText("Settings")).toBeTruthy();
   });
+
+  it("collapses desktop navigation to icons and persists the preference", () => {
+    window.localStorage.clear();
+    const { container } = render(<WorkspaceShell><main>Workspace content</main></WorkspaceShell>);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse navigation" }));
+    expect(container.querySelector(".desktop-shell")?.classList.contains("sidebar-is-collapsed")).toBe(true);
+    expect(window.localStorage.getItem("mintdesk.sidebar.collapsed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Expand navigation" })).toBeTruthy();
+  });
 });

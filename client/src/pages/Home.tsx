@@ -40,36 +40,34 @@ export default function Home() {
 
   useEffect(() => {
     void refreshRuntime();
-    const timer = window.setInterval(() => void refreshRuntime(), 15_000);
-    return () => window.clearInterval(timer);
+    const refreshOnVisible = () => { if (document.visibilityState === "visible") void refreshRuntime(); };
+    document.addEventListener("visibilitychange", refreshOnVisible);
+    return () => document.removeEventListener("visibilitychange", refreshOnVisible);
   }, [refreshRuntime]);
 
   const bridgeOnline = healthState.online && metrics !== null;
-  const bridgeTitle = bridgeOnline ? "Companion online" : "Companion unavailable";
-  const bridgeDetail = bridgeOnline
-    ? `Receiving measurements from ${metrics.hostname}.`
-    : bridgeError || healthState.detail || "No measurement has arrived from the Linux companion.";
+  const bridgeTitle = bridgeOnline ? metrics.hostname : "No bridge";
+  const bridgeStatus = bridgeOnline ? "Online" : "Unavailable";
 
   return <main className="main-canvas">
     <div className="content-wrap dashboard-content">
       <h1 className="sr-only">Dashboard</h1>
-      <section className="runtime-grid" aria-label="Operational status">
+      <section className="runtime-grid" aria-label="System status">
         <article className="panel runtime-panel">
-          <header className="runtime-panel-header"><span className="panel-kicker">Local runtime</span><span className={`source-state ${bridgeOnline ? "ready" : "unavailable"}`}>{bridgeOnline ? "Live" : "Unavailable"}</span></header>
-          <div className="runtime-heading"><span className="runtime-icon"><Cpu size={21} /></span><div><h2>{bridgeTitle}</h2><p>{bridgeDetail}</p></div></div>
+          <header className="runtime-panel-header"><span className="runtime-icon"><Cpu size={21} /></span><span className={`source-state ${bridgeOnline ? "ready" : "unavailable"}`}>{bridgeStatus}</span></header>
+          <div className="runtime-heading"><div><h2>{bridgeTitle}</h2>{!bridgeOnline && <p>{bridgeError || healthState.detail || "No measurement"}</p>}</div></div>
           <dl className="runtime-facts"><div><dt>Uptime</dt><dd>{metrics ? formatUptime(metrics.uptimeSeconds) : "—"}</dd></div><div><dt>Platform</dt><dd>{metrics?.platform || "—"}</dd></div></dl>
           <div className="runtime-metrics" aria-label="Current Linux measurements">
             <div><span><Cpu size={14} /> CPU</span><strong>{metrics ? `${metrics.cpuPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.cpuPercent ?? 0}%` }} /></i></div>
             <div><span><HardDrive size={14} /> Memory</span><strong>{metrics ? `${metrics.memory.usedPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.memory.usedPercent ?? 0}%` }} /></i></div>
             <div><span><Gauge size={14} /> Load</span><strong>{metrics ? metrics.loadAverage[0]?.toFixed(2) : "—"}</strong><i><b style={{ width: `${Math.min((metrics?.loadAverage[0] ?? 0) * 25, 100)}%` }} /></i></div>
           </div>
-          <p className="runtime-freshness">Updated {formatUpdatedAt(metrics?.checkedAt || healthState.checkedAt)} · refreshes every 15 seconds while this dashboard is open.</p>
+          <p className="runtime-freshness">{formatUpdatedAt(metrics?.checkedAt || healthState.checkedAt)}</p>
         </article>
         <article className="panel workspace-source-panel">
-          <header className="runtime-panel-header"><span className="panel-kicker">Workspace sources</span><span className={`source-state ${googleScopeState.status === "connected" ? "ready" : "unavailable"}`}>{google.isLoading ? "Checking" : googleScopeState.status}</span></header>
-          <div className="workspace-source-heading"><span className="runtime-icon"><ShieldCheck size={21} /></span><div><h2>Google Workspace</h2><p>{googleScopeState.detail}</p></div></div>
+          <header className="runtime-panel-header"><span className="runtime-icon"><ShieldCheck size={21} /></span><span className={`source-state ${googleScopeState.status === "connected" ? "ready" : "unavailable"}`}>{google.isLoading ? "Checking" : googleScopeState.status}</span></header>
+          <div className="workspace-source-heading"><div><h2>Google</h2></div></div>
           {googleScopeState.status === "connected" && <div className="source-capabilities" aria-label="Available Google Workspace sources"><span>Calendar</span><span>Gmail</span><span>Tasks</span></div>}
-          <p className="workspace-source-note">Detailed evidence and reviewed actions remain in Daily Focus. Connection settings remain in your profile menu.</p>
         </article>
       </section>
       <section className="dashboard-process" aria-label="Process controls"><ProcessPanel /></section>

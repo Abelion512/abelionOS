@@ -2,6 +2,11 @@
 
 # Dashboard and Shell Rework
 
+- [x] Tambahkan dan dokumentasikan minimal satu referensi dashboard produk nyata yang dipakai sebagai acuan komposisi dan status, lalu selaraskan `docs/DASHBOARD-UI-RESEARCH.md`. Vercel Observability dipakai sebagai referensi pemisahan monitoring ringkas dan detail investigasi.
+- [x] Buang copy penjelas yang tidak memandu keputusan pada Dashboard dan gunakan status singkat yang hanya menjelaskan nilai operasional saat ini.
+- [x] Terapkan sidebar expand-collapse yang menyimpan preferensi, memiliki target interaksi jelas, dan tidak mengubah perilaku navigasi mobile.
+- [x] Tetapkan mekanisme regresi visual Dashboard yang dapat dijalankan ulang untuk desktop dan 375px mobile, atau dokumentasikan alasan validasi screenshot manual yang tepat untuk proyek ini. Screenshot terkelola pada 1280px dan 375px diwajibkan sebelum checkpoint dan dipasangkan dengan component regression karena timestamp serta source availability dapat berubah secara sah.
+
 - [x] Rekonstruksi Dashboard agar status Linux dan Google Workspace menampilkan sumber nyata atau kondisi unavailable yang ringkas, tanpa breadcrumb, label, kartu, atau waktu pemeriksaan yang redundan. Kategori integrasi eksternal yang belum memiliki sumber nyata sengaja dihapus dari Dashboard, bukan dipresentasikan sebagai placeholder unavailable.
 - [x] Sederhanakan Workspace Shell: hapus penanda aktif berlapis, rapikan identitas/profil, dan pindahkan konteks autentikasi serta konfigurasi ke menu profil.
 - [x] Evaluasi pola expand-collapse sidebar sebagai pekerjaan terpisah setelah fondasi status backend, server, dan autentikasi/otorisasi real-time disetujui; jangan membuat affordance palsu pada iterasi ini. Keputusan iterasi ini: ditunda sampai pengguna menyetujui scope status real-time, sehingga tidak ada kontrol collapse inert.

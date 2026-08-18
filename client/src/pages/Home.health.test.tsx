@@ -26,11 +26,11 @@ describe("Overview health polling", () => {
     mocks.metrics.mockReturnValue(new Promise(() => undefined));
     render(<Home />);
     expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
-    expect(screen.getByText("Companion unavailable")).toBeTruthy();
+    expect(screen.getByText("No bridge")).toBeTruthy();
     expect(screen.queryByText("Weather is unavailable.")).toBeNull();
   });
 
-  it("renders connected health then switches to unavailable after the next poll fails", async () => {
+  it("renders connected health then refreshes when the dashboard becomes visible", async () => {
     vi.useFakeTimers();
     mocks.health
       .mockResolvedValueOnce({ ok: true, service: "mintdesk-bridge", version: "1.0.0" })
@@ -40,13 +40,14 @@ describe("Overview health polling", () => {
 
     render(<Home />);
     await flush();
-    expect(screen.getByText("Companion online")).toBeTruthy();
-    expect(screen.getByText("Google Workspace")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "linux" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Google" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /refresh linux/i })).toBeNull();
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
     await flush();
-    expect(screen.getByText("Companion unavailable")).toBeTruthy();
+    expect(screen.getByText("No bridge")).toBeTruthy();
     expect(screen.getByText("Bridge offline")).toBeTruthy();
   });
 });

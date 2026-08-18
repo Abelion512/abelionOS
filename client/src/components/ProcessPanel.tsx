@@ -23,8 +23,9 @@ export function ProcessPanel() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(() => void load(), 15_000);
-    return () => window.clearInterval(timer);
+    const refreshOnVisible = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", refreshOnVisible);
+    return () => document.removeEventListener("visibilitychange", refreshOnVisible);
   }, [load]);
 
   const terminate = async (process: BridgeProcess) => {
