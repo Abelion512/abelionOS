@@ -170,6 +170,7 @@
 - [x] Tambahkan test otomatis untuk scope, ownership, preview, failure policy, audit boundary, responsive layout, serta verifikasi build sebelum checkpoint.
 - [x] Jalankan E2E nyata proposal task disposable setelah Bun companion Linux aktif dan re-consent scope action Google selesai. Lifecycle `queued` → `processing` → `ready` → `rejected` terverifikasi pada action `90001`, tanpa aksi Google dieksekusi.
 - [ ] Validasi Calendar create/delete dan Gmail Trash terhadap data Google nyata hanya setelah persetujuan eksplisit untuk perubahan provider tersebut.
+- [x] Dokumentasikan keputusan runtime: pnpm tetap untuk web app dan Bun hanya untuk companion; Gmail draft/send tetap di luar scope karena `gmail.compose` tidak diizinkan. Lihat `docs/RUNTIME-DECISIONS.md`.
 - [x] Buat paket companion Bun mandiri beserta panduan instalasi singkat agar Linux laptop/server tidak memerlukan source penuh Mintdesk.
 - [x] Perbaiki parser respons 9router agar JSON dalam markdown fence dapat diekstrak dan tetap ditolak bila tidak memenuhi schema proposal ketat.
 - [x] Buat credential companion pengganti setelah device lama mengembalikan 401, lalu gunakan alur unduh dan pemasangan yang seluruhnya berawal dari workdir `/media/abelion/Isaf/ican/project`. Device v6 dipasangkan melalui browser-ke-loopback tanpa token di chat.
