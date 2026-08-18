@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CircleStop, Cpu, RefreshCw } from "lucide-react";
+import { CircleStop, Cpu } from "lucide-react";
 import { toast } from "sonner";
 import { bridgeApi, canRequestProcessTermination, type BridgeProcess } from "@/lib/bridge";
 
@@ -21,7 +21,11 @@ export function ProcessPanel() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 15_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
 
   const terminate = async (process: BridgeProcess) => {
     if (!canRequestProcessTermination(process)) return;
@@ -36,8 +40,8 @@ export function ProcessPanel() {
   };
 
   return <article className="process-card panel">
-    <div className="section-header"><div><p className="panel-kicker">Linux bridge</p><h2>Process control</h2></div><button className="icon-button subtle" aria-label="Refresh processes" onClick={() => void load()}><RefreshCw size={16} /></button></div>
-    {loading && <div className="connection-empty process-empty"><strong>Reading process table…</strong><span>Waiting for the local companion.</span></div>}
+    <div className="section-header"><div><p className="panel-kicker">Processes</p><h2>Controlled processes</h2></div></div>
+    {loading && <div className="connection-empty process-empty"><strong>Reading the process table…</strong><span>Waiting for the local companion.</span></div>}
     {!loading && error && <div className="connection-empty process-empty"><strong>Process list unavailable.</strong><span>{error}</span></div>}
     {!loading && !error && processes.length === 0 && <div className="connection-empty process-empty"><strong>No user processes returned.</strong><span>The bridge returned an empty process list.</span></div>}
     {!loading && !error && processes.length > 0 && <div className="process-list">{processes.slice(0, 8).map((process) => <div className="process-row" key={process.pid}><span className="process-glyph"><Cpu size={15} /></span><div className="process-copy"><strong>{process.command}</strong><span>PID {process.pid} · CPU {process.cpuPercent}% · MEM {process.memoryPercent}%</span></div><button className="kill-button" disabled={!canRequestProcessTermination(process)} aria-label={`Terminate ${process.command}`} onClick={() => void terminate(process)}><CircleStop size={15} /></button></div>)}</div>}

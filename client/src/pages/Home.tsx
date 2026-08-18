@@ -1,9 +1,11 @@
 import { ProcessPanel } from "@/components/ProcessPanel";
 import { bridgeApi, type BridgeMetrics } from "@/lib/bridge";
 import { initialBridgeHealthState } from "@/lib/bridgeHealthState";
-import { pollBridgeHealth, startBridgeHealthPolling } from "@/lib/bridgeHealthPolling";
-import { Activity, ShieldAlert } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { pollBridgeHealth } from "@/lib/bridgeHealthPolling";
+import { getGoogleConnectionScopeState } from "@/lib/googleConnectionScopeState";
+import { trpc } from "@/lib/trpc";
+import { Cpu, Gauge, HardDrive, ShieldCheck } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 
 function formatUptime(seconds: number) {
   const days = Math.floor(seconds / 86400);
@@ -12,28 +14,65 @@ function formatUptime(seconds: number) {
   return `${days}d ${hours}h ${minutes}m`;
 }
 
+function formatUpdatedAt(value?: Date | string | null) {
+  if (!value) return "No reading yet";
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.valueOf()) ? "No reading yet" : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
 export default function Home() {
   const [metrics, setMetrics] = useState<BridgeMetrics | null>(null);
   const [bridgeError, setBridgeError] = useState<string | null>(null);
   const [healthState, setHealthState] = useState(initialBridgeHealthState);
-  const checkHealth = async () => pollBridgeHealth(bridgeApi.health, setHealthState);
-  const refresh = async () => {
-    await checkHealth();
-    try { setMetrics(await bridgeApi.metrics()); setBridgeError(null); }
-    catch (reason) { setMetrics(null); setBridgeError(reason instanceof Error ? reason.message : "Linux companion unavailable"); }
-  };
+  const google = trpc.google.status.useQuery();
+  const googleScopeState = getGoogleConnectionScopeState(google.data?.connected === true, google.data?.scopes);
 
-  useEffect(() => { void refresh(); }, []);
-  useEffect(() => startBridgeHealthPolling({ request: bridgeApi.health, onState: setHealthState }), []);
-  const statusLabel = healthState.online ? "Connected" : "Unavailable";
+  const refreshRuntime = useCallback(async () => {
+    await pollBridgeHealth(bridgeApi.health, setHealthState);
+    try {
+      setMetrics(await bridgeApi.metrics());
+      setBridgeError(null);
+    } catch (reason) {
+      setMetrics(null);
+      setBridgeError(reason instanceof Error ? reason.message : "Linux companion unavailable");
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRuntime();
+    const timer = window.setInterval(() => void refreshRuntime(), 15_000);
+    return () => window.clearInterval(timer);
+  }, [refreshRuntime]);
+
+  const bridgeOnline = healthState.online && metrics !== null;
+  const bridgeTitle = bridgeOnline ? "Companion online" : "Companion unavailable";
+  const bridgeDetail = bridgeOnline
+    ? `Receiving measurements from ${metrics.hostname}.`
+    : bridgeError || healthState.detail || "No measurement has arrived from the Linux companion.";
 
   return <main className="main-canvas">
-    <header className="topbar"><div className="breadcrumb"><span>Workspace</span><strong>Dashboard</strong></div><div className="topbar-actions"><span className={`status-chip ${healthState.online ? "" : "status-unavailable"}`}><span /> Linux bridge {statusLabel.toLowerCase()}</span><button className="power-button" onClick={() => void refresh()}><Activity size={16} /><span>Refresh Linux</span></button></div></header>
-    <div className="content-wrap">
-      <section className="welcome-row"><div><p className="eyebrow"><span className="eyebrow-line" /> {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p><h1>Linux workspace</h1></div></section>
-      <section className="hero-grid"><article className="system-hero panel"><div className="hero-content"><div className="hero-topline"><span className={`status-chip ${healthState.online ? "" : "status-unavailable"}`}><span /> Linux bridge {statusLabel.toLowerCase()}</span></div><div className="hero-heading"><p className="panel-kicker">System overview</p><h2>{healthState.online ? "Linux companion connected" : "Linux companion unavailable"}</h2><p className="hero-description">{bridgeError || healthState.detail || "Metrics are read from the local companion when it is available."}</p></div><div className="hero-meta"><div><p>Health checked</p><strong>{healthState.checkedAt ? healthState.checkedAt.toLocaleTimeString() : "Not checked"}</strong></div><div><p>Uptime</p><strong>{metrics ? formatUptime(metrics.uptimeSeconds) : "Unavailable"}</strong></div><div><p>Platform</p><strong>{metrics?.platform || "Unavailable"}</strong></div></div><div className="system-metrics"><div><span>CPU</span><strong>{metrics ? `${metrics.cpuPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.cpuPercent ?? 0}%` }} /></i></div><div><span>Memory</span><strong>{metrics ? `${metrics.memory.usedPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.memory.usedPercent ?? 0}%` }} /></i></div><div><span>Load</span><strong>{metrics ? metrics.loadAverage[0]?.toFixed(2) : "—"}</strong><i><b style={{ width: `${Math.min((metrics?.loadAverage[0] ?? 0) * 25, 100)}%` }} /></i></div></div></div></article><article className="weather-card panel"><div className="card-heading"><div><p className="panel-kicker">External provider</p><h3>Not configured</h3></div><ShieldAlert size={25} className="weather-icon" /></div><div className="connection-empty"><strong>Weather is unavailable.</strong><span>No provider or location permission has been configured. This card will remain unavailable.</span></div></article></section>
-      <section className="lower-grid"><ProcessPanel /><article className="calendar-card panel"><div className="section-header"><div><p className="panel-kicker">Google Workspace</p><h2>Not connected</h2></div><ShieldAlert size={20} className="calendar-symbol" /></div><div className="connection-empty calendar-empty"><strong>Calendar and Gmail are not available to this app yet.</strong><span>The session connector is separate from the deployed app OAuth flow. No events or messages are fabricated.</span></div></article></section>
-      <footer className="bottom-status"><span><span className="live-dot" /> {healthState.online ? "Linux bridge health online" : "Linux bridge health unavailable"}</span><span>mintdesk</span><span>{healthState.checkedAt ? `Health checked ${healthState.checkedAt.toLocaleTimeString()}` : "Not checked"}</span></footer>
+    <div className="content-wrap dashboard-content">
+      <h1 className="sr-only">Dashboard</h1>
+      <section className="runtime-grid" aria-label="Operational status">
+        <article className="panel runtime-panel">
+          <header className="runtime-panel-header"><span className="panel-kicker">Local runtime</span><span className={`source-state ${bridgeOnline ? "ready" : "unavailable"}`}>{bridgeOnline ? "Live" : "Unavailable"}</span></header>
+          <div className="runtime-heading"><span className="runtime-icon"><Cpu size={21} /></span><div><h2>{bridgeTitle}</h2><p>{bridgeDetail}</p></div></div>
+          <dl className="runtime-facts"><div><dt>Uptime</dt><dd>{metrics ? formatUptime(metrics.uptimeSeconds) : "—"}</dd></div><div><dt>Platform</dt><dd>{metrics?.platform || "—"}</dd></div></dl>
+          <div className="runtime-metrics" aria-label="Current Linux measurements">
+            <div><span><Cpu size={14} /> CPU</span><strong>{metrics ? `${metrics.cpuPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.cpuPercent ?? 0}%` }} /></i></div>
+            <div><span><HardDrive size={14} /> Memory</span><strong>{metrics ? `${metrics.memory.usedPercent}%` : "—"}</strong><i><b style={{ width: `${metrics?.memory.usedPercent ?? 0}%` }} /></i></div>
+            <div><span><Gauge size={14} /> Load</span><strong>{metrics ? metrics.loadAverage[0]?.toFixed(2) : "—"}</strong><i><b style={{ width: `${Math.min((metrics?.loadAverage[0] ?? 0) * 25, 100)}%` }} /></i></div>
+          </div>
+          <p className="runtime-freshness">Updated {formatUpdatedAt(metrics?.checkedAt || healthState.checkedAt)} · refreshes every 15 seconds while this dashboard is open.</p>
+        </article>
+        <article className="panel workspace-source-panel">
+          <header className="runtime-panel-header"><span className="panel-kicker">Workspace sources</span><span className={`source-state ${googleScopeState.status === "connected" ? "ready" : "unavailable"}`}>{google.isLoading ? "Checking" : googleScopeState.status}</span></header>
+          <div className="workspace-source-heading"><span className="runtime-icon"><ShieldCheck size={21} /></span><div><h2>Google Workspace</h2><p>{googleScopeState.detail}</p></div></div>
+          {googleScopeState.status === "connected" && <div className="source-capabilities" aria-label="Available Google Workspace sources"><span>Calendar</span><span>Gmail</span><span>Tasks</span></div>}
+          <p className="workspace-source-note">Detailed evidence and reviewed actions remain in Daily Focus. Connection settings remain in your profile menu.</p>
+        </article>
+      </section>
+      <section className="dashboard-process" aria-label="Process controls"><ProcessPanel /></section>
     </div>
   </main>;
 }

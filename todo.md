@@ -1,5 +1,12 @@
 # Operational Dashboard Upgrade
 
+# Dashboard and Shell Rework
+
+- [x] Rekonstruksi Dashboard agar status Linux dan Google Workspace menampilkan sumber nyata atau kondisi unavailable yang ringkas, tanpa breadcrumb, label, kartu, atau waktu pemeriksaan yang redundan. Kategori integrasi eksternal yang belum memiliki sumber nyata sengaja dihapus dari Dashboard, bukan dipresentasikan sebagai placeholder unavailable.
+- [x] Sederhanakan Workspace Shell: hapus penanda aktif berlapis, rapikan identitas/profil, dan pindahkan konteks autentikasi serta konfigurasi ke menu profil.
+- [x] Evaluasi pola expand-collapse sidebar sebagai pekerjaan terpisah setelah fondasi status backend, server, dan autentikasi/otorisasi real-time disetujui; jangan membuat affordance palsu pada iterasi ini. Keputusan iterasi ini: ditunda sampai pengguna menyetujui scope status real-time, sehingga tidak ada kontrol collapse inert.
+- [x] Tambahkan regresi UI dan verifikasi desktop/mobile untuk dashboard serta shell setelah perombakan visual. Regresi Dashboard/Shell, typecheck, build, dan screenshot desktop/mobile lulus; breakpoint mobile dua-kolom diperbaiki setelah verifikasi pertama.
+
 - [x] Tetapkan batasan keamanan untuk metrics, Google Workspace, startup, dan process termination.
 - [x] Konfirmasi folder lokal terikat untuk Linux bridge atau desktop companion. Bind Linux tidak tersedia karena Manus Desktop hanya menyediakan installer macOS; jalur installer manual Linux telah didokumentasikan.
 - [x] Upgrade project ke full-stack dan siapkan server-side API boundary.
