@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getBridgeConfig: vi.fn(), health: vi.fn(), dailyFocus: vi.fn(),
-  devices: vi.fn(), enroll: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
+  devices: vi.fn(), actions: vi.fn(), enroll: vi.fn(), requestProposal: vi.fn(), prepareTrash: vi.fn(), prepareDelete: vi.fn(), confirm: vi.fn(), reject: vi.fn(), invalidate: vi.fn(),
 }));
 
 vi.mock("@/lib/bridge", () => ({ bridgeApi: { health: mocks.health, dailyFocus: mocks.dailyFocus }, getBridgeConfig: mocks.getBridgeConfig }));
@@ -32,7 +32,7 @@ vi.mock("@/lib/trpc", () => ({
       enroll: { useMutation: () => ({ mutate: mocks.enroll, isPending: false }) },
     },
     dailyFocusActions: {
-      list: { useQuery: () => ({ data: [] }) },
+      list: { useQuery: () => ({ data: mocks.actions() }) },
       requestProposal: { useMutation: () => ({ mutate: mocks.requestProposal, isPending: false }) },
       prepareGmailTrash: { useMutation: () => ({ mutate: mocks.prepareTrash, isPending: false }) },
       prepareCalendarDelete: { useMutation: () => ({ mutate: mocks.prepareDelete, isPending: false }) },
@@ -45,7 +45,7 @@ vi.mock("@/lib/trpc", () => ({
 import MorningBriefing from "./MorningBriefing";
 
 describe("Morning Briefing 5W1H", () => {
-  afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.devices.mockReturnValue([]); });
+  afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.devices.mockReturnValue([]); mocks.actions.mockReturnValue([]); });
 
   it("separates Calendar and Gmail and exposes facts without rendering an email body", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
@@ -86,6 +86,14 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.getByText("Add another reasoning device")).toBeTruthy();
     expect(screen.getByPlaceholderText("e.g. Mint laptop")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeTruthy();
+  });
+
+  it("explains a provider-limited action without rendering the provider response", () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    mocks.actions.mockReturnValue([{ id: 1, status: "error", proposalPayload: null, errorCode: "reasoner_provider_limited", expiresAt: new Date("2026-08-17T02:00:00.000Z") }]);
+    render(<MorningBriefing />);
+    expect(screen.getByText(/selected local provider has no available quota/i)).toBeTruthy();
+    expect(screen.queryByText(/prevent abuse of free resources/i)).toBeNull();
   });
 
   it("lets the user mark a structured priority as done without changing the source evidence", async () => {

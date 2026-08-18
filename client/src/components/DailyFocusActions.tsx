@@ -28,6 +28,13 @@ function proposalCopy(raw: string | null) {
   return "Proposal is ready for review.";
 }
 
+function actionErrorCopy(code: string) {
+  if (code === "reasoner_provider_limited") return "The selected local provider has no available quota. Select a provider or model with available access; no Google change was proposed.";
+  if (code === "proposal_needs_clarification") return "The proposal needs clearer details before it can be reviewed. No Google change was proposed.";
+  if (code === "reasoner_unavailable") return "Local reasoning is unavailable. No Google change was proposed.";
+  return `Reason: ${code}`;
+}
+
 export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMessages: InboxMessage[] | null; calendarEvents: CalendarEvent[] | null }) {
   const utils = trpc.useUtils();
   const devices = trpc.companionDevices.list.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -78,6 +85,6 @@ export function DailyFocusActions({ inboxMessages, calendarEvents }: { inboxMess
 
     {calendarEvents !== null && calendarEvents.some((event) => event.organizerSelf) && <div className="action-evidence-list"><div><strong>Calendar deletion</strong><span>Only events organized by your connected Google account can be prepared here.</span></div><div className="action-select-list">{calendarEvents.filter((event) => event.organizerSelf).map((event) => <div className="action-record" key={event.id}><span><b>{event.summary}</b><small>{formatDate(event.start)}</small></span><Button type="button" variant="outline" onClick={() => prepareDelete.mutate({ calendarId: "primary", eventId: event.id, title: event.summary, start: new Date(event.start).toISOString(), organizerSelf: true })} disabled={prepareDelete.isPending}><Trash2 size={15} /> Review deletion</Button></div>)}</div></div>}
 
-    {(actions.data ?? []).length > 0 && <div className="action-history"><strong>Action review</strong>{actions.data?.map((action) => <article key={action.id} className={`action-history-record status-${action.status}`}><div><span className="action-status">{action.status}</span><p>{proposalCopy(action.proposalPayload)}</p><small>{action.errorCode ? `Reason: ${action.errorCode}` : `Expires ${formatDate(action.expiresAt)}`}</small></div>{action.status === "ready" && <div className="action-history-buttons"><AlertDialog><AlertDialogTrigger asChild><Button type="button"><Check size={15} /> Confirm</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm this Google change?</AlertDialogTitle><AlertDialogDescription>{proposalCopy(action.proposalPayload)}. Mintdesk will execute only this reviewed action.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => confirm.mutate({ actionId: action.id })}>Confirm change</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog><Button type="button" variant="outline" onClick={() => reject.mutate({ actionId: action.id })}><X size={15} /> Reject</Button></div>}</article>)}</div>}
+    {(actions.data ?? []).length > 0 && <div className="action-history"><strong>Action review</strong>{actions.data?.map((action) => <article key={action.id} className={`action-history-record status-${action.status}`}><div><span className="action-status">{action.status}</span><p>{proposalCopy(action.proposalPayload)}</p><small>{action.errorCode ? actionErrorCopy(action.errorCode) : `Expires ${formatDate(action.expiresAt)}`}</small></div>{action.status === "ready" && <div className="action-history-buttons"><AlertDialog><AlertDialogTrigger asChild><Button type="button"><Check size={15} /> Confirm</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm this Google change?</AlertDialogTitle><AlertDialogDescription>{proposalCopy(action.proposalPayload)}. Mintdesk will execute only this reviewed action.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => confirm.mutate({ actionId: action.id })}>Confirm change</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog><Button type="button" variant="outline" onClick={() => reject.mutate({ actionId: action.id })}><X size={15} /> Reject</Button></div>}</article>)}</div>}
   </section>;
 }
