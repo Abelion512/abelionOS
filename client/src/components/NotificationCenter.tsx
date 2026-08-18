@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { Bell, CheckCheck, CircleAlert, CircleCheck, Info, RefreshCw, TriangleAlert } from "lucide-react";
+import { Bell, CheckCheck, CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -81,7 +81,6 @@ export function NotificationCenter() {
         <DialogDescription>Operational updates only. Email content, credentials, and raw AI output are never included.</DialogDescription>
       </DialogHeader>
       <div className="notification-dialog-toolbar">
-        <Button variant="ghost" size="sm" onClick={() => void itemsQuery.refetch()} disabled={itemsQuery.isFetching} aria-label="Refresh notifications"><RefreshCw size={14} className={itemsQuery.isFetching ? "spin" : ""} /><span>Refresh</span></Button>
         <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()} disabled={unreadCount === 0 || markAllRead.isPending}><CheckCheck size={14} /><span>Mark all read</span></Button>
       </div>
       <div className="notification-list" aria-live="polite">

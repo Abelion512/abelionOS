@@ -2,6 +2,9 @@
 
 # Dashboard and Shell Rework
 
+- [x] Tinjau, pasang, dan terapkan Ponytail secara kontekstual sebagai guardrail visual Mintdesk tanpa mengganti identitas Mint Atelier, security boundary, atau data nyata.
+- [x] Terapkan satu perbaikan UI nyata menggunakan ladder Ponytail, dokumentasikan solusi minimum dan yang sengaja tidak ditambahkan, lalu lindungi dengan regression yang sesuai. Notification Center memakai observasi companion dan invalidation query yang sudah ada saat dibuka; tombol Refresh redundan dihapus, Mark all read dipertahankan, dan regression mengunci kedua keputusan.
+
 - [x] Ubah surface popup menjadi opaque dengan kontras teks dan control yang jelas pada desktop serta mobile, tanpa mengubah behavior dialog yang aksesibel.
 - [x] Verifikasi popup detail Activity aplikasi nyata melalui sesi produksi terautentikasi untuk mengonfirmasi defect awal; regression desktop dan breakpoint 375px membuka dialog terpakai, memeriksa class surface opaque, serta mempertahankan Escape/focus return. Build baru siap dideploy untuk verifikasi visual final pada sesi pengguna yang sama.
 

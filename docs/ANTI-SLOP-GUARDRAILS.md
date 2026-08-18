@@ -31,6 +31,10 @@ Taste Skill `design-taste-frontend` telah dipasang untuk lingkungan proyek melal
 | Detail | Evidence panjang dan action composer masuk dialog hanya bila preview halaman cukup untuk menentukan apakah detail perlu dibuka. Jangan menyembunyikan konteks esensial. |
 | State | Loading, unavailable, error, empty, success, dan confirmation harus memakai data nyata atau state eksplisit. Tidak ada mock, seeded review, atau placeholder yang menyaru sebagai data. |
 
+## Keputusan Ponytail yang Diterapkan
+
+Notification Center tidak lagi memiliki tombol **Refresh** manual. Saat dialog dibuka, mutation `observeStatus` yang sudah ada menerbitkan observasi companion dan menginvalidasi inbox; query juga melakukan refetch ketika jendela kembali fokus. Menambah tombol kedua hanya memperluas kontrol tanpa sumber data baru. Tombol **Mark all read** dipertahankan karena melakukan aksi user-scoped yang berbeda. Tidak ada dependency, hook, atau abstraction baru yang ditambahkan.
+
 ## Checklist Sebelum Checkpoint
 
 - [ ] Apakah primary surface menjawab pertanyaan halaman dalam satu pandangan?

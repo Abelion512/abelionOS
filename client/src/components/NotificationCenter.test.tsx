@@ -43,6 +43,8 @@ describe("NotificationCenter", () => {
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(screen.getByText("No notifications yet. Mintdesk will add an entry only when a real operational event occurs.")).toBeTruthy();
     expect(mocks.observeStatus).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Refresh notifications" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Mark all read" })).toBeTruthy();
   });
 
   it("shows unread count and marks only the selected notification as read", () => {
