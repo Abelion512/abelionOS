@@ -16,6 +16,7 @@
 .pairing-copy-button { margin-top: .65rem; font-size: .76rem; }
 .action-device-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .55rem .75rem; }
 .action-device-row label { font-size: .8rem; font-weight: 700; }
+.action-device-static { color: var(--charcoal); font-size: .86rem; font-weight: 700; }
 .action-device-row span { grid-column: 2; color: var(--muted); font-size: .74rem; }
 .action-compose { display: grid; gap: .7rem; }
 .action-compose textarea { min-height: 108px; resize: vertical; border: 1px solid var(--line); border-radius: .65rem; background: #fffdf8; color: var(--charcoal); padding: .75rem; font-size: .86rem; line-height: 1.45; }

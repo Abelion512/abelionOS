@@ -89,6 +89,14 @@ describe("Morning Briefing 5W1H", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeTruthy();
   });
 
+  it("shows one active reasoning device without a redundant device selector", () => {
+    mocks.getBridgeConfig.mockReturnValue(null);
+    mocks.devices.mockReturnValue([{ deviceId: "active-device", name: "Mint laptop", deviceType: "laptop", online: true }]);
+    render(<MorningBriefing />);
+    expect(screen.getByText("Mint laptop · laptop · online")).toBeTruthy();
+    expect(screen.queryByRole("combobox", { name: "Reasoning device" })).toBeNull();
+  });
+
   it("keeps a pending browser pairing available after a reload without rendering its credential", () => {
     mocks.getBridgeConfig.mockReturnValue(null);
     mocks.devices.mockReturnValue([{ deviceId: "a3c98704-f361-44ac-a693-86ee70895a52", name: "Mint laptop", deviceType: "laptop", online: false, pendingPairing: true, pairingExpiresAt: new Date("2026-08-17T01:10:00.000Z") }]);

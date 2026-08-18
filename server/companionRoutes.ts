@@ -14,7 +14,7 @@ async function authenticateDevice(req: Request, res: Response): Promise<NonNulla
     return null;
   }
   const device = await getCompanionDevice(deviceId);
-  if (!device || !safeDeviceSecretEquals(device.secretHash, bearer)) {
+  if (!device || device.isArchived || !safeDeviceSecretEquals(device.secretHash, bearer)) {
     res.status(401).json({ error: "device_auth_invalid" });
     return null;
   }

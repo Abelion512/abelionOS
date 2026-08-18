@@ -186,3 +186,4 @@
 - [x] Diagnosa endpoint pairing loopback yang tidak merespons di Linux pengguna dan tambahkan timeout eksplisit agar UI tidak menampilkan spinner tanpa batas. Service dan endpoint tervalidasi aktif; UI kini mengajukan izin loopback, target address space, serta abort enam detik.
 - [ ] Tambahkan observabilitas request loopback dan tangani kegagalan browser-ke-loopback secara bounded agar respons CORS atau private-network tidak mengunci UI pairing.
 - [x] Hentikan pembacaan respons 9router streaming segera setelah penanda SSE `[DONE]` agar action tidak macet dalam status processing saat koneksi tetap hidup. Reader SSE, regression test koneksi terbuka, build, dan paket CDN tervalidasi.
+- [ ] Konsolidasikan credential pemulihan dan test untuk satu laptop menjadi satu device aktif yang terlihat, dengan riwayat lama diarsipkan dari pemilih Daily Focus.

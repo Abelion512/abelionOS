@@ -1,0 +1,1 @@
+ALTER TABLE `companion_devices` ADD `isArchived` boolean DEFAULT false NOT NULL;

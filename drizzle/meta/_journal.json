@@ -43,6 +43,13 @@
       "when": 1787018779680,
       "tag": "0005_silly_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1787021641152,
+      "tag": "0006_burly_morbius",
+      "breakpoints": true
     }
   ]
 }

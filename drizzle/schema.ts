@@ -77,6 +77,7 @@ export const companionDevices = mysqlTable("companion_devices", {
   encryptedPairingSecret: text("encryptedPairingSecret"),
   pairingExpiresAt: timestamp("pairingExpiresAt"),
   isDefaultReasoner: boolean("isDefaultReasoner").notNull().default(false),
+  isArchived: boolean("isArchived").notNull().default(false),
   lastSeenAt: timestamp("lastSeenAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

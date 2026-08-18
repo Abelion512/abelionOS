@@ -1,4 +1,4 @@
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { AuditEvent, CompanionDevice, DailyFocusAction, FileRecord, GoogleConnection, InsertAuditEvent, InsertCompanionDevice, InsertDailyFocusAction, InsertFileRecord, InsertGoogleConnection, InsertUser, auditEvents, companionDevices, dailyFocusActions, files, googleConnections, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -159,13 +159,13 @@ export async function createCompanionDevice(device: InsertCompanionDevice): Prom
 export async function listCompanionDevices(userId: number): Promise<CompanionDevice[]> {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  return db.select().from(companionDevices).where(eq(companionDevices.userId, userId)).orderBy(desc(companionDevices.lastSeenAt), desc(companionDevices.createdAt));
+  return db.select().from(companionDevices).where(and(eq(companionDevices.userId, userId), eq(companionDevices.isArchived, false))).orderBy(desc(companionDevices.lastSeenAt), desc(companionDevices.createdAt));
 }
 
 export async function getCompanionDeviceForUser(userId: number, deviceId: string): Promise<CompanionDevice | undefined> {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const device = await db.select().from(companionDevices).where(and(eq(companionDevices.userId, userId), eq(companionDevices.deviceId, deviceId))).limit(1);
+  const device = await db.select().from(companionDevices).where(and(eq(companionDevices.userId, userId), eq(companionDevices.deviceId, deviceId), eq(companionDevices.isArchived, false))).limit(1);
   return device[0];
 }
 
@@ -179,7 +179,12 @@ export async function getCompanionDevice(deviceId: string): Promise<CompanionDev
 export async function markCompanionDeviceSeen(deviceId: string): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  await db.update(companionDevices).set({ lastSeenAt: new Date(), encryptedPairingSecret: null, pairingExpiresAt: null }).where(eq(companionDevices.deviceId, deviceId));
+  const current = await getCompanionDevice(deviceId);
+  if (!current || current.isArchived) return;
+  if (current.encryptedPairingSecret && current.pairingExpiresAt && current.pairingExpiresAt.getTime() > Date.now()) {
+    await db.update(companionDevices).set({ isArchived: true, isDefaultReasoner: false }).where(and(eq(companionDevices.userId, current.userId), eq(companionDevices.deviceType, current.deviceType), ne(companionDevices.deviceId, deviceId), eq(companionDevices.isArchived, false)));
+  }
+  await db.update(companionDevices).set({ lastSeenAt: new Date(), encryptedPairingSecret: null, pairingExpiresAt: null, isDefaultReasoner: true, isArchived: false }).where(eq(companionDevices.deviceId, deviceId));
 }
 
 export async function createDailyFocusAction(action: InsertDailyFocusAction): Promise<DailyFocusAction> {
