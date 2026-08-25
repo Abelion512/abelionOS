@@ -17,7 +17,7 @@
 
 ## Arsitektur
 
-Mintdesk menggunakan aplikasi web full-stack dan satu companion lokal. Aplikasi web berjalan dengan React 19, TypeScript, Tailwind CSS 4, Wouter, Express, tRPC 11, Drizzle ORM, dan MySQL. Web application dikelola dengan **pnpm**. Companion menggunakan **Bun** dan sengaja dipisahkan agar akses ke Linux, 9router loopback, serta filesystem tidak ikut berpindah ke deployment web.
+Mintdesk menggunakan aplikasi web full-stack dan satu companion lokal. Aplikasi web berjalan dengan React 19, TypeScript, Tailwind CSS 4, Wouter, Express, tRPC 11, Drizzle ORM, dan MySQL. Web application dikelola dengan **Bun** sebagai package manager dan runtime. Companion juga menggunakan **Bun** dan sengaja dipisahkan agar akses ke Linux, 9router loopback, serta filesystem tidak ikut berpindah ke deployment web.
 
 ```text
 Browser (desktop atau mobile)
@@ -117,25 +117,24 @@ Menandai item sebagai read hanya mengubah state inbox milik pengguna yang sedang
 | Komponen | Versi atau penggunaan |
 |---|---|
 | Node.js | 22 atau kompatibel dengan toolchain proyek |
-| pnpm | Package manager satu-satunya untuk web application |
-| Bun | Hanya diperlukan untuk Linux companion |
+| Bun | Package manager dan runtime untuk web application serta Linux companion |
 | MySQL | Database aplikasi pada environment yang dikelola |
 
 ```bash
 git clone <repository-url>
 cd dashboard-os-linux-mint
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 Variabel environment dikelola oleh platform. Jangan membuat atau meng-commit `.env` berisi credential. Jika mengubah schema, lakukan urutan berikut:
 
 ```bash
-pnpm drizzle-kit generate
+bunx drizzle-kit generate
 # Baca migration SQL yang dihasilkan, lalu aplikasikan melalui workflow database terkelola.
-pnpm test
-pnpm check
-pnpm build
+bun test
+bunx tsc --noEmit
+bun run build
 ```
 
 ## Validasi wajib
@@ -143,9 +142,9 @@ pnpm build
 Perubahan dianggap siap checkpoint hanya bila test, typecheck, build, dan verifikasi visual yang relevan lulus. Komponen interaktif harus memiliki regression test yang mencakup state loading, unavailable/error, serta aksi yang mengubah state. Perubahan UI juga diverifikasi pada desktop dan viewport mobile 375px.
 
 ```bash
-pnpm test
-pnpm check
-pnpm build
+bun test
+bunx tsc --noEmit
+bun run build
 ```
 
 ## Workflow GitHub
