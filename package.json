@@ -10,6 +10,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "bunx vitest run",
+    "postinstall": "node scripts/patch-wouter.js",
     "db:push": "drizzle-kit generate && drizzle-kit migrate"
   },
   "dependencies": {
