@@ -1,0 +1,114 @@
+# Rilis otomatis Mintdesk.
+#
+# Cara pakai:
+#   1. Naikkan "version" di package.json pada PR yang akan dirilis, merge ke main.
+#   2. Workflow ini memverifikasi typecheck + test, menyusun entri CHANGELOG.md
+#      dari commit sejak tag terakhir, mendorong tag v<version>, dan membuat
+#      GitHub Release dengan catatan tersebut.
+#   3. Bila versi package.json sudah memiliki tag, workflow keluar tanpa aksi —
+#      aman terhadap push ulang maupun trigger ganda.
+#
+# Sengaja tidak memakai action pihak ketiga untuk logika rilis agar kebijakan
+# data dan jejak audit tetap berada dalam repo ini.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck and test
+        run: |
+          pnpm check
+          pnpm test
+
+      - name: Decide whether a release is due
+        id: decision
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            echo "Tag ${TAG} sudah ada; tidak ada rilis baru."
+            echo "due=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "${PREVIOUS_TAG}" ]; then
+            RANGE="${PREVIOUS_TAG}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+
+          # Subjek commit sejak rilis terakhir dibatasi 200 baris agar catatan tetap ringkas.
+          git log --no-merges --pretty=format:"- %s" ${RANGE} | head -200 > RELEASE_NOTES.md
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "- Pemeliharaan rutin tanpa perubahan yang dapat dicatat." > RELEASE_NOTES.md
+          fi
+
+          {
+            printf '## [%s] - %s\n\n' "${VERSION}" "$(date +%F)"
+            cat RELEASE_NOTES.md
+          } >> /tmp/new-section.md
+
+          if [ -f CHANGELOG.md ]; then
+            # Sisipkan setelah baris judul agar header CHANGELOG selalu di atas.
+            { head -n 1 CHANGELOG.md; printf '\n'; cat /tmp/new-section.md; tail -n +2 CHANGELOG.md; } > CHANGELOG.next.md
+          else
+            { printf '# Changelog\n\n'; cat /tmp/new-section.md; } > CHANGELOG.next.md
+          fi
+          mv CHANGELOG.next.md CHANGELOG.md
+
+          echo "due=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish changelog, tag, and release
+        if: steps.decision.outputs.due == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.decision.outputs.version }}
+          TAG: ${{ steps.decision.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add CHANGELOG.md
+          git commit -m "chore(release): v${VERSION} [skip ci]"
+          git tag "${TAG}"
+          git push origin HEAD "${TAG}"
+
+          gh release create "${TAG}" \
+            --title "v${VERSION}" \
+            --notes-file RELEASE_NOTES.md \
+            --verify-tag
