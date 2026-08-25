@@ -259,3 +259,42 @@
 - [x] Tambahkan observabilitas request loopback dan tangani kegagalan browser-ke-loopback secara bounded agar respons CORS atau private-network tidak mengunci UI pairing. Pairing browser v6 berhasil, dengan permission loopback dan timeout enam detik sebagai fallback.
 - [x] Hentikan pembacaan respons 9router streaming segera setelah penanda SSE `[DONE]` agar action tidak macet dalam status processing saat koneksi tetap hidup. Reader SSE, regression test koneksi terbuka, build, dan paket CDN tervalidasi.
 - [x] Konsolidasikan credential pemulihan dan test untuk satu laptop menjadi satu device aktif yang terlihat, dengan riwayat lama diarsipkan dari pemilih Daily Focus. Production kini menampilkan hanya `abelion-linux-mint-autopair-v6` sebagai laptop aktif; enam credential recovery lama dipertahankan sebagai audit tetapi tidak dapat autentikasi.
+
+# Glassmorphism UI/UX Redesign
+
+## Phase 0: Design Constitution Update
+- [ ] Revisi `docs/ANTI-SLOP-GUARDRAILS.md`: ubah larangan "border atau glass effect dekoratif" menjadi "glass effect hanya untuk layering fungsional (dialog, dropdown, sidebar overlay), bukan dekorasi kartu statis". Tambahkan definisi glassmorphism yang diizinkan: backdrop-blur pada layer transparan, bukan gradient berkilau atau neon border.
+- [ ] Revisi bagian "Pola UI" di `AGENTS.md`: ganti "shadow ambient tipis sesuai hue background" menjadi "shadow ambient tipis + backdrop-blur untuk elevated layers". Pertahankan larangan gradient multicolor dan copy pseudo-intelligent.
+- [ ] Perbarui `ideas.md` section "Style Decisions" untuk mencatat transisi dari warm parchment ke glass-on-parchment: background tetap hangat (#f4f0e6), tetapi card/elevated surface memakai `backdrop-blur` + semi-transparent white.
+
+## Phase 1: Token & Foundation
+- [ ] Audit `client/src/index.css` CSS variables: identifikasi semua token warna yang perlu diupdate untuk glassmorphism (card background, popover, sidebar, dialog).
+- [ ] Tambahkan CSS custom properties baru: `--glass-bg`, `--glass-border`, `--glass-blur`, `--glass-shadow` dengan nilai yang match warm parchment palette.
+- [ ] Update `:root` dan `.dark` theme variables untuk mendukung glass surfaces tanpa menghapus existing tokens yang masih dipakai.
+- [ ] Verifikasi contrast ratio WCAG AA untuk text di atas glass surfaces (minimum 4.5:1 untuk body text).
+
+## Phase 2: Component Surfaces
+- [ ] Update `.panel` class di `index.css`: tambahkan `backdrop-filter: blur(12px)` + semi-transparent background. Pastikan fallback untuk browser yang tidak support backdrop-filter.
+- [ ] Update dialog/dropdown surfaces (Radix Dialog, DropdownMenu, AlertDialog): terapkan glass effect hanya pada overlay dan content wrapper, bukan pada setiap card internal.
+- [ ] Update sidebar/WorkspaceShell: glass effect pada rail expanded state, bukan collapsed state (collapsed tetap opaque untuk readability).
+- [ ] Update notification center popover: glass background dengan backdrop-blur.
+- [ ] Pastikan semua glass surfaces memiliki `border: 1px solid rgba(255,255,255,0.18)` atau equivalent yang match warm palette.
+
+## Phase 3: Interaction & Motion
+- [ ] Tambahkan subtle glass transition pada card hover: `backdrop-filter` intensity increase + slight translateY lift (2px, 180ms).
+- [ ] Update dialog open/close animation: gunakan `opacity` + `scale(0.98→1)` + backdrop-blur fade-in.
+- [ ] Verifikasi `prefers-reduced-motion`: glass effects harus gracefully degrade ke opaque backgrounds.
+- [ ] Update sidebar collapse/expand transition: glass blur intensity animates同步 dengan width transition.
+
+## Phase 4: Responsive & Accessibility
+- [ ] Verifikasi glassmorphism pada viewport 375px: pastikan backdrop-blur tidak menyebabkan text unreadable di mobile.
+- [ ] Test dengan Windows High Contrast Mode: glass surfaces harus memiliki sufficient border/outline untuk visibility.
+- [ ] Audit keyboard navigation: glass overlays harus memiliki proper focus management dan visible focus rings.
+- [ ] Screenshot desktop (1280px) dan mobile (375px) untuk baseline comparison.
+
+## Phase 5: Regression & Documentation
+- [ ] Jalankan `bunx vitest run` — pastikan 102+ test lulus tanpa perubahan.
+- [ ] Jalankan `bunx tsc --noEmit` — pastikan typecheck lulus.
+- [ ] Update `docs/ANTI-SLOP-GUARDRAILS.md` design read: "glass-on-parchment operational dashboard" bukan "warm parchment editorial".
+- [ ] Screenshot Dashboard, Daily Focus, Storage, Activity pada desktop dan 375px mobile.
+- [ ] Checkpoint dengan catatan: glassmorphism diterapkan untuk layering fungsional, bukan dekorasi; identitas Mint Atelier (warm palette, DM Sans, mint accent) tetap dipertahankan.
