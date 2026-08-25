@@ -34,27 +34,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Typecheck and test
         run: |
-          pnpm check
-          pnpm test
+          bun run check
+          bun run test
 
       - name: Decide whether a release is due
         id: decision
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(bun --print "require('./package.json').version")
           TAG="v${VERSION}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
