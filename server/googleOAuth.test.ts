@@ -50,7 +50,8 @@ describe("Google OAuth security helpers", () => {
     ENV.googleOAuthRedirectUri = previous;
   });
 
-  it("uses a reachable HTTPS callback endpoint from the configured production URI", async () => {
+  // Integrasi smoke-test yang hanya berlaku bila callback publik produksi dikonfigurasi dan dapat dijangkau.
+  it.skipIf(!ENV.googleOAuthRedirectUri)("uses a reachable HTTPS callback endpoint from the configured production URI", async () => {
     expect(ENV.googleOAuthRedirectUri).toBe("https://mintdash-khcj34hp.manus.space/api/google/callback");
     const response = await fetch(ENV.googleOAuthRedirectUri, { redirect: "manual" });
     expect([301, 302, 303, 307, 308]).toContain(response.status);

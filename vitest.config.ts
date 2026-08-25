@@ -15,5 +15,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["server/**/*.test.ts", "server/**/*.spec.ts", "client/src/**/*.test.ts", "client/src/**/*.spec.ts", "client/src/**/*.test.tsx", "client/src/**/*.spec.tsx", "companion/**/*.test.ts"],
+    // Nilai uji deterministik untuk round-trip enkripsi OAuth state/token.
+    // Bukan secret produksi; runtime nyata membaca JWT_SECRET dari env-nya sendiri.
+    env: {
+      JWT_SECRET: "vitest-deterministic-test-key-not-a-secret",
+    },
   },
 });

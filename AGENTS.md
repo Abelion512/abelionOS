@@ -17,7 +17,7 @@ Mintdesk adalah **Daily Focus Assistant** dan dashboard operasional Linux Mint. 
 
 ## Arsitektur dan package manager
 
-Web app berada di repository ini dan selalu memakai **pnpm**. Stack: React 19, TypeScript, Tailwind 4, Wouter, Express, tRPC, Drizzle, serta MySQL. Jangan membuat `bun.lock` atau mengganti script proyek ke Bun. **Bun hanya digunakan oleh companion hybrid di Linux**, yang dipasang di luar repository aplikasi web.
+Web app berada di repository ini dan selalu memakai **Bun** sebagai package manager dan runtime. Stack: React 19, TypeScript, Tailwind 4, Wouter, Express, tRPC, Drizzle, serta MySQL. **Bun juga digunakan oleh companion hybrid di Linux**, yang dapat dipasang dari repository yang sama atau dipisah sesuai kebutuhan.
 
 | Lokasi | Peran | Aturan perubahan |
 |---|---|---|
@@ -92,7 +92,7 @@ Setiap perubahan fitur harus mengikuti urutan berikut:
 3. Perbarui schema terlebih dahulu bila model data berubah, generate migration, baca SQL, kemudian aplikasikan melalui workflow database terkelola.
 4. Tambahkan helper database, tRPC procedure user-scoped, UI, dan state success/error/unavailable.
 5. Tulis atau perbarui Vitest sebelum delivery. Screenshot bukan pengganti test.
-6. Jalankan `pnpm test`, `pnpm check`, dan `pnpm build`.
+6. Jalankan `bun test`, `bunx tsc --noEmit`, dan `bun run build`.
 7. Verifikasi tampilan desktop dan mobile 375px; baca `.manus-logs/` melalui terminal jika ada error runtime atau network.
 8. Tandai item selesai menjadi `[x]`, baca keseluruhan `todo.md`, lalu buat checkpoint.
 
