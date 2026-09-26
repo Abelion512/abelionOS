@@ -1,5 +1,11 @@
 # todo.md
 
+## Checkpoint 2026-09-26 (rebuild → GitHub)
+- [x] **Rebuild Convex 2026 dikirim sebagai PR** — branch `rebuild/convex-2026`, commit `8f47c73` (295 file, +9119/−19391), PR #2 ke `main` (https://github.com/Abelion512/dashboard-os-linux/pull/2). Validasi lulus sebelum push: Vitest 91/91, `tsc -b --noEmit` bersih, build sukses, scan secret staged diff bersih. `isolate/` (kosong) dikecualikan. Status: menunggu review + merge pemilik. Konteks: workspace sempat wedged (RAM ~2000%, OOM thrashing) lalu di-restart dari UI Freebuff; semua file utuh.
+
+## Checkpoint 2026-09-26 (CI PR #2)
+- [x] **Perbaiki check gagal di PR #2** — job CI gagal karena billing GitHub Actions (job tidak pernah start; butuh aksi pemilik di Settings → Billing & plans), dan Socket alert Block pada `@auth/core@0.37.4` via `@convex-dev/auth@0.0.80`. Aksi: upgrade `@convex-dev/auth` → `^0.0.95` (peer `@auth/core ^0.41.1` dipasang eksplisit `0.41.3`; transitive deprecated `oslo`/`arctic` hilang dari lock). Validasi: Vitest 91/91, tsc bersih, build sukses. Sisa sadar: `lucia@3.2.2` (internal `@convex-dev/auth`) masih Deprecated di Socket — Warn, hilang hanya bila upstream berpindah; advisory `convex` inactive-collaborators = maintenance, dimonitor.
+
 ## Riwayat Terkompresi
 - [x] Riwayat 1–169 (Operational Dashboard Upgrade, Product Rebaseline, Clean Restart, Runtime Verification Runbook, Reliability & OAuth, Morning Briefing, Gmail Drafts rollback, Daily Focus, 9router, Action Expansion, Glassmorphism Phase 0): SEMUA selesai — ringkasan lengkap tersimpan permanen di CHANGELOG.md v1.0.0 dan docs/archive/.
 - [x] Riwayat 4–103 (9router Runtime, Action Expansion, Glassmorphism, Rebuild Freebuff: executor/revoke/registry OAuth multi-account, login fix): SEMUA selesai — keputusan operasional permanen ada di AGENTS.md, README.md, dan docs/RUNTIME-DECISIONS.md.

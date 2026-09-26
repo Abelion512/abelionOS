@@ -13,7 +13,8 @@
     "postinstall": "node scripts/patch-wouter.js"
   },
   "dependencies": {
-    "@convex-dev/auth": "^0.0.80",
+    "@auth/core": "^0.41.3",
+    "@convex-dev/auth": "^0.0.95",
     "convex": "^1.19.0",
     "jose": "^6.1.0",
     "lucide-react": "^0.453.0",
