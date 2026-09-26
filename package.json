@@ -9,8 +9,7 @@
     "start": "vite preview --host 0.0.0.0 --port ${PORT:-8080}",
     "check": "tsc -b --noEmit",
     "test": "vitest run",
-    "convex:dev": "convex dev --once",
-    "postinstall": "node scripts/patch-wouter.js"
+    "convex:dev": "convex dev --once"
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
@@ -21,7 +20,7 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "web-push": "^3.6.7",
-    "wouter": "^3.3.5",
+    "wouter": "^3.11.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
