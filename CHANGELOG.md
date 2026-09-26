@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1] - 2026-09-26
+
+- fix(ci): drop broken wouter postinstall patch, upgrade wouter to 3.11.0
+- ci: trigger rerun after billing fix
+- fix(deps): upgrade @convex-dev/auth to 0.0.95 and pin @auth/core 0.41.3
+- refactor!: rebuild Mintdesk on React 19 + Convex stack
+
 ## [1.0.0] - 2026-08-25
 
 - Perbaiki workflow Release agar berjalan dengan Bun mengikuti migrasi package manager. Ganti setup pnpm menjadi oven-sh/setup-bun, install dengan bun install --frozen-lockfile, dan jalankan typecheck/test lewat script check serta test. Ekstraksi versi package.json memakai bun --print sehingga job tidak lagi bergantung pada binary Node terpisah.
