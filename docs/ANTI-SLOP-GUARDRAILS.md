@@ -25,9 +25,11 @@ Taste Skill `design-taste-frontend` telah dipasang untuk lingkungan proyek melal
 | Warna | Mint adalah accent interaktif utama. Amber dan rose hanya status semantik (warning/error), bukan aksen kompetitif. Satu neutral family hangat dipakai lintas halaman. |
 | Tipografi | DM Sans untuk display dan Source Sans 3 untuk body tetap merupakan keputusan brand. Maksimum dua family; hierarchy mengikuti large title, title, headline, body, dan caption. |
 | Spacing | Gunakan kelipatan grid 4/8px untuk rhythm baru. Legacy spacing tidak diperluas tanpa alasan komposisional. |
-| Material dan motion | Shadow ambient tipis sesuai hue background. Blur hanya untuk layering nyata. Motion di bawah 300ms, hanya transform/opacity, dan menghormati reduced motion. |
-| Ikon | Pertahankan Lucide karena sudah menjadi satu keluarga ikon yang konsisten di project. Jangan menambah family ikon kedua hanya karena Taste Skill memiliki preferensi library lain. |
-| Responsif | Setiap grid punya fallback eksplisit di 900px/680px atau breakpoint yang lebih sempit. Tidak boleh mengandalkan wrapping kebetulan. |
+| Material dan motion | Shadow ambient tipis sesuai hue background. Glassmorphism hanya untuk layering fungsional (dialog, dropdown, popover, overlay sidebar, notification center), bukan dekorasi kartu statis: `backdrop-filter: blur` pada layer transparan di atas konten bergerak, dengan border 1px semi-transparan dan fallback opaque saat `backdrop-filter` tidak didukung. Bukan gradient berkilau, neon border, atau blur pada kartu yang berdiri sendiri. Motion di bawah 300ms, hanya transform/opacity, dan menghormati reduced motion; saat reduced motion aktif, glass degenerate ke background opaque. |
+| Ikon | Pertahankan Lucide karena sudah menjadi satu keluarga ikon yang konsisten di project. Jangan menambah family ikon kedua hanya karena Taste Skill memiliki preferensi library lain. Ikon Sparkles/AI-glamour dilarang sebagai dekorasi (termasuk pada copy "AI-powered"). |
+| Struktur DOM | Tidak ada wrapper div nested atau borderless tanpa fungsi layout yang jelas: setiap pembungkus harus membawa spacing, border, grouping semantik, atau behavior. Flat-first: bila pembungkus bisa dihapus tanpa perubahan visual/aksesibilitas, hapus. |
+| Gradien | Gradient purple/pink dilarang. Multicolor gradient dilarang sesuai identitas. Satu-satunya gradien yang diperbolehkan adalah ambient hangat yang sudah ada dalam palette parchment. |
+| Responsif | Setiap grid punya fallback eksplisit di 900px/680px atau breakpoint yang lebih sempit. Tidak boleh mengandalkan wrapping kebetulan. Glass surface wajib diverifikasi pada 375px: teks dan kontrol tetap terbaca, blur tidak menciptakan area kontras rendah, dan dialog tetap muat viewport. |
 | Detail | Evidence panjang dan action composer masuk dialog hanya bila preview halaman cukup untuk menentukan apakah detail perlu dibuka. Jangan menyembunyikan konteks esensial. |
 | State | Loading, unavailable, error, empty, success, dan confirmation harus memakai data nyata atau state eksplisit. Tidak ada mock, seeded review, atau placeholder yang menyaru sebagai data. |
 
@@ -44,6 +46,7 @@ Notification Center tidak lagi memiliki tombol **Refresh** manual. Saat dialog d
 - [ ] Apakah text, controls, error, focus ring, dan metadata terbaca pada background sebenarnya?
 - [ ] Apakah warna selain mint membawa status semantik yang jelas?
 - [ ] Apakah mobile fallback sudah diverifikasi pada 375px tanpa teks terpotong atau drawer/modal yang menutup konteks?
+- [ ] Apakah setiap glass surface adalah layering fungsional (mengambang di atas konten), bukan kartu statis ber-blur, dan fallback opaque-nya teruji?
 - [ ] Apakah test, typecheck, build, dan screenshot page terkait telah lulus tanpa data dummy?
 
 ## Referensi
@@ -51,3 +54,11 @@ Notification Center tidak lagi memiliki tombol **Refresh** manual. Saat dialog d
 [1]: https://www.tasteskill.dev/ "Taste Skill documentation and installation"
 [2]: https://github.com/Leonxlnx/taste-skill "Leonxlnx/taste-skill source repository"
 [3]: https://developer.apple.com/design/human-interface-guidelines/ "Apple Human Interface Guidelines"
+
+## Referensi Anti-Slop Tambahan (kurasi pengguna)
+
+- [no-ai-slop](https://github.com/petergyang/no-ai-slop) — penghapusan pola copy AI-slop (binary contrast, throat-clearing, faux-insight, weasel attribution); dipakai untuk audit copy UI.
+- [impeccable](https://github.com/pbakaus/impeccable) — disiplin detail UI.
+- [apple-design-skill](https://github.com/dickwu/apple-design-skill) — penerapan Apple HIG yang kontekstual.
+- [stop-slop](https://github.com/hardikpandya/stop-slop) — checklist anti-template.
+- [i-have-adhd](https://github.com/ayghri/i-have-adhd) — keterbacaan dan hierarki untuk attention budget rendah.

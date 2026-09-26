@@ -1,0 +1,34 @@
+{
+  "name": "Mintdesk — Daily Focus Assistant",
+  "short_name": "Mintdesk",
+  "description": "Dashboard operasional personal: berita terkurasi, Daily Focus, dan Google Workspace read-first.",
+  "id": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f0e6",
+  "theme_color": "#f4f0e6",
+  "lang": "id",
+  "categories": ["news", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

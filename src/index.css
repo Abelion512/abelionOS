@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ===== Mint Atelier tokens ===== */
+:root {
+  /* warm parchment surfaces */
+  --surface-page: #f4f0e6;
+  --surface-card: #fdfaf2;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ece6d6;
+
+  /* ink */
+  --ink-strong: #26312b;
+  --ink: #3c4a42;
+  --ink-soft: #6b7a70;
+  --ink-faint: #93a198;
+
+  /* mint accent + semantic */
+  --mint: #78c091;
+  --mint-strong: #4f9d70;
+  --mint-wash: #e7f3ec;
+  --amber: #c98a2b;
+  --amber-wash: #f7ecd9;
+  --rose: #c05e5e;
+  --rose-wash: #f6e4e4;
+
+  /* hairlines */
+  --line: #e2dac7;
+  --line-strong: #cfc5ab;
+
+  /* glass (functional layering only) */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-blur: 14px;
+  --glass-shadow: 0 8px 24px rgba(38, 49, 43, 0.1);
+
+  --radius-card: 14px;
+}
+
+@theme inline {
+  --font-display: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: var(--surface-page);
+  --color-card: var(--surface-card);
+  --color-raised: var(--surface-raised);
+  --color-sunken: var(--surface-sunken);
+
+  --color-ink-strong: var(--ink-strong);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-mint: var(--mint);
+  --color-mint-strong: var(--mint-strong);
+  --color-mint-wash: var(--mint-wash);
+  --color-amber: var(--amber);
+  --color-amber-wash: var(--amber-wash);
+  --color-rose: var(--rose);
+  --color-rose-wash: var(--rose-wash);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --radius-card: var(--radius-card);
+}
+
+@layer base {
+  html {
+    background: var(--surface-page);
+  }
+  body {
+    background: var(--surface-page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    color: var(--ink-strong);
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: var(--mint-wash);
+    color: var(--ink-strong);
+  }
+  :focus-visible {
+    outline: 2px solid var(--mint-strong);
+    outline-offset: 2px;
+  }
+}
+
+/* ===== Glass: functional layering only (dialog, dropdown, popover, overlay, notification center) =====
+   ponytail: kartu statis TIDAK memakai kelas ini; glass hanya di layer yang mengambang
+   di atas konten bergerak. Jalur upgrade: token --glass-* cukup untuk tuning global. */
+.glass-surface {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+}
+
+/* Fallback opaque: browser tanpa backdrop-filter atau pengguna dengan reduced motion */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-surface {
+    background: var(--surface-raised);
+    border-color: var(--line);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-surface {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--surface-raised);
+    border-color: var(--line);
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Metadata label ala editorial */
+.meta-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Motion: transform/opacity di bawah 300ms */
+.card-lift {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(38, 49, 43, 0.08);
+}
