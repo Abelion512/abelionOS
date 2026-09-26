@@ -1,108 +1,92 @@
-# Rilis otomatis Mintdesk.
-#
-# Cara pakai:
-#   1. Naikkan "version" di package.json pada PR yang akan dirilis, merge ke main.
-#   2. Workflow ini memverifikasi typecheck + test, menyusun entri CHANGELOG.md
-#      dari commit sejak tag terakhir, mendorong tag v<version>, dan membuat
-#      GitHub Release dengan catatan tersebut.
-#   3. Bila versi package.json sudah memiliki tag, workflow keluar tanpa aksi —
-#      aman terhadap push ulang maupun trigger ganda.
-#
-# Sengaja tidak memakai action pihak ketiga untuk logika rilis agar kebijakan
-# data dan jejak audit tetap berada dalam repo ini.
-
 name: Release
 
+# Pipeline rilis semantik (rekonstruksi dari kontrak terdokumentasi CHANGELOG
+# v1.0.0): merge ke main → verifikasi → sisipkan entri CHANGELOG dari commit
+# konvensional sejak tag terakhir → bump minor saat feat, patch saat
+# fix/chore → tag v<version> → GitHub Release. Idempoten bila tag sudah ada.
+# Tanpa action rilis pihak ketiga agar kebijakan data tetap dalam repo.
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: write
-
-concurrency:
-  group: release-main
-  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      # `bun run test` = Vitest (script proyek, memuat vitest.config.ts);
+      # `bun test` memakai runner bawaan Bun dan membuat test komponen gagal.
+      - run: bun run test
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Typecheck and test
+      - name: Hitung versi berikutnya dari commit konvensional
+        id: semver
         run: |
-          bun run check
-          bun run test
-
-      - name: Decide whether a release is due
-        id: decision
-        run: |
-          VERSION=$(bun --print "require('./package.json').version")
-          TAG="v${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-
-          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
-            echo "Tag ${TAG} sudah ada; tidak ada rilis baru."
-            echo "due=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
-          if [ -n "${PREVIOUS_TAG}" ]; then
-            RANGE="${PREVIOUS_TAG}..HEAD"
+          set -e
+          LAST_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="$LAST_TAG..HEAD"
           else
             RANGE="HEAD"
           fi
-
-          # Subjek commit sejak rilis terakhir dibatasi 200 baris agar catatan tetap ringkas.
-          git log --no-merges --pretty=format:"- %s" ${RANGE} | head -200 > RELEASE_NOTES.md
-          if [ ! -s RELEASE_NOTES.md ]; then
-            echo "- Pemeliharaan rutin tanpa perubahan yang dapat dicatat." > RELEASE_NOTES.md
-          fi
-
-          {
-            printf '## [%s] - %s\n\n' "${VERSION}" "$(date +%F)"
-            cat RELEASE_NOTES.md
-          } >> /tmp/new-section.md
-
-          if [ -f CHANGELOG.md ]; then
-            # Sisipkan setelah baris judul agar header CHANGELOG selalu di atas.
-            { head -n 1 CHANGELOG.md; printf '\n'; cat /tmp/new-section.md; tail -n +2 CHANGELOG.md; } > CHANGELOG.next.md
+          FEATS=$(git log --no-merges --pretty=format:%s "$RANGE" | grep -cE '^feat(\(|:)' || true)
+          FIXES=$(git log --no-merges --pretty=format:%s "$RANGE" | grep -cE '^(fix|perf|refactor|chore)(\(|:)' || true)
+          CUR=$(bun --print 'require("./package.json").version')
+          echo "Perkiraan: feat=$FEATS fix/chore=$FIXES dari versi $CUR"
+          if [ "$FEATS" -gt 0 ]; then
+            NEXT=$(bun --print 'const v=process.argv[1].split(".").map(Number); `${v[0]}.${v[1]+1}.0`' "$CUR")
+          elif [ "$FIXES" -gt 0 ]; then
+            NEXT=$(bun --print 'const v=process.argv[1].split(".").map(Number); `${v[0]}.${v[1]}.${v[2]+1}`' "$CUR")
           else
-            { printf '# Changelog\n\n'; cat /tmp/new-section.md; } > CHANGELOG.next.md
+            echo "Tidak ada feat/fix sejak $LAST_TAG — release dilewati."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          mv CHANGELOG.next.md CHANGELOG.md
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
-          echo "due=true" >> "$GITHUB_OUTPUT"
-
-      - name: Publish changelog, tag, and release
-        if: steps.decision.outputs.due == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.decision.outputs.version }}
-          TAG: ${{ steps.decision.outputs.tag }}
+      - name: Sisipkan entri CHANGELOG
+        if: steps.semver.outputs.skip != 'true'
         run: |
+          set -e
+          NEXT="${{ steps.semver.outputs.next }}"
+          LAST_TAG=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; else RANGE="HEAD"; fi
+          NOTES=$(git log --no-merges --pretty=format:"- %s" "$RANGE" | head -50)
+          {
+            echo ""
+            echo "## [$NEXT] - $(date +%F)"
+            echo ""
+            echo "$NOTES"
+          } >> /tmp/entry.md
+          awk '{print} /^# Changelog$/ && !done {while ((getline line < "/tmp/entry.md") > 0) print line; close("/tmp/entry.md"); done=1}' CHANGELOG.md > /tmp/changelog.md
+          mv /tmp/changelog.md CHANGELOG.md
+          bun --print 'const p=require("./package.json"); p.version="'$NEXT'"; require("fs").writeFileSync("package.json", JSON.stringify(p,null,2)+"\n")'
+
+      - name: Commit, tag, dan rilis
+        if: steps.semver.outputs.skip != 'true'
+        run: |
+          set -e
+          NEXT="${{ steps.semver.outputs.next }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add CHANGELOG.md
-          git commit -m "chore(release): v${VERSION} [skip ci]"
-          git tag "${TAG}"
-          git push origin HEAD "${TAG}"
-
-          gh release create "${TAG}" \
-            --title "v${VERSION}" \
-            --notes-file RELEASE_NOTES.md \
-            --verify-tag
+          git add CHANGELOG.md package.json
+          git commit -m "chore(release): v$NEXT [skip ci]" || echo "tidak ada perubahan"
+          git tag "v$NEXT"
+          git push origin HEAD --tags
+          if gh release view "v$NEXT" >/dev/null 2>&1; then
+            echo "Release v$NEXT sudah ada (idempoten)."
+          else
+            gh release create "v$NEXT" --title "v$NEXT" --notes-file <(sed -n "/## \[$NEXT\]/,/^\$/p" CHANGELOG.md)
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

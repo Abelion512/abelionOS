@@ -1,1 +1,0 @@
-ALTER TABLE `companion_devices` ADD `lastOfflineNotifiedAt` timestamp;

@@ -1,1 +1,0 @@
-ALTER TABLE `daily_focus_actions` MODIFY COLUMN `status` enum('draft','queued','processing','ready','confirmed','executed','rejected','error','expired') NOT NULL DEFAULT 'draft';

@@ -63,6 +63,7 @@ Logo berupa abstraksi daun mint yang dibentuk dari tiga bidang geometris seperti
 **Mint Leaf #78C091**, warna hijau desaturasi yang menghubungkan kesehatan sistem dengan nuansa kebun, bukan neon teknologi.
 
 ## Style Decisions
+
 - Gunakan latar parchment dan charcoal, bukan purple gradient atau neon.
 - Gunakan sidebar asimetris dan panel yang terasa seperti instrumen kerja.
 - Gunakan logo daun geometris sebagai simbol brand dan favicon.
@@ -73,3 +74,7 @@ Logo berupa abstraksi daun mint yang dibentuk dari tiga bidang geometris seperti
 - Mint Leaf #78C091 menjadi bahasa visual untuk status sehat, navigasi aktif, progress, dan angka sistem penting.
 - Komposisi menghindari simetri SaaS terpusat: panel sistem dominan, kolom konteks asimetris, dan modul data dengan bobot berbeda.
 - Permukaan hangat dipertahankan, tetapi setiap panel sistem harus menyertakan glyph, status numerik, atau label teknis agar terasa seperti instrumen kerja.
+
+## Transisi Glass-on-Parchment
+
+Background tetap hangat parchment (#f4f0e6); identitas Mint Atelier tidak berubah. Yang berubah hanya material elevated layer: dialog, dropdown, popover, notification center, dan overlay sidebar memakai `backdrop-blur` dengan semi-transparent white di atas konten bergerak, disertai border 1px semi-transparan hangat. Kartu statis pada halaman Dashboard, Daily Focus, Storage, Activity, dan berita tetap opaque parchment agar kontras WCAG AA dan keterbacaan tidak bergantung pada apa yang kebetulan lewat di belakangnya. Reduksi motion atau browser tanpa `backdrop-filter` menerima permukaan opaque sebagai fallback penuh.
