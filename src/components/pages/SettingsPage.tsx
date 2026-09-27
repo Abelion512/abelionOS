@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePushSetup } from "@/lib/pushSetup";
+import { describeBackend } from "@/lib/backendStatus";
 
 const ENV_KEYS = [
   "AUTH_OWNER_EMAIL (pemilik tunggal — tanpa ini pendaftaran terkunci)",
@@ -365,22 +366,38 @@ function ProductsSection() {
   );
 }
 
+// Endpoint companion = Convex site (HTTP action), bukan origin app: hosting
+// statis tidak mem-proxy /api/*. Dipakai ulang dari helper alamat backend yang
+// sama dengan runtime klien, jadi yang ditampilkan tidak menyimpang dari yang
+// benar-benar dihubungi aplikasi.
+function companionEndpoint(): string {
+  return describeBackend({
+    envClientUrl: import.meta.env.VITE_CONVEX_URL as string | undefined,
+    envSiteUrl: import.meta.env.VITE_CONVEX_SITE_URL as string | undefined,
+    origin: window.location.origin,
+  }).site.url;
+}
+
 function CompanionSection() {
   const devices = useQuery(api.companion.listCompanionDevices, {});
   const createCode = useMutation(api.companion.createPairingCode);
   const registerDevice = useMutation(api.companion.registerDevice);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pairingCode, setPairingCode] = useState<string | null>(null);
-  const [codeInput, setCodeInput] = useState("");
+  // Nama otoritatif yang BENAR-BENAR terdaftar (server mengikat device ke code
+  // saat registrasi) — perintah laptop memakai nama ini persis.
+  const [registeredName, setRegisteredName] = useState<string | null>(null);
   const [devName, setDevName] = useState("");
   const [devType, setDevType] = useState<"laptop" | "server">("laptop");
   const [busy, setBusy] = useState(false);
+  const [copiedCommand, setCopiedCommand] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function closeDialog() {
     setDialogOpen(false);
     setPairingCode(null);
-    setCodeInput("");
+    setRegisteredName(null);
+    setCopiedCommand(false);
     setError(null);
   }
 
@@ -402,14 +419,29 @@ function CompanionSection() {
     setBusy(true);
     setError(null);
     try {
-      await registerDevice({ code: pairingCode, name: devName, type: devType });
-      closeDialog();
+      const cleanName = devName.trim();
+      await registerDevice({ code: pairingCode, name: cleanName, type: devType });
+      setRegisteredName(cleanName);
     } catch (e: any) {
       setError(e?.message ?? "Gagal mendaftarkan device.");
     } finally {
       setBusy(false);
     }
   }
+
+  // Perintah laptop ditulis sebagai satu string: sumber tunggal untuk yang
+  // ditampilkan di <pre> dan yang disalin tombol — sebelumnya perintah di-escape
+  // salah (backslash ganjil → baris pecah) sehingga copy-paste gagal di shell.
+  const command =
+    pairingCode && registeredName
+      ? [
+          "bun run companion/pair.ts \\",
+          `  --endpoint ${companionEndpoint()} \\`,
+          `  --code ${pairingCode} \\`,
+          `  --name "${registeredName}" \\`,
+          `  --type ${devType}`,
+        ].join("\n")
+      : "";
 
   return (
     <section className="rounded-2xl border border-line bg-card p-6">
@@ -491,20 +523,43 @@ function CompanionSection() {
             </div>
             {!pairingCode ? (
               <p className="text-sm text-ink-soft">Membuat pairing code…</p>
+            ) : registeredName ? (
+              <>
+                <p className="text-sm text-ink-soft">
+                  Langkah 2 — jalankan di laptop (code berlaku 10 menit):
+                </p>
+                <pre className="mt-2 rounded-lg bg-sunken p-3 text-xs overflow-x-auto text-ink">
+                  {command}
+                </pre>
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(command);
+                      setCopiedCommand(true);
+                    } catch {
+                      setCopiedCommand(false);
+                    }
+                  }}
+                  className="mt-2 inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sunken"
+                >
+                  {copiedCommand ? (
+                    <Check className="w-3.5 h-3.5" aria-label="Tersalin" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" aria-label="Salin" />
+                  )}
+                  <span className="ml-1">{copiedCommand ? "Tersalin" : "Salin perintah"}</span>
+                </button>
+                <p className="mt-3 text-sm text-ink-soft">
+                  Lalu jalankan {" "}
+                  <span className="font-mono text-xs">bun run companion/heartbeat.ts</span> di laptop
+                  agar perangkat muncul online di Dashboard dan Storage.
+                </p>
+              </>
             ) : (
               <>
                 <p className="text-sm text-ink-soft">
-                  Langkah 1 — jalankan di laptop:
-                </p>
-                <pre className="mt-2 rounded-lg bg-sunken p-3 text-xs overflow-x-auto text-ink">
-{`bun run companion/pair.ts \\\
-  --endpoint https://charming-firefly-655.convex.site \\\\
-  --code ${pairingCode} \\\\
-  --name "${devName || "Laptop"}" \\\\
-  --type ${devType}`}
-                </pre>
-                <p className="mt-3 text-sm text-ink-soft">
-                  Langkah 2 — daftarkan device untuk code ini (TTL 10 menit):
+                  Langkah 1 — daftarkan perangkat ini dulu; perintah untuk laptop di langkah
+                  berikutnya memakai code yang sama.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <input

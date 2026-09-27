@@ -86,12 +86,27 @@ Rekomendasi: pertahankan **deploy + companion polling outbound** — tunnel tida
 
 ### Memasang Linux companion
 
-**Belum tersedia.** Companion Bun belum diimplementasi pada rebuild Convex ini;
-desain pairing lengkap (Ed25519, pairing code 8 karakter, device secret tidak
-pernah lewat browser, polling outbound, satu device aktif per tipe) sudah final
-di [docs/COMPANION-PAIRING-DESIGN.md](./docs/COMPANION-PAIRING-DESIGN.md) dan
-menunggu persetujuan capability pemilik yang tercatat di todo.md. Sampai
-implementasi disetujui, Dashboard/Storage menampilkan status observasi kosong
+Companion Bun sudah tersedia (`companion/`, capability persis design doc §4 —
+health, metadata agregat workdir canonical, jumlah audit lokal; tanpa remote
+shell). Pairing dipimpin laptop lewat polling outbound, dengan device secret yang
+tidak pernah lewat browser:
+
+1. **Browser** — Settings → Companion → “Pasangkan perangkat”: tulis nama,
+pilih tipe, **Daftarkan** (Langkah 1).
+2. **Laptop** — salin perintah Langkah 2 dari dialog lalu jalankan di akar repo:
+
+   ```bash
+   bun run companion/pair.ts \
+     --endpoint https://charming-firefly-655.convex.site \
+     --code ABCD2345 --name "Laptop Kantor" --type laptop
+   ```
+
+3. **Heartbeat** — jalankan terus: `bun run companion/heartbeat.ts` (polling 20 detik).
+
+Detail, batas keamanan, dan tabel diagnosa error CLI ada di
+[companion/README.md](./companion/README.md); desain pairing lengkap di
+[docs/COMPANION-PAIRING-DESIGN.md](./docs/COMPANION-PAIRING-DESIGN.md). Sebelum
+companion pertama melapor, Dashboard/Storage menampilkan status observasi kosong
 yang eksplisit — bukan data contoh.
 
 ### Menjalankan Daily Focus

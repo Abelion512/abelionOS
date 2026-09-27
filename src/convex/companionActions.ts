@@ -9,6 +9,7 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
   HEARTBEAT_MIN_INTERVAL_MS,
+  evaluateClaim,
   generateDeviceSecret,
 } from "./companionLogic";
 import { sha256HexNode, verifyPairingSignature } from "./companionSignature";
@@ -23,39 +24,63 @@ export type HeartbeatResult =
 
 // Claim: laptop membuktikan kepemilikan code dengan menandatangani
 // "companion-claim:" + code menggunakan private key Ed25519-nya. Server:
-// code hash → device pending milik code → kunci publik TIDAK dikenal sebelum
-// claim; kunci dikirim pertama kali di sini dan langsung diikat ke device
-// (first-use trust — pairing code TTL 10 menit single-use adalah faktor
-// penguatnya). Device secret plaintext dikembalikan sekali.
+// code hash → device pending yang TERIKAT ke code (diisi registerDevice di
+// browser) → kunci publik TIDAK dikenal sebelum claim; kunci dikirim pertama
+// kali di sini dan langsung diikat ke device (first-use trust — pairing code
+// TTL 10 menit single-use adalah faktor penguatnya). Device secret plaintext
+// dikembalikan sekali.
+//
+// Regresi 2026-09-27: guard lama menolak `codeRow.deviceId` sebagai "sudah
+// dipakai" — padahal field itu justru diisi registerDevice (Langkah 1), jadi
+// claim SELALU 401. Kini ikatan code→device itulah sumber kebenarannya, dan
+// pencocokan NAMA tidak lagi dipakai sebagai syarat (nama otoritatif tetap
+// nama yang didaftarkan browser; CLI cukup menampilkan `name` dari respons).
 export const claimDevice = internalAction({
   args: { code: v.string(), name: v.string(), type: v.string(), publicKey: v.string(), signature: v.string() },
   handler: async (ctx, { code, name, type, publicKey, signature }): Promise<ClaimResult> => {
     const normalized = code.trim().toUpperCase();
     const codeHash = sha256HexNode(normalized);
     const codeRow = await ctx.runQuery(internal.companionInternals.pairingCodeByHash, { codeHash });
-    if (!codeRow || codeRow.deviceId || codeRow.expiresAt < Date.now()) {
+    if (!codeRow) {
       return { ok: false, httpStatus: 401, code: "invalid_code", error: "Pairing code tidak valid, kadaluarsa, atau sudah dipakai" };
     }
-    const userId = codeRow.userId;
     if (!verifyPairingSignature(publicKey, "companion-claim:" + normalized, signature)) {
       return { ok: false, httpStatus: 401, code: "bad_signature", error: "Signature tidak valid" };
     }
 
-    // Device pending dibuat oleh registerDevice (browser) — claim hanya valid
-    // untuk device yang masih pending.
-    const pending = await ctx.runQuery(internal.companionInternals.activeDevicesOfType, {
-      userId,
+    // Device target = device pending yang didaftarkan browser untuk code ini.
+    const rows = await ctx.runQuery(internal.companionInternals.activeDevicesOfType, {
+      userId: codeRow.userId,
       deviceId: type,
     });
-    const device = pending.find((d: any) => d.status === "pending" && d.name === name.trim());
+    const device = codeRow.deviceId
+      ? (rows.find((d: any) => d._id === codeRow.deviceId) ?? null)
+      : null;
+    const guard = evaluateClaim({
+      codeFound: true,
+      codeExpiresAt: codeRow.expiresAt,
+      now: Date.now(),
+      device,
+      requestedType: type,
+    });
+    if (!guard.ok) {
+      return {
+        ok: false,
+        httpStatus: guard.code === "no_pending_device" ? 404 : 401,
+        code: guard.code,
+        error: guard.error,
+      };
+    }
     if (!device) {
+      // evaluateClaim sudah menolak device null — jaring tipe saja.
       return {
         ok: false,
         httpStatus: 404,
         code: "no_pending_device",
-        error: "Tidak ada device pending bernama itu — daftarkan dulu dari Settings → Companion",
+        error: "Tidak ada device pending untuk code ini",
       };
     }
+    void name; // nama dari CLI hanya tampilan; nama otoritatif dari registrasi browser
 
     const secret = generateDeviceSecret();
     await ctx.runMutation(internal.companionInternals.activateDevice, {
@@ -65,22 +90,22 @@ export const claimDevice = internalAction({
     });
     // Satu device aktif per tipe: arsipkan credential aktif lama bertipe sama.
     await ctx.runMutation(internal.companionInternals.archiveOtherActives, {
-      userId,
-      deviceId: type,
+      userId: codeRow.userId,
+      deviceId: device.deviceId,
       exceptId: device._id,
     });
     await ctx.runMutation(internal.mintdeskInternals.auditFromAction, {
-      userId,
+      userId: codeRow.userId,
       action: "companion.device.claimed",
       status: "accepted",
-      detail: `${device.name} (${type}) aktif — secret sekali-tampil ke companion`,
+      detail: `${device.name} (${device.type}) aktif — secret sekali-tampil ke companion`,
     });
     return {
       ok: true,
       deviceSecret: secret,
-      deviceId: type,
+      deviceId: device.deviceId,
       name: device.name,
-      type,
+      type: device.type,
     };
   },
 });

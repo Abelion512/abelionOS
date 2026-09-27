@@ -3,6 +3,7 @@ import {
   PAIRING_CODE_LENGTH,
   WORKDIR_CANONICAL,
   describeHeartbeat,
+  evaluateClaim,
   generateDeviceSecret,
   generatePairingCode,
   isValidPairingCode,
@@ -42,6 +43,85 @@ describe("device secret & input", () => {
     expect(() => validateDeviceInput("", "laptop")).toThrow(/1–40/);
     expect(() => validateDeviceInput("x".repeat(41), "laptop")).toThrow(/1–40/);
     expect(() => validateDeviceInput("ok", "router")).toThrow(/laptop atau server/);
+  });
+});
+
+describe("claim guard (pairing code → device pending)", () => {
+  const now = 1_000_000;
+  const pending = { status: "pending", type: "laptop" };
+
+  it("mengizinkan claim untuk device pending yang terikat ke code", () => {
+    expect(
+      evaluateClaim({
+        codeFound: true,
+        codeExpiresAt: now + 60_000,
+        now,
+        device: pending,
+        requestedType: "laptop",
+      })
+    ).toEqual({ ok: true });
+  });
+
+  // Regresi 2026-09-27: registerDevice (browser) mengisi pairingCodes.deviceId,
+  // dan guard lama memperlakukannya sebagai "code sudah dipakai" → claim selalu
+  // 401 invalid_code pada alur 2 langkah yang didokumentasikan.
+  it("device hasil registrasi tetap bisa di-claim (bukan dianggap code terpakai)", () => {
+    const registered = evaluateClaim({
+      codeFound: true,
+      codeExpiresAt: now + 60_000,
+      now,
+      device: pending,
+      requestedType: "laptop",
+    });
+    expect(registered.ok).toBe(true);
+  });
+
+  it("menolak code kadaluarsa/tidak ada sebagai invalid_code", () => {
+    expect(
+      evaluateClaim({ codeFound: false, codeExpiresAt: now, now, device: pending, requestedType: "laptop" })
+    ).toMatchObject({ ok: false, code: "invalid_code" });
+    expect(
+      evaluateClaim({
+        codeFound: true,
+        codeExpiresAt: now - 1,
+        now,
+        device: pending,
+        requestedType: "laptop",
+      })
+    ).toMatchObject({ ok: false, code: "invalid_code" });
+  });
+
+  it("menolak claim tanpa device terdaftar (Langkah 1 belum dijalankan)", () => {
+    expect(
+      evaluateClaim({
+        codeFound: true,
+        codeExpiresAt: now + 60_000,
+        now,
+        device: null,
+        requestedType: "laptop",
+      })
+    ).toMatchObject({ ok: false, code: "no_pending_device" });
+  });
+
+  it("menolak code yang device-nya sudah aktif (single-use) dan tipe tak cocok", () => {
+    expect(
+      evaluateClaim({
+        codeFound: true,
+        codeExpiresAt: now + 60_000,
+        now,
+        device: { status: "active", type: "laptop" },
+        requestedType: "laptop",
+      })
+    ).toMatchObject({ ok: false, code: "invalid_code" });
+    expect(
+      evaluateClaim({
+        codeFound: true,
+        codeExpiresAt: now + 60_000,
+        now,
+        device: { status: "pending", type: "server" },
+        requestedType: "laptop",
+      })
+    ).toMatchObject({ ok: false, code: "no_pending_device" });
   });
 });
 

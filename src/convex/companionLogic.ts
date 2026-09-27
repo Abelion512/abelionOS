@@ -53,6 +53,53 @@ export function validateDeviceInput(rawName: string, type: string): { name: stri
   return { name, type };
 }
 
+// Guard claim (murni, tanpa ctx). `pairingCodes.deviceId` diisi SAAT REGISTER
+// (browser, Langkah 1), jadi field itu TIDAK menandai "code sudah dipakai" —
+// regresi 2026-09-27: guard lama menolaknya dan membuat claim SELALU
+// 401 invalid_code pada alur 2 langkah. Sumber kebenaran claim = device pending
+// yang terikat ke code; yang menandai code terpakai adalah status device
+// (pending → active), bukan field code.
+export type ClaimGuardInput = {
+  codeFound: boolean;
+  codeExpiresAt: number;
+  now: number;
+  device: { status: string; type: string } | null;
+  requestedType: string;
+};
+
+export type ClaimGuard =
+  | { ok: true }
+  | { ok: false; code: "invalid_code" | "no_pending_device"; error: string };
+
+export function evaluateClaim(input: ClaimGuardInput): ClaimGuard {
+  if (!input.codeFound || input.codeExpiresAt < input.now) {
+    return {
+      ok: false,
+      code: "invalid_code",
+      error: "Pairing code tidak valid atau kadaluarsa (TTL 10 menit)",
+    };
+  }
+  if (!input.device) {
+    return {
+      ok: false,
+      code: "no_pending_device",
+      error:
+        "Belum ada device terdaftar untuk code ini — daftarkan dulu di Settings → Companion (Langkah 1), lalu jalankan perintah ini",
+    };
+  }
+  if (input.device.status !== "pending") {
+    return { ok: false, code: "invalid_code", error: "Pairing code ini sudah dipakai device tersebut" };
+  }
+  if (input.device.type !== input.requestedType) {
+    return {
+      ok: false,
+      code: "no_pending_device",
+      error: `Device terdaftar bertipe ${input.device.type}, bukan ${input.requestedType}`,
+    };
+  }
+  return { ok: true };
+}
+
 export type HeartbeatPayload = {
   uptimeS: number;
   load1: number;

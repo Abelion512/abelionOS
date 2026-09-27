@@ -5,7 +5,7 @@
 // Dilarang: daftar proses, isi file, network snapshot, env vars, path lain.
 import { existsSync, readFileSync, appendFileSync } from "node:fs";
 import { readdirSync, statSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, loadavg } from "node:os";
 import { join } from "node:path";
 
 const CONFIG_DIR = join(homedir(), ".config", "mintdesk");
@@ -79,8 +79,9 @@ function workdirAggregate(): { entries: number; totalBytes: number } {
 }
 
 function payload() {
-  // Bun runtime: loadavg dari Bun.os; fallback 0 bila API tidak tersedia.
-  const load = (globalThis as any).Bun?.os?.loadavg?.() ?? [];
+  // loadavg dari node:os (tersedia di Bun maupun Node). Sebelumnya memakai
+  // Bun.os.loadavg yang TIDAK ada → load selalu 0 di Dashboard.
+  const load = loadavg();
   return {
     uptimeS: Math.round(process.uptime()),
     load1: load[0] ?? 0,
@@ -92,16 +93,32 @@ function payload() {
 }
 
 async function beatOnce(): Promise<boolean> {
-  const res = await fetch(endpoint + "/api/companion/heartbeat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + secret },
-    body: JSON.stringify(payload()),
-  });
+  let res: Response;
+  try {
+    res = await fetch(endpoint + "/api/companion/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + secret },
+      body: JSON.stringify(payload()),
+    });
+  } catch (e) {
+    console.error(
+      `Tidak bisa menghubungi ${endpoint} — periksa jaringan/endpoint (di companion.env).`,
+      e instanceof Error ? e.message : e
+    );
+    return false;
+  }
+  if (res.ok) return true;
+  const detail = await res.text().catch(() => "");
+  // 401 = secret tidak dikenal/diarsipkan (device bertipe sama dipasangkan
+  // ulang mengarsipkan yang lama) → heartbeat ini tidak akan pernah pulih.
   if (res.status === 401) {
-    console.error("Secret ditolak — pair ulang perangkat.");
+    console.error(`Secret ditolak (401 ${detail.slice(0, 200)}) — pair ulang: bun run companion/pair.ts …`);
     process.exit(1);
   }
-  return res.ok;
+  // 400 bad_payload / 5xx / 404: tampilkan tubuh respons apa adanya (server
+  // mengirim {error, code}) supaya penyebabnya terlihat, bukan gagal senyap.
+  console.error(`heartbeat gagal: HTTP ${res.status} ${detail.slice(0, 200)}`);
+  return false;
 }
 
 const INTERVAL_MS = 20_000;
