@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2026-09-27
+
+- fix(companion): unblock first pairing and heartbeat
+- docs(todo): checkpoint companion implementation complete
+
 ## [1.3.0] - 2026-09-27
 
 - feat(companion): Bun companion pairing and heartbeat per approved design
