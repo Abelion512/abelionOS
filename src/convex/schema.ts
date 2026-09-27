@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
-// ponytail: skema minimum untuk kontrak Mintdesk di Freebuff.
+// ponytail: skema minimum untuk kontrak AbelionOS di Freebuff.
 // Tidak ada kolom untuk body Gmail, bearer token, atau raw prompt AI —
 // refresh token disimpan terenkripsi server-side (AES-256-GCM) di field cipher.
 export default defineSchema({
@@ -59,7 +59,9 @@ export default defineSchema({
   // Audit event: metadata tindakan saja + rantai hash tamper-evident.
   auditEvents: defineTable({
     userId: v.id("users"),
-    actor: v.union(v.literal("user"), v.literal("system"), v.literal("companion")),
+    // "product" = permintaan dari produk klien terdaftar (F3); identitas
+    // produk spesifik (product:<slug>) dicatat di detail, bukan di union ini.
+    actor: v.union(v.literal("user"), v.literal("system"), v.literal("companion"), v.literal("product")),
     action: v.string(),
     status: v.union(v.literal("accepted"), v.literal("rejected"), v.literal("error")),
     // ringkasan metadata; larang menyimpan credential/konten email
@@ -171,6 +173,34 @@ export default defineSchema({
     url: v.string(),
     seenAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  // Produk klien yang menyambung ke Google Workspace melalui AbelionOS
+  // (hub koneksi — keputusan pemilik 2026-09-26, lihat
+  // docs/PRODUCT-CONNECTION-DESIGN.md). Secret produk disimpan hashed
+  // (pola device secret; plaintext hanya tampil sekali saat registrasi).
+  // Token Google tidak pernah disimpan di tabel ini dan tidak pernah
+  // dikirim ke produk klien. Allowlist default kosong — tiap capability
+  // ditambah eksplisit dengan justifikasi capability/proporsionalitas/
+  // retention/dampak human confirmation di todo.md.
+  products: defineTable({
+    userId: v.id("users"),
+    // nama stabil (slug), mis. "abelink"; satu produk aktif per nama
+    productId: v.string(),
+    type: v.union(v.literal("local"), v.literal("web")),
+    // sha256 secret produk; verifikasi request klien lookup via by_secret_hash
+    secretHash: v.string(),
+    // capability eksplisit ("calendar.read.events" dll), tanpa wildcard
+    allowlist: v.array(v.string()),
+    // rotasi/arsip: secret baru mengarsipkan yang lama, riwayat tidak dihapus
+    status: v.union(v.literal("active"), v.literal("archived")),
+    createdAt: v.number(),
+    // rate limit read per produk: timestamp request read terakhir
+    // (isRateLimited di productReadLogic.ts) — tanpa tabel/kron baru.
+    lastReadAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_product", ["userId", "productId"])
+    .index("by_secret_hash", ["secretHash"]),
 
   // Push subscription browser — endpoint adalah bearer-secret Push API;
   // disimpan user-scoped, tidak pernah masuk log atau audit.

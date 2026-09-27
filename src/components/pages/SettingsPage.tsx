@@ -1,7 +1,7 @@
-import { Settings as SettingsIcon, BellRing, BellOff, Send, Server } from "lucide-react";
+import { Settings as SettingsIcon, BellRing, BellOff, Send, Server, Plug, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import { useAction } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePushSetup } from "@/lib/pushSetup";
 
@@ -100,6 +100,261 @@ function PushSettingsSection() {
   );
 }
 
+type ProductRow = {
+  _id: string;
+  productId: string;
+  type: "local" | "web";
+  status: "active" | "archived";
+  allowlist: string[];
+  createdAt: number;
+};
+
+// Bagian "Connected products" — registry produk klien yang menyambung ke
+// Google Workspace melalui AbelionOS (docs/PRODUCT-CONNECTION-DESIGN.md).
+// Secret hanya tampil SEKALI setelah register/rotate, lalu tidak pernah
+// dikirim server lagi (server hanya menyimpan hash).
+const PRODUCT_CAPABILITIES = ["calendar.read.list", "calendar.read.events"];
+
+function ProductsSection() {
+  const products = useQuery(api.products.listProducts, {});
+  const register = useMutation(api.products.registerProduct);
+  const rotate = useMutation(api.products.rotateProductSecret);
+  const revoke = useMutation(api.products.revokeProduct);
+  const setAllowlist = useMutation(api.products.setProductAllowlist);
+
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"local" | "web">("local");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [oneTimeSecret, setOneTimeSecret] = useState<{ id: string; secret: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
+  const [allowlistError, setAllowlistError] = useState<string | null>(null);
+
+  const active = (products ?? []).filter((p: ProductRow) => p.status === "active");
+  const archived = (products ?? []).filter((p: ProductRow) => p.status === "archived");
+
+  async function run(fn: () => Promise<{ secret: string }>, slug: string) {
+    setBusy(true);
+    setError(null);
+    setOneTimeSecret(null);
+    try {
+      const { secret } = await fn();
+      setOneTimeSecret({ id: slug, secret });
+      setCopied(false);
+      setName("");
+    } catch (e: any) {
+      setError(e?.message ?? "Gagal memproses permintaan.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doRevoke(slug: string) {
+    setBusy(true);
+    setError(null);
+    setConfirmRevoke(null);
+    try {
+      await revoke({ productId: slug });
+    } catch (e: any) {
+      setError(e?.message ?? "Gagal mencabut produk.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-line bg-card p-6">
+      <div className="flex items-center gap-2 mb-1">
+        <Plug className="w-5 h-5 text-mint-strong" aria-hidden />
+        <h2 className="font-display font-bold text-ink-strong">Connected products</h2>
+      </div>
+      <p className="text-sm text-ink-soft">
+        Secret = bearer token produk, tampil sekali; server menyimpan hash-nya. Akses
+        terbatas allowlist (deny-by-default).
+      </p>
+
+      {products === undefined ? (
+        <p className="mt-4 text-sm text-ink-faint">Memuat produk terhubung…</p>
+      ) : (
+        <>
+          {active.length === 0 ? (
+            <p className="mt-4 text-sm text-ink-faint">
+              Belum ada produk aktif. Daftarkan satu, misalnya abelink.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {active.map((p: ProductRow) => (
+                <li
+                  key={p._id}
+                  className="rounded-xl border border-line px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink-strong font-mono">{p.productId}</p>
+                    <p className="text-xs text-ink-faint">
+                      {p.type} · allowlist {p.allowlist.length} capability
+                      {p.allowlist.length > 0 ? ": " + p.allowlist.join(", ") : " (deny-by-default)"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={`Capability produk ${p.productId}`}>
+                      {PRODUCT_CAPABILITIES.map((cap) => {
+                        const granted = p.allowlist.includes(cap);
+                        return (
+                          <label
+                            key={cap}
+                            className={
+                              "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold " +
+                              (granted
+                                ? "border-mint-strong/40 bg-mint-wash text-mint-strong"
+                                : "border-line text-ink-faint hover:bg-sunken")
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              checked={granted}
+                              disabled={busy}
+                              onChange={(e) => {
+                                const next = e.target.checked
+                                  ? [...p.allowlist, cap]
+                                  : p.allowlist.filter((c) => c !== cap);
+                                setAllowlistError(null);
+                                setAllowlist({ productId: p.productId, capabilities: next }).catch(
+                                  (err: any) => setAllowlistError(err?.message ?? "Gagal mengubah capability.")
+                                );
+                              }}
+                              className="h-3 w-3 accent-mint-strong"
+                            />
+                            {cap}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => run(() => rotate({ productId: p.productId }), p.productId)}
+                      disabled={busy}
+                      className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sunken disabled:opacity-60"
+                    >
+                      Rotasi kunci
+                    </button>
+                    {confirmRevoke === p.productId ? (
+                      <span className="flex items-center gap-2">
+                        <button
+                          onClick={() => doRevoke(p.productId)}
+                          disabled={busy}
+                          className="rounded-lg bg-rose px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                        >
+                          Ya, cabut
+                        </button>
+                        <button
+                          onClick={() => setConfirmRevoke(null)}
+                          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sunken"
+                        >
+                          Batal
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmRevoke(p.productId)}
+                        disabled={busy}
+                        className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sunken disabled:opacity-60"
+                      >
+                        Cabut akses
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {archived.length > 0 && (
+            <p className="mt-3 text-xs text-ink-faint">
+              {archived.length} entri lama diarsipkan — riwayat tetap tercatat di audit.
+            </p>
+          )}
+        </>
+      )}
+
+      {oneTimeSecret && (
+        <div
+          className="mt-4 rounded-xl border border-mint-strong/40 bg-sunken px-4 py-3"
+          role="status"
+        >
+          <p className="text-xs font-semibold text-ink-strong">
+            Secret produk “{oneTimeSecret.id}” — tampil sekali, salin sekarang:
+          </p>
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
+            <code className="rounded-lg bg-card px-3 py-1.5 text-xs font-mono text-ink break-all max-w-full">
+              {oneTimeSecret.secret}
+            </code>
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(oneTimeSecret.secret);
+                  setCopied(true);
+                } catch {
+                  setCopied(false);
+                }
+              }}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-sunken"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" aria-label="Tersalin" /> : <Copy className="w-3.5 h-3.5" aria-label="Salin" />}
+              <span className="ml-1">{copied ? "Tersalin" : "Salin"}</span>
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-ink-faint">
+            Simpan sekarang (local: file chmod 600; web: backend env) — tidak bisa dilihat lagi.
+          </p>
+        </div>
+      )}
+
+      {allowlistError && (
+        <p className="mt-3 rounded-lg bg-sunken px-3 py-2 text-xs text-amber" role="alert">
+          {allowlistError}
+        </p>
+      )}
+      {error && (
+        <p className="mt-3 rounded-lg bg-sunken px-3 py-2 text-xs text-amber" role="alert">
+          {error}
+        </p>
+      )}
+
+      <form
+        className="mt-4 flex flex-wrap items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (name.trim()) void run(() => register({ productId: name, type }), name.trim().toLowerCase());
+        }}
+      >
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="nama produk (mis. abelink)"
+          aria-label="Nama produk baru"
+          maxLength={32}
+          className="min-w-0 flex-1 rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-mint-strong/40"
+        />
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value === "web" ? "web" : "local")}
+          aria-label="Tipe produk"
+          className="rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-mint-strong/40"
+        >
+          <option value="local">local</option>
+          <option value="web">web</option>
+        </select>
+        <button
+          type="submit"
+          disabled={busy || !name.trim()}
+          className="rounded-xl bg-mint-strong px-4 py-2 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-60"
+        >
+          {busy ? "Memproses…" : "Daftarkan"}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <>
@@ -142,6 +397,9 @@ export default function SettingsPage() {
 
         {/* Push notifications: izin hanya dari klik eksplisit (kontrak AGENTS.md). */}
         <PushSettingsSection />
+
+        {/* Registry produk klien — secret tampil sekali, hash-only server-side. */}
+        <ProductsSection />
 
         <section className="rounded-2xl border border-line bg-card p-6 text-sm text-ink-soft">
           <h2 className="font-display font-bold text-ink-strong mb-2">Batas produk</h2>
