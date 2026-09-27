@@ -113,7 +113,15 @@ type ProductRow = {
 // Google Workspace melalui AbelionOS (docs/PRODUCT-CONNECTION-DESIGN.md).
 // Secret hanya tampil SEKALI setelah register/rotate, lalu tidak pernah
 // dikirim server lagi (server hanya menyimpan hash).
-const PRODUCT_CAPABILITIES = ["calendar.read.list", "calendar.read.events"];
+// Registry capability yang bisa di-grant owner: read F3 + proposal F4.
+// Sengaja tanpa calendar.delete/gmail.trash — klien tidak mengusulkan
+// operasi destruktif; write tetap preview + confirm di Daily Focus.
+const PRODUCT_CAPABILITIES = [
+  "calendar.read.list",
+  "calendar.read.events",
+  "calendar.create.proposal",
+  "task.create.proposal",
+];
 
 function ProductsSection() {
   const products = useQuery(api.products.listProducts, {});

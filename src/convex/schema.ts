@@ -52,6 +52,9 @@ export default defineSchema({
     payload: v.string(),
     expiresAt: v.number(),
     decidedAt: v.optional(v.number()),
+    // F4: slug produk klien pengusul (mis. "abelink") bila proposal masuk
+    // lewat endpoint /api/products/v1/proposals — kosong berarti dari UI.
+    sourceProductId: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_user_and_status", ["userId", "status"]),
@@ -197,6 +200,9 @@ export default defineSchema({
     // rate limit read per produk: timestamp request read terakhir
     // (isRateLimited di productReadLogic.ts) — tanpa tabel/kron baru.
     lastReadAt: v.optional(v.number()),
+    // F4: rate limit pengajuan proposal per produk (terpisah dari read agar
+    // jalur write dan read tidak saling memblokir).
+    lastProposalAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_user_and_product", ["userId", "productId"])

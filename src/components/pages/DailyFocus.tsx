@@ -136,8 +136,13 @@ export default function DailyFocus() {
               {pending.map((a: any) => (
                 <li key={a._id} className="rounded-2xl border border-line bg-card p-5">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                      <p className="text-sm font-semibold text-ink-strong">{a.kind}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink-strong">
+                        {a.kind}
+                        {a.sourceProductId && (
+                          <span className="meta-label ml-2 align-middle">via {a.sourceProductId}</span>
+                        )}
+                      </p>
                       <p className="text-xs text-ink-soft">
                         Berlaku sampai {new Date(a.expiresAt).toLocaleString("id-ID")}
                       </p>

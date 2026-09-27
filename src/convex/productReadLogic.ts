@@ -60,12 +60,14 @@ export function boundsForEvents(
 }
 
 // Validasi allowlist yang di-set owner (UI Settings): hanya capability
-// terdaftar F3, dedupe, urutan input dipertahankan. Menolak wildcard/string lain
-// — allowlist tidak pernah bisa melebar ke luar capability registry.
+// terdaftar (read F3 + proposal F4), dedupe, urutan input dipertahankan.
+// Menolak wildcard/string lain — allowlist tidak pernah bisa melebar ke luar
+// capability registry.
 export function normalizeAllowlist(raw: string[]): string[] {
+  const known = [...PRODUCT_READ_CAPABILITIES, ...PRODUCT_PROPOSAL_CAPABILITIES] as readonly string[];
   const out: string[] = [];
   for (const c of raw) {
-    if (!PRODUCT_READ_CAPABILITIES.includes(c as ProductReadCapability)) {
+    if (!known.includes(c)) {
       throw new Error("Capability tidak dikenal: " + c);
     }
     if (!out.includes(c)) out.push(c);
@@ -73,9 +75,14 @@ export function normalizeAllowlist(raw: string[]): string[] {
   return out;
 }
 
-// Murni + testable: true bila request read harus ditolak sementara.
-export function isRateLimited(lastReadAt: number | undefined, now: number): boolean {
-  return lastReadAt !== undefined && now - lastReadAt < READ_MIN_INTERVAL_MS;
+// Murni + testable: true bila request harus ditolak sementara. Interval
+// opsional: default jeda read (2s); touchProposal memakai PROPOSAL_MIN_INTERVAL_MS.
+export function isRateLimited(
+  lastReadAt: number | undefined,
+  now: number,
+  minIntervalMs: number = READ_MIN_INTERVAL_MS
+): boolean {
+  return lastReadAt !== undefined && now - lastReadAt < minIntervalMs;
 }
 
 // ISO 8601 valid (dipakai http.ts untuk menolak window rusak dengan 400,
@@ -89,4 +96,55 @@ export function isIsoTimestamp(value: string): boolean {
 // bukan baris pertama apa pun statusnya.
 export function firstActiveAccount<T extends { status: string }>(rows: T[]): T | null {
   return rows.find((r) => r.status === "active") ?? null;
+}
+
+// ===== F4: capability proposal (write via antrean preview + confirm) =====
+// Registry terpisah dari read (F3): produk hanya bisa MENGAJUKAN proposal —
+// eksekusi tetap butuh konfirmasi manusia di Daily Focus (AGENTS.md human
+// confirmation). gmail.trash sengaja tidak ditawarkan ke produk (destructive).
+export const PRODUCT_PROPOSAL_CAPABILITIES = [
+  "calendar.create.proposal",
+  "task.create.proposal",
+] as const;
+
+export type ProductProposalCapability = (typeof PRODUCT_PROPOSAL_CAPABILITIES)[number];
+
+// Jeda minimum antar pengajuan proposal per produk — write path lebih ketat
+// daripada read (2s): satu proposal layak review per maksimal 5 detik.
+export const PROPOSAL_MIN_INTERVAL_MS = 5_000;
+
+export function proposalKindForCapability(
+  capability: ProductProposalCapability
+): "calendar.create" | "task.create" {
+  switch (capability) {
+    case "calendar.create.proposal":
+      return "calendar.create";
+    case "task.create.proposal":
+      return "task.create";
+  }
+}
+
+// Scope OAuth minimum yang harus dipegang koneksi aktif agar proposal ini
+// bisa dieksekusi — harus persis REQUIRED_SCOPES di googleProposalSchema.
+export function requiredGoogleScopeForProposal(capability: ProductProposalCapability): string {
+  switch (capability) {
+    case "calendar.create.proposal":
+      return "https://www.googleapis.com/auth/calendar.events.owned";
+    case "task.create.proposal":
+      return "https://www.googleapis.com/auth/tasks";
+  }
+}
+
+// deny-by-default untuk proposal: hanya capability registry F4 yang eksplisit
+// ada di allowlist produk.
+export function requireProposalCapability(
+  allowlist: string[],
+  requested: string
+): asserts requested is ProductProposalCapability {
+  if (!PRODUCT_PROPOSAL_CAPABILITIES.includes(requested as ProductProposalCapability)) {
+    throw new Error("Capability tidak dikenal: " + requested);
+  }
+  if (!allowlist.includes(requested)) {
+    throw new Error("Capability tidak diizinkan untuk produk ini");
+  }
 }

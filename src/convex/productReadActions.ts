@@ -19,7 +19,8 @@ import {
 
 // ponytail: hash node lokal alih-alih mengimpor auditChain (query-nya tidak
 // relevan di sini) — algoritma sha256 hex identik dengan secret saat registrasi.
-function sha256HexNode(input: string): string {
+// Dipakai ulang endpoint proposal F4 (productProposalActions.ts).
+export function sha256HexNode(input: string): string {
   return createHash("sha256").update(input).digest("hex");
 }
 

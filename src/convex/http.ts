@@ -96,6 +96,64 @@ http.route({
   }),
 });
 
+// Endpoint pengajuan proposal produk klien (F4): body = capability + payload
+// (string JSON proposal). Write tetap dua langkah — proposal masuk antrean
+// status ready dan TIDAK pernah dieksekusi sebelum konfirmasi manusia.
+http.route({
+  path: "/api/products/v1/proposals",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authHeader = request.headers.get("authorization") ?? "";
+    const secret = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Body harus JSON valid" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const capability =
+      typeof body === "object" && body !== null && typeof (body as any).capability === "string"
+        ? (body as any).capability
+        : "";
+    // Payload proposal dikirim sebagai string JSON (pola penyimpanan
+    // googleActions) — dinarrow eksplisit per guideline.
+    const payload =
+      typeof body === "object" && body !== null && typeof (body as any).payload === "string"
+        ? (body as any).payload
+        : "";
+    if (!secret || !capability || !payload) {
+      return new Response(
+        JSON.stringify({ error: "Header Authorization bearer, capability, dan payload wajib" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const result = await ctx.runAction(internal.productProposalActions.createProductProposal, {
+      secret,
+      capability,
+      payload,
+    });
+    if (!result.ok) {
+      return new Response(
+        JSON.stringify({ error: result.error, code: result.code }),
+        { status: result.httpStatus, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        proposalId: result.proposalId,
+        kind: result.kind,
+        status: "ready",
+        expiresAt: result.expiresAt,
+        account: result.account,
+      }),
+      { status: 201, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
 http.route({
   path: "/api/google/callback",
   method: "GET",

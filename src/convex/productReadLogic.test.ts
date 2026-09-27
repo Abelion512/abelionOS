@@ -2,14 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_EVENTS_ITEMS,
   MAX_EVENTS_WINDOW_DAYS,
+  PRODUCT_PROPOSAL_CAPABILITIES,
   PRODUCT_READ_CAPABILITIES,
+  PROPOSAL_MIN_INTERVAL_MS,
   boundsForEvents,
   firstActiveAccount,
   isIsoTimestamp,
   isRateLimited,
   normalizeAllowlist,
+  proposalKindForCapability,
   requireCapability,
+  requireProposalCapability,
   requiredGoogleScope,
+  requiredGoogleScopeForProposal,
 } from "./productReadLogic";
 
 describe("requireCapability", () => {
@@ -148,6 +153,55 @@ describe("firstActiveAccount", () => {
   it("mengembalikan null bila tidak ada akun aktif", () => {
     expect(firstActiveAccount([row({ status: "disconnected" })])).toBeNull();
     expect(firstActiveAccount([])).toBeNull();
+  });
+});
+
+describe("F4 proposal capabilities", () => {
+  it("registry persis dua: create calendar + create task — tanpa kind destruktif", () => {
+    expect([...PRODUCT_PROPOSAL_CAPABILITIES]).toEqual([
+      "calendar.create.proposal",
+      "task.create.proposal",
+    ]);
+  });
+
+  it("kind payload wajib cocok capability", () => {
+    expect(proposalKindForCapability("calendar.create.proposal")).toBe("calendar.create");
+    expect(proposalKindForCapability("task.create.proposal")).toBe("task.create");
+  });
+
+  it("scope minimum persis REQUIRED_SCOPES proposal schema", () => {
+    expect(requiredGoogleScopeForProposal("calendar.create.proposal")).toBe(
+      "https://www.googleapis.com/auth/calendar.events.owned"
+    );
+    expect(requiredGoogleScopeForProposal("task.create.proposal")).toBe(
+      "https://www.googleapis.com/auth/tasks"
+    );
+  });
+
+  it("requireProposalCapability deny-by-default dan menolak kind destruktif", () => {
+    expect(() =>
+      requireProposalCapability(["calendar.create.proposal"], "calendar.create.proposal")
+    ).not.toThrow();
+    expect(() => requireProposalCapability([], "task.create.proposal")).toThrow(
+      /tidak diizinkan/
+    );
+    expect(() =>
+      requireProposalCapability(["calendar.create.proposal"], "gmail.trash")
+    ).toThrow(/tidak dikenal/);
+  });
+
+  it("normalizeAllowlist menerima capability proposal (F4) di samping read (F3)", () => {
+    expect(normalizeAllowlist(["calendar.read.list", "task.create.proposal"])).toEqual([
+      "calendar.read.list",
+      "task.create.proposal",
+    ]);
+  });
+
+  it("jeda minimum proposal lebih ketat daripada read", () => {
+    expect(PROPOSAL_MIN_INTERVAL_MS).toBeGreaterThan(2_000);
+    // Rate limit proposal memakai isRateLimited dengan interval proposal.
+    expect(isRateLimited(1_000_000, 1_000_000 + PROPOSAL_MIN_INTERVAL_MS - 1, PROPOSAL_MIN_INTERVAL_MS)).toBe(true);
+    expect(isRateLimited(1_000_000, 1_000_000 + PROPOSAL_MIN_INTERVAL_MS, PROPOSAL_MIN_INTERVAL_MS)).toBe(false);
   });
 });
 
