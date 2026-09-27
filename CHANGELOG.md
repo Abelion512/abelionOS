@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0] - 2026-09-27
+
+- chore(codegen): register products modules in generated api types
+- feat(news): auto-load cached news and clickable notification link
+- feat(ux): trim stale copy and clarify login timeout message
+- fix(preview): sweep orphan convex/vite processes on start and exit
+- feat(products): product read endpoint with deny-by-default allowlist
+- feat(products): client product registry with hashed secrets and allowlist
+- docs(design): product-connection design v2 for Google Workspace hub
+- feat(brand): rename Mintdesk to AbelionOS across UI, PWA, and docs
+
 ## [1.0.1] - 2026-09-26
 
 - fix(ci): drop broken wouter postinstall patch, upgrade wouter to 3.11.0
