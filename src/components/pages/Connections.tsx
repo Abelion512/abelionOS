@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Plug, Trash2, Plus, ShieldCheck } from "lucide-react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export default function Connections() {
   const accounts = useQuery(api.googleAccounts.listAccounts, {});
   const disconnect = useMutation(api.googleAccounts.disconnectAccount);
+  const startConsent = useAction(api.googleOAuthActions.googleStartAction);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
 
   // Status hasil callback OAuth.
@@ -17,18 +19,23 @@ export default function Connections() {
     if (status === "error") setFlash("Koneksi Google gagal. Coba lagi dari halaman ini.");
   }, []);
 
+  // ponytail: mulai consent via action publik (useAction melampirkan token
+  // auth otomatis, respons JSON tanpa CORS), lalu navigasi browser penuh ke
+  // consent URL. Fetch ke /api/google/start salah dua arah: hosting statis
+  // tidak mem-proxy /api/*, dan fetch polos tidak membawa token Convex.
   async function connect() {
-    // Public HTTP action menghasilkan URL consent (state signed + PKCE).
+    setStarting(true);
     try {
-      const res = await fetch("/api/google/start");
-      if (res.redirected && res.url) {
-        window.location.href = res.url;
-        return;
-      }
-      const data = await res.json();
-      if (data?.url) window.location.href = data.url;
-    } catch {
-      setFlash("Gagal memulai koneksi.");
+      const { url } = await startConsent({});
+      if (url) window.location.href = url;
+    } catch (e) {
+      setFlash(
+        e instanceof Error && e.message
+          ? "Gagal memulai koneksi: " + e.message
+          : "Gagal memulai koneksi. Coba lagi dari halaman ini."
+      );
+    } finally {
+      setStarting(false);
     }
   }
 
@@ -57,7 +64,8 @@ export default function Connections() {
             </div>
             <button
               onClick={connect}
-              className="inline-flex items-center gap-2 rounded-xl bg-mint-strong px-4 py-2 text-sm font-semibold text-white hover:brightness-95"
+              disabled={starting}
+              className="inline-flex items-center gap-2 rounded-xl bg-mint-strong px-4 py-2 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-60"
             >
               <Plus className="w-4 h-4" /> Hubungkan akun
             </button>

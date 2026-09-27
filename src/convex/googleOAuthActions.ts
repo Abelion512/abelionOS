@@ -15,7 +15,8 @@ import {
 } from "./googleOAuthState";
 import { requireUserId } from "./mintdeskHelpers";
 
-// Publik: dipanggil dari http route /api/google/start.
+// Publik: dipanggil dari UI Connections via useAction — client Convex
+// melampirkan token auth dan menerima {url} sebagai JSON tanpa CORS.
 export const googleStartAction = action({
   args: {},
   handler: async (ctx) => {

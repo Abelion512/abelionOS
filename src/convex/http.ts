@@ -1,25 +1,30 @@
 // HTTP routes: auth + OAuth Google callback (PKCE + signed state).
+// Start consent TIDAK lewat HTTP route: UI memanggil action publik
+// googleStartAction langsung via useAction (token auth + JSON, tanpa CORS) —
+// hosting statis aplikasi tidak mem-proxy /api/* ke Convex site.
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { auth } from "./auth";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { isIsoTimestamp } from "./productReadLogic";
 
 const http = httpRouter();
 
 auth.addHttpRoutes(http);
 
-http.route({
-  path: "/api/google/start",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    const url = await ctx.runAction(api.googleOAuthActions.googleStartAction, {});
-    return new Response(null, {
-      status: 302,
-      headers: { Location: url.url },
-    });
-  }),
-});
+// Callback OAuth harus mendarat kembali di origin aplikasi, bukan di domain
+// convex.site yang melayani HTTP action. Prod wajib set OAUTH_APP_URL;
+// dev (tanpa env) memakai Location relatif yang proxy Vite selesaikan
+// terhadap origin browser.
+function appRedirect(status: "connected" | "error", email?: string): Response {
+  const query = new URLSearchParams({ status });
+  if (email) query.set("email", email);
+  const base = process.env.OAUTH_APP_URL?.replace(/\/+$/, "") ?? "";
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${base}/connections?${query.toString()}` },
+  });
+}
 
 // Endpoint read produk klien (F3): klien mengirim secret via header
 // Authorization (pola bearer) + capability di body; semua guard di internal
@@ -98,9 +103,7 @@ http.route({
     const reqUrl = new URL(request.url);
     const code = reqUrl.searchParams.get("code");
     const state = reqUrl.searchParams.get("state");
-    if (!code || !state) {
-      return Response.redirect(new URL("/connections?status=error", request.url), 302);
-    }
+    if (!code || !state) return appRedirect("error");
     try {
       // Identitas user AbelionOS diambil dari state JWT ter-sign (sub), bukan
       // dari session HTTP action (public route), agar state sumber kebenaran.
@@ -108,11 +111,9 @@ http.route({
         code,
         state,
       });
-      const target = new URL("/connections?status=connected", request.url);
-      target.searchParams.set("email", result.email);
-      return Response.redirect(target, 302);
-    } catch (e) {
-      return Response.redirect(new URL("/connections?status=error", request.url), 302);
+      return appRedirect("connected", result.email);
+    } catch {
+      return appRedirect("error");
     }
   }),
 });
