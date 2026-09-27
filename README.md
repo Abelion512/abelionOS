@@ -62,11 +62,15 @@ Jika tombol sempat menampilkan “Memproses…”, tunggu sampai pesan muncul. B
 
 ### Menghubungkan Google Workspace
 
-Pengguna harus sudah sign in ke AbelionOS. Dari **Connections** pada menu profil, mulai koneksi Google dan selesaikan consent screen. Jika Google menampilkan `redirect_uri_mismatch`, pastikan redirect URI yang terdaftar di Google Cloud sama persis dengan callback deployment AbelionOS:
+Flow OAuth: UI Connections memanggil action publik `googleStartAction` via `useAction` (token sesi otomatis, respons `{url}` JSON) lalu browser navigasi penuh ke consent Google. Callback di `https://charming-firefly-655.convex.site/api/google/callback` menukar code + memverifikasi state, lalu redirect ke `${OAUTH_APP_URL}/connections?status=connected|error&email=…`.
+
+Jika Google menampilkan `redirect_uri_mismatch`, pastikan redirect URI yang terdaftar di Google Cloud sama persis dengan callback HTTP action deployment Convex (bukan domain aplikasi — hosting statis aplikasi tidak mem-proxy `/api/*`):
 
 ```text
-https://abelionos.freebuff.app/api/google/callback
+https://charming-firefly-655.convex.site/api/google/callback
 ```
+
+Authorized JavaScript origin tetap domain aplikasi (`https://abelionos.freebuff.app`). Setelah consent, callback me-redirect kembali ke origin aplikasi lewat env `OAUTH_APP_URL`.
 
 Setelah kembali ke AbelionOS, Dashboard dan Daily Focus akan menampilkan status koneksi serta scopes yang benar-benar diberikan. Putuskan koneksi dari menu yang sama apabila akses tidak lagi diperlukan.
 
