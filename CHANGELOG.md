@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0] - 2026-09-27
+
+- feat(companion): Bun companion pairing and heartbeat per approved design
+- docs(products): capability registry live status and product layer regression
+- docs(todo): checkpoint notification click tab-focus fix
+
 ## [1.2.1] - 2026-09-27
 
 - fix(push): focus matching tab instead of opening new one on notification click
