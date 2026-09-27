@@ -126,6 +126,39 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_nonce", ["nonce"]),
 
+  // Companion Bun terpairing (design docs/COMPANION-PAIRING-DESIGN.md —
+  // disetujui pemilik 2026-09-27). Device secret disimpan hashed (pola
+  // products/secret; plaintext hanya dikembalikan sekali di claim).
+  // Satu device aktif per tipe: heartbeat valid mengarsipkan credential lama.
+  devices: defineTable({
+    userId: v.id("users"),
+    // slug stabil ("laptop", "server"); nama tampilan bebas di name
+    deviceId: v.string(),
+    name: v.string(),
+    type: v.union(v.literal("laptop"), v.literal("server")),
+    // kunci publik Ed25519 (base64) — diisi saat claim (laptop membuktikan
+    // kepemilikan code + kunci); browser tidak pernah melihat kunci.
+    publicKey: v.optional(v.string()),
+    secretHash: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("active"), v.literal("archived")),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_device", ["userId", "deviceId"])
+    .index("by_secret_hash", ["secretHash"]),
+
+  // Pairing code 8 karakter TTL 10 menit single-use: di-hash server-side
+  // (code plaintext hanya tampil di terminal laptop), diprune retention.
+  pairingCodes: defineTable({
+    userId: v.id("users"),
+    codeHash: v.string(),
+    expiresAt: v.number(),
+    // device yang terdaftar memakai code ini (diisi saat register)
+    deviceId: v.optional(v.id("devices")),
+  })
+    .index("by_code_hash", ["codeHash"])
+    .index("by_user", ["userId"]),
+
   // Preferensi topik berita per user.
   newsTopics: defineTable({
     userId: v.id("users"),

@@ -11,6 +11,11 @@
 import type * as agents from "../agents.js";
 import type * as auditChain from "../auditChain.js";
 import type * as auth from "../auth.js";
+import type * as companion from "../companion.js";
+import type * as companionActions from "../companionActions.js";
+import type * as companionInternals from "../companionInternals.js";
+import type * as companionLogic from "../companionLogic.js";
+import type * as companionSignature from "../companionSignature.js";
 import type * as crons from "../crons.js";
 import type * as crypto from "../crypto.js";
 import type * as dashboard from "../dashboard.js";
@@ -66,6 +71,11 @@ declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   auditChain: typeof auditChain;
   auth: typeof auth;
+  companion: typeof companion;
+  companionActions: typeof companionActions;
+  companionInternals: typeof companionInternals;
+  companionLogic: typeof companionLogic;
+  companionSignature: typeof companionSignature;
   crons: typeof crons;
   crypto: typeof crypto;
   dashboard: typeof dashboard;

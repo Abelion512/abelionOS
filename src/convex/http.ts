@@ -96,6 +96,99 @@ http.route({
   }),
 });
 
+// ===== Companion Bun: claim + heartbeat (public, polling outbound) =====
+// Body dinarrow eksplisit per guideline; logic + signature di companion*.
+http.route({
+  path: "/api/companion/claim",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Body harus JSON valid" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const str = (k: string) =>
+      typeof body === "object" && body !== null && typeof (body as any)[k] === "string"
+        ? ((body as any)[k] as string)
+        : "";
+    const code = str("code");
+    const name = str("name");
+    const type = str("type");
+    const publicKey = str("publicKey");
+    const signature = str("signature");
+    if (!code || !name || !type || !publicKey || !signature) {
+      return new Response(
+        JSON.stringify({ error: "code, name, type, publicKey, signature wajib" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const result = await ctx.runAction(internal.companionActions.claimDevice, {
+      code,
+      name,
+      type,
+      publicKey,
+      signature,
+    });
+    if (!result.ok) {
+      return new Response(JSON.stringify({ error: result.error, code: result.code }), {
+        status: result.httpStatus,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(
+      JSON.stringify({
+        deviceSecret: result.deviceSecret,
+        deviceId: result.deviceId,
+        name: result.name,
+        type: result.type,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
+http.route({
+  path: "/api/companion/heartbeat",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authHeader = request.headers.get("authorization") ?? "";
+    const secret = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Body harus JSON valid" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (!secret || typeof body !== "object" || body === null) {
+      return new Response(JSON.stringify({ error: "Header Authorization bearer dan payload objek wajib" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const result = await ctx.runAction(internal.companionActions.sendHeartbeat, {
+      secret,
+      payload: body,
+    });
+    if (!result.ok) {
+      return new Response(JSON.stringify({ error: result.error, code: result.code }), {
+        status: result.httpStatus,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ accepted: true, nextIntervalMs: result.nextIntervalMs }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }),
+});
+
 // Endpoint pengajuan proposal produk klien (F4): body = capability + payload
 // (string JSON proposal). Write tetap dua langkah — proposal masuk antrean
 // status ready dan TIDAK pernah dieksekusi sebelum konfirmasi manusia.

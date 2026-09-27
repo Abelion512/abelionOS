@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, BellRing, BellOff, Send, Server, Plug, Copy, Check } from "lucide-react";
+import { Settings as SettingsIcon, BellRing, BellOff, Send, Server, Plug, Copy, Check, Laptop, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { useAction, useMutation, useQuery } from "convex/react";
@@ -365,6 +365,187 @@ function ProductsSection() {
   );
 }
 
+function CompanionSection() {
+  const devices = useQuery(api.companion.listCompanionDevices, {});
+  const createCode = useMutation(api.companion.createPairingCode);
+  const registerDevice = useMutation(api.companion.registerDevice);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [codeInput, setCodeInput] = useState("");
+  const [devName, setDevName] = useState("");
+  const [devType, setDevType] = useState<"laptop" | "server">("laptop");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function closeDialog() {
+    setDialogOpen(false);
+    setPairingCode(null);
+    setCodeInput("");
+    setError(null);
+  }
+
+  async function makeCode() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = (await createCode({})) as unknown as { code: string; expiresAt: number };
+      setPairingCode(r.code);
+    } catch (e: any) {
+      setError(e?.message ?? "Gagal membuat pairing code.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitRegistration() {
+    if (!pairingCode) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await registerDevice({ code: pairingCode, name: devName, type: devType });
+      closeDialog();
+    } catch (e: any) {
+      setError(e?.message ?? "Gagal mendaftarkan device.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-line bg-card p-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+        <div className="flex items-center gap-2">
+          <Laptop className="w-5 h-5 text-mint-strong" aria-hidden />
+          <h2 className="font-display font-bold text-ink-strong">Companion</h2>
+        </div>
+        <button
+          onClick={() => {
+            setDialogOpen(true);
+            void makeCode();
+          }}
+          className="inline-flex items-center gap-2 rounded-xl bg-mint-strong px-4 py-2 text-sm font-semibold text-white hover:brightness-95"
+        >
+          <Laptop className="w-4 h-4" /> Pasangkan perangkat
+        </button>
+      </div>
+      <p className="text-sm text-ink-soft">
+        Companion Bun di laptop melapor via polling outbound — tanpa port inbound,
+        metadata agregat saja.
+      </p>
+
+      {devices === undefined ? (
+        <p className="mt-4 text-sm text-ink-faint">Memuat perangkat…</p>
+      ) : devices.length === 0 ? (
+        <p className="mt-4 text-sm text-ink-faint">
+          Belum ada perangkat terpasang — Dashboard menampilkan status "Belum ada
+          observasi" sampai companion pertama melapor.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {devices.map((d: any) => (
+            <li
+              key={d._id}
+              className="rounded-xl border border-line px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-ink-strong">
+                  {d.name} <span className="meta-label">{d.type}</span>
+                </p>
+                <p className="text-xs text-ink-faint">
+                  {d.status === "active" && d.observedAt
+                    ? "online · " + new Date(d.observedAt).toLocaleString("id-ID") + " · " + (d.detail ?? "")
+                    : d.status === "pending"
+                      ? "pending — jalankan perintah claim di laptop"
+                      : "diarsipkan"}
+                </p>
+              </div>
+              <span
+                className={
+                  "meta-label rounded-full px-2.5 py-1 " +
+                  (d.status === "active" ? "bg-mint-wash text-mint-strong" : "bg-sunken text-ink-soft")
+                }
+              >
+                {d.status}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {dialogOpen && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ink-strong/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pasangkan perangkat companion"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closeDialog();
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-line bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display font-bold text-ink-strong">Pasangkan perangkat</h3>
+              <button onClick={closeDialog} aria-label="Tutup dialog" className="rounded-lg p-1 hover:bg-sunken">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {!pairingCode ? (
+              <p className="text-sm text-ink-soft">Membuat pairing code…</p>
+            ) : (
+              <>
+                <p className="text-sm text-ink-soft">
+                  Langkah 1 — jalankan di laptop:
+                </p>
+                <pre className="mt-2 rounded-lg bg-sunken p-3 text-xs overflow-x-auto text-ink">
+{`bun run companion/pair.ts \\\
+  --endpoint https://charming-firefly-655.convex.site \\\\
+  --code ${pairingCode} \\\\
+  --name "${devName || "Laptop"}" \\\\
+  --type ${devType}`}
+                </pre>
+                <p className="mt-3 text-sm text-ink-soft">
+                  Langkah 2 — daftarkan device untuk code ini (TTL 10 menit):
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <input
+                    value={devName}
+                    onChange={(e) => setDevName(e.target.value)}
+                    placeholder="nama (mis. Laptop Kantor)"
+                    aria-label="Nama device"
+                    maxLength={40}
+                    className="min-w-0 flex-1 rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-mint-strong/40"
+                  />
+                  <select
+                    value={devType}
+                    onChange={(e) => setDevType(e.target.value === "server" ? "server" : "laptop")}
+                    aria-label="Tipe device"
+                    className="rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-mint-strong/40"
+                  >
+                    <option value="laptop">laptop</option>
+                    <option value="server">server</option>
+                  </select>
+                  <button
+                    onClick={submitRegistration}
+                    disabled={busy || !devName.trim()}
+                    className="rounded-xl bg-mint-strong px-4 py-2 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-60"
+                  >
+                    {busy ? "Memproses…" : "Daftarkan"}
+                  </button>
+                </div>
+              </>
+            )}
+            {error && (
+              <p className="mt-3 rounded-lg bg-sunken px-3 py-2 text-xs text-amber" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <>
@@ -410,6 +591,9 @@ export default function SettingsPage() {
 
         {/* Registry produk klien — secret tampil sekali, hash-only server-side. */}
         <ProductsSection />
+
+        {/* Companion Bun: daftar device read-only + pairing 2 langkah. */}
+        <CompanionSection />
 
         <section className="rounded-2xl border border-line bg-card p-6 text-sm text-ink-soft">
           <h2 className="font-display font-bold text-ink-strong mb-2">Batas produk</h2>
