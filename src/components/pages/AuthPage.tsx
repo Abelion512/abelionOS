@@ -36,7 +36,7 @@ export default function AuthPage() {
       // Watchdog: promise yang menggantung karena retry/limit server tidak boleh
       // membuat tombol "Memproses…" tanpa akhir dan tanpa pesan.
       const watchdog = new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error("MintdeskTimeout")), 15_000);
+        timer = setTimeout(() => reject(new Error("AbelionOSTimeout")), 15_000);
       });
       await Promise.race([
         signIn("password", {
@@ -60,15 +60,12 @@ export default function AuthPage() {
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-6 justify-center">
           <Leaf className="w-5 h-5 text-mint-strong" aria-hidden />
-          <span className="font-display font-bold text-lg text-ink-strong">Mintdesk</span>
+          <span className="font-display font-bold text-lg text-ink-strong">AbelionOS</span>
         </div>
         <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
           <h1 className="font-display font-bold text-xl text-ink-strong mb-1">
             {mode === "signin" ? "Masuk" : "Buat akun"}
           </h1>
-          <p className="text-sm text-ink-soft mb-5">
-            Akun lokal Mintdesk untuk sesi dashboard pribadi Anda.
-          </p>
           <form onSubmit={submit} className="space-y-4">
             <div>
               <label htmlFor="email" className="meta-label block mb-1">
@@ -124,9 +121,6 @@ export default function AuthPage() {
         <div className="mt-4">
           <BackendStatusNotice />
         </div>
-        <p className="mt-4 text-center text-xs text-ink-faint">
-          Setelah masuk, hubungkan akun Google dari menu Connections.
-        </p>
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ describe("AuthPage", () => {
     render(<AuthPage />);
     fillAndSubmit();
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toMatch(/belum menjawab/i);
+    expect(alert.textContent).toMatch(/coba lagi/i);
     expect(screen.getByRole("button", { name: "Masuk" })).toBeTruthy();
   });
 
@@ -86,7 +86,7 @@ describe("AuthPage", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(15_000);
     });
-    expect(screen.getByRole("alert").textContent).toMatch(/belum menjawab/i);
+    expect(screen.getByRole("alert").textContent).toMatch(/coba lagi/i);
     expect(screen.getByRole("button", { name: "Masuk" })).toBeTruthy();
   });
 });

@@ -5,18 +5,18 @@ export function explainAuthError(err: unknown): string {
   const data = (err as { data?: { code?: string } } | undefined)?.data;
   const code = data?.code;
   const raw = err instanceof Error ? err.message : String(err ?? "");
-  if (raw === "MintdeskTimeout" || /timed out|Server Error|Connection lost|not available/i.test(raw)) {
-    return "Backend Mintdesk belum menjawab (batas waktu server dev). Tunggu beberapa detik, lalu tekan tombolnya sekali lagi.";
+  if (raw === "AbelionOSTimeout" || /timed out|Server Error|Connection lost|not available/i.test(raw)) {
+    return "Koneksi ke backend belum selesai. Coba lagi sebentar.";
   }
   if (code === "TooManyFailedAttempts") {
     return "Terlalu banyak percobaan gagal. Tunggu sebentar lalu coba lagi.";
   }
   if (code === "InvalidAccountId" || /InvalidAccountId/.test(raw)) {
-    return "Email ini belum punya akun Mintdesk. Pilih “Belum punya akun? Daftar di sini.” untuk membuat akun pemilik.";
+    return "Email ini belum punya akun AbelionOS. Pilih “Belum punya akun? Daftar di sini.” untuk membuat akun pemilik.";
   }
   if (code === "InvalidSecret" || /InvalidSecret/.test(raw)) return "Password salah.";
-  if (/Pendaftaran hanya untuk pemilik Mintdesk/.test(raw)) {
-    return "Pendaftaran hanya untuk pemilik Mintdesk sesuai AUTH_OWNER_EMAIL.";
+  if (/Pendaftaran hanya untuk pemilik AbelionOS/.test(raw)) {
+    return "Pendaftaran hanya untuk pemilik AbelionOS sesuai AUTH_OWNER_EMAIL.";
   }
   if (/Pendaftaran ditutup/.test(raw)) {
     return "Pendaftaran ditutup: AUTH_OWNER_EMAIL belum diisi pada environment Convex.";

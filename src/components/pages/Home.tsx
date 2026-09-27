@@ -30,7 +30,7 @@ export default function Home() {
       <header className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Leaf className="w-5 h-5 text-mint-strong" aria-hidden />
-          <span className="font-display font-bold text-lg text-ink-strong">Mintdesk</span>
+          <span className="font-display font-bold text-lg text-ink-strong">AbelionOS</span>
         </div>
         <Link
           href="/auth?returnTo=%2Fdashboard"
@@ -51,8 +51,7 @@ export default function Home() {
             Satu layar untuk kondisi mesin, agenda, dan keputusan harian Anda.
           </h1>
           <p className="mt-5 text-lg text-ink-soft leading-relaxed">
-            Mintdesk menampilkan evidence dari Calendar, Gmail, dan companion lokal Anda —
-            lalu menyiapkan tindakan terbatas yang selalu butuh konfirmasi Anda.
+            Evidence Calendar, Gmail, dan companion lokal — konfirmasi di setiap tindakan.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
@@ -84,15 +83,6 @@ export default function Home() {
               </div>
             </article>
           ))}
-        </section>
-
-        <section className="mt-12 rounded-2xl border border-line bg-card p-6">
-          <p className="text-sm text-ink-soft leading-relaxed">
-            <span className="font-semibold text-ink-strong">Batas produk:</span> Mintdesk bukan
-            remote shell, bukan file manager umum, dan tidak menjalankan aksi Google tanpa
-            preview plus konfirmasi Anda. Sumber yang tidak tersedia ditandai eksplisit,
-            bukan ditutupi data contoh.
-          </p>
         </section>
       </main>
     </div>

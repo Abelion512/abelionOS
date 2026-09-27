@@ -14,15 +14,15 @@ describe("explainAuthError", () => {
 
   it("menjelaskan password salah dan status guard pemilik", () => {
     expect(explainAuthError(new Error("Uncaught Error: InvalidSecret"))).toBe("Password salah.");
-    expect(explainAuthError(new Error("Uncaught Error: Pendaftaran hanya untuk pemilik Mintdesk"))).toMatch(/AUTH_OWNER_EMAIL/);
+    expect(explainAuthError(new Error("Uncaught Error: Pendaftaran hanya untuk pemilik AbelionOS"))).toMatch(/AUTH_OWNER_EMAIL/);
     expect(explainAuthError(new Error("Uncaught Error: Pendaftaran ditutup: AUTH_OWNER_EMAIL belum diisi"))).toMatch(/ditutup/i);
   });
 
   it("meminta mencoba ulang saat backend dev timeout atau tidak menjawab", () => {
-    expect(explainAuthError(new Error("MintdeskTimeout"))).toMatch(/belum menjawab/i);
+    expect(explainAuthError(new Error("AbelionOSTimeout"))).toMatch(/coba lagi/i);
     expect(
       explainAuthError(new Error("[Request ID: abc] Server Error Uncaught Error: Function execution timed out (maximum duration: 1s)")),
-    ).toMatch(/belum menjawab/i);
+    ).toMatch(/coba lagi/i);
   });
 
   it("meneruskan validasi password dan memberi fallback untuk error tak dikenal", () => {
