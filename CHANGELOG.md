@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.1] - 2026-09-27
+
+- fix(push): focus matching tab instead of opening new one on notification click
+
 ## [1.2.0] - 2026-09-27
 
 - chore: codegen fixup and checkpoint OAuth prod diagnosis
