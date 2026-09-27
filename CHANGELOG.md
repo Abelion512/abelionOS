@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0] - 2026-09-27
+
+- chore: codegen fixup and checkpoint OAuth prod diagnosis
+- docs(todo): checkpoint F4 proposal endpoint verification
+- feat(products): proposal endpoint F4 with source product labeling
+- docs(oauth): canonical redirect URI is convex.site and checkpoint the fix
+
 ## [1.1.1] - 2026-09-27
 
 - fix(oauth): start consent via authenticated action and site-domain callback
