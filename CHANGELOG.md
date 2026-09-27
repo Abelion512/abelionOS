@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2026-09-27
+
+- fix(oauth): start consent via authenticated action and site-domain callback
+- docs(todo): checkpoint deployment prod and rebasing notes
+
 ## [1.1.0] - 2026-09-27
 
 - chore(codegen): register products modules in generated api types
