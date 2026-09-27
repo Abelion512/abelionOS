@@ -44,6 +44,7 @@ import type * as observationLogic from "../observationLogic.js";
 import type * as passwordCrypto from "../passwordCrypto.js";
 import type * as pollPolicy from "../pollPolicy.js";
 import type * as productLogic from "../productLogic.js";
+import type * as productProposalActions from "../productProposalActions.js";
 import type * as productReadActions from "../productReadActions.js";
 import type * as productReadInternals from "../productReadInternals.js";
 import type * as productReadLogic from "../productReadLogic.js";
@@ -98,6 +99,7 @@ declare const fullApi: ApiFromModules<{
   passwordCrypto: typeof passwordCrypto;
   pollPolicy: typeof pollPolicy;
   productLogic: typeof productLogic;
+  productProposalActions: typeof productProposalActions;
   productReadActions: typeof productReadActions;
   productReadInternals: typeof productReadInternals;
   productReadLogic: typeof productReadLogic;
