@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RefreshCw, Plus, X, ExternalLink, TriangleAlert, Rss, LayoutGrid } from "lucide-react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -65,6 +65,17 @@ export default function News() {
       setLoading(false);
     }
   }
+
+  // ponytail: auto-load sekali per kunjungan halaman memakai cache server
+  // (force=false, TTL 10 menit) — halaman tidak lagi kosong sebelum tombol
+  // ditekan; fetch paksa tetap lewat tombol "Ambil berita".
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoadedRef.current) return;
+    autoLoadedRef.current = true;
+    void run("", "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
