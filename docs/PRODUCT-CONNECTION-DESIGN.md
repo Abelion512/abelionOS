@@ -67,14 +67,16 @@ Audit permintaan klien: `actor: "product:<productId>"`, capability, status `acce
 
 Penamaan `<sumber>.<mode>.<objek>`. Default: **kosong** — tiap capability ditambah eksplisit dengan justifikasi (pola justifikasi scope di AGENTS.md).
 
-| Capability | Mode | Catatan |
-|---|---|---|
-| `calendar.read.list` | read | daftar kalimat akun |
-| `calendar.read.events` | read | jendela waktu terbatas (param wajib, maks 7 hari) |
-| `gmail.read.metadata` | read | metadata/excerpt terbatas, tidak pernah body, tidak dipersistenkan |
-| `tasks.read` | read | metadata task on-demand |
-| `calendar.propose.create` | propose | klien mengusulkan event; tetap preview + confirm di UI |
-| `calendar.propose.delete` | propose | klien mengusulkan penghapusan; ownership guard tetap |
+| Capability | Mode | Status | Catatan |
+|---|---|---|---|
+| `calendar.read.list` | read | **live (F3)** | daftar kalender akun, maks 25 item |
+| `calendar.read.events` | read | **live (F3)** | jendela waktu terbatas (maks 7 hari, 25 item) |
+| `calendar.create.proposal` | proposal | **live (F4)** | klien mengusulkan event (kind `calendar.create`); ownership guard + preview + confirm di UI |
+| `task.create.proposal` | proposal | **live (F4)** | klien mengusulkan task (kind `task.create`); preview + confirm di UI |
+| `gmail.read.metadata` | read | planned | metadata/excerpt terbatas, tidak pernah body, tidak dipersistenkan |
+| `tasks.read` | read | planned | metadata task on-demand |
+
+Capability destruktif (`calendar.propose.delete`, `gmail.trash`) sengaja **tidak** masuk registry proposal — klien tidak mengusulkan operasi destruktif; keputusan F4 2026-09-27 di todo.md.
 
 Aturan:
 1. Read-only default; write capability hanya untuk produk yang dibuktikan butuh, dan bentuknya **usulan proposal**, bukan eksekusi.

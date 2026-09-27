@@ -15,7 +15,7 @@ AbelionOS adalah **Daily Focus Assistant**, dashboard operasional Linux Mint, da
 | Minimum data retention | Jangan persist body Gmail, bearer token, device secret, atau raw prompt AI dalam database atau audit event |
 | Capability allowlist | Companion hanya boleh menjalankan health, metrics, process observation, audit, terminate yang telah di-allowlist, workdir observation, dan Daily Focus reasoning |
 | No scheduled AI | Jangan menambahkan cron, background AI, atau notification scheduler tanpa persetujuan eksplisit dan workflow periodik yang sesuai. Pengecualian tercatat: news watcher cron Convex 5 menit (metadata-only, tanpa AI, tanpa write Google) disetujui pemilik 2026-09-25 di todo.md |
-| Hub tunggal Google Workspace | Produk klien terdaftar dengan secret hashed server-side + allowlist per produk; kredensial Google tidak pernah dikirim ke klien; write dari klien tetap proposal + confirm; tiap permintaan klien masuk audit |
+| Hub tunggal Google Workspace | Produk klien terdaftar dengan secret hashed server-side + allowlist per produk; kredensial Google tidak pernah dikirim ke klien; write dari klien tetap proposal + confirm; tiap permintaan klien masuk audit. Registry capability live (2026-09-27): read `calendar.read.list` + `calendar.read.events` (F3), proposal `calendar.create.proposal` + `task.create.proposal` (F4) — deny-by-default, capability baru hanya via justifikasi di todo.md; endpoint di convex.site: `/api/products/v1/read` + `/api/products/v1/proposals` |
 
 ## Arsitektur dan package manager
 

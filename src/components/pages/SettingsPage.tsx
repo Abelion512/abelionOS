@@ -116,7 +116,9 @@ type ProductRow = {
 // Registry capability yang bisa di-grant owner: read F3 + proposal F4.
 // Sengaja tanpa calendar.delete/gmail.trash — klien tidak mengusulkan
 // operasi destruktif; write tetap preview + confirm di Daily Focus.
-const PRODUCT_CAPABILITIES = [
+// Di-export agar regression test bisa mem-pin konsistensi dengan registry
+// backend (productReadLogic) — daftar capability tidak boleh berbeda.
+export const PRODUCT_CAPABILITIES = [
   "calendar.read.list",
   "calendar.read.events",
   "calendar.create.proposal",

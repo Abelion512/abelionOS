@@ -1,6 +1,6 @@
 # AbelionOS
 
-**AbelionOS** adalah dashboard operasional personal untuk Linux Mint. Aplikasi ini menyatukan kondisi runtime companion lokal, workdir yang dipantau, koneksi Google Workspace, serta *Daily Focus* berbasis bukti. Sebagai posisi produk, AbelionOS juga menjadi satu tempat koneksi Google Workspace pemilik: daripada setiap produk mengelola OAuth Google sendiri, koneksi dipusatkan di sini dan produk klien menerima metadata/hasil dengan konfirmasi manusia untuk setiap write (lapisan koneksi produk sedang didesain, lihat todo.md). AbelionOS bukan desktop environment, remote shell, atau agent otonom. Ia adalah lapisan kontrol yang membantu pengguna meninjau konteks, menyiapkan tindakan terbatas, dan mengonfirmasi setiap perubahan berisiko.
+**AbelionOS** adalah dashboard operasional personal untuk Linux Mint. Aplikasi ini menyatukan kondisi runtime companion lokal, workdir yang dipantau, koneksi Google Workspace, serta *Daily Focus* berbasis bukti. Sebagai posisi produk, AbelionOS juga menjadi satu tempat koneksi Google Workspace pemilik: daripada setiap produk mengelola OAuth Google sendiri, koneksi dipusatkan di sini dan produk klien menerima metadata/hasil dengan konfirmasi manusia untuk setiap write (layer koneksi produk terimplementasi — registry capability di [docs/PRODUCT-CONNECTION-DESIGN.md](./docs/PRODUCT-CONNECTION-DESIGN.md)). AbelionOS bukan desktop environment, remote shell, atau agent otonom. Ia adalah lapisan kontrol yang membantu pengguna meninjau konteks, menyiapkan tindakan terbatas, dan mengonfirmasi setiap perubahan berisiko.
 
 > Prinsip operasional: **data deterministik dahulu, rekomendasi lokal hanya atas permintaan, dan manusia selalu memberi konfirmasi sebelum write ke Google Workspace.**
 
@@ -16,6 +16,7 @@
 | Linux companion | Companion Bun (desain final: polling outbound + pairing, lihat [docs/COMPANION-PAIRING-DESIGN.md](./docs/COMPANION-PAIRING-DESIGN.md)) | Implementasi menunggu persetujuan capability pemilik; tanpa companion aktif, Dashboard menampilkan status "Belum ada observasi" yang eksplisit |
 | Storage | Metadata workdir `/media/abelion/Isaf/ican/project` ditampilkan lewat observasi companion | Bukan file manager cloud; browser tidak memiliki akses filesystem lokal secara langsung |
 | Activity | Audit events (metadata tindakan) dengan verifikasi rantai hash sha256 tamper-evident | Bukan log collector umum atau sistem SIEM |
+| Product connection | Produk terdaftar (mis. abelink) memanggil `POST /api/products/v1/read` (Calendar read) dan `POST /api/products/v1/proposals` (mengajukan write) di convex.site dengan secret bearer | Allowlist deny-by-default (registry 4 capability: 2 read + 2 proposal), rate limit per operasi, tiap request ter-audit; proposal produk berlabel `via <slug>` dan tetap preview + confirm manusia |
 
 ## Arsitektur
 
