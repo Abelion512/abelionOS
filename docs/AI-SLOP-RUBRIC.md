@@ -1,12 +1,12 @@
-# Mintdesk Anti-AI-Slop Rubric
+# AbelionOS Anti-AI-Slop Rubric
 
 ## Tujuan
 
-Mintdesk harus memprioritaskan bukti, tindakan, dan status runtime. AI hanya membantu menyusun proposal dalam Daily Focus. Antarmuka tidak boleh memakai estetika generik sebagai pengganti kejelasan fungsi.
+AbelionOS harus memprioritaskan bukti, tindakan, dan status runtime. AI hanya membantu menyusun proposal dalam Daily Focus. Antarmuka tidak boleh memakai estetika generik sebagai pengganti kejelasan fungsi.
 
 ## Aturan yang dapat ditinjau
 
-| Area | Hindari | Standar Mintdesk |
+| Area | Hindari | Standar AbelionOS |
 | --- | --- | --- |
 | Copy | slogan, buzzword SaaS, pengulangan label dan helper text | satu pernyataan spesifik tentang data, aksi, atau status yang tersedia |
 | Hierarki | eyebrow besar, badge di atas judul tanpa makna, hero marketing | breadcrumb atau label sumber hanya jika membantu orientasi atau provenance |

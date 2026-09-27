@@ -1,6 +1,6 @@
-# skill.md — Pembelajaran Sesi Mintdesk (Freebuff, 2026-09-25)
+# skill.md — Pembelajaran Sesi AbelionOS (Freebuff, 2026-09-25)
 
-Skill ini didistilasi dari sesi rebuild Mintdesk di Freebuff: web app React 19 + Vite +
+Skill ini didistilasi dari sesi rebuild AbelionOS di Freebuff: web app React 19 + Vite +
 Tailwind 4 + Wouter + Convex (backend/database + auth), single-user, dengan companion
 Bun di Linux sebagai rencana lanjutan. Semua pola di bawah sudah teruji lewat test,
 build, dan preview — bukan teori.

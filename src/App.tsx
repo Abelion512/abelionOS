@@ -47,7 +47,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const meta = SHELL_META["/" + (location.split("/")[1] ?? "")];
   return (
-    <AppShell title={meta?.title ?? "Mintdesk"} subtitle={meta?.subtitle}>
+    <AppShell title={meta?.title ?? "AbelionOS"} subtitle={meta?.subtitle}>
       {children}
     </AppShell>
   );

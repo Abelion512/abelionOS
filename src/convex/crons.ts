@@ -1,4 +1,4 @@
-// Cron Convex — pekerjaan berkala satu-satunya di Mintdesk.
+// Cron Convex — pekerjaan berkala satu-satunya di AbelionOS.
 // Persetujuan eksplisit pemilik untuk news watcher tercatat di todo.md
 // (2026-09-25, "auto update ketika ada berita baru tanpa menunggu rentang
 // waktu"). Interval 5 menit memadai untuk RSS metadata-only; biaya tetap

@@ -143,7 +143,7 @@ export async function fetchSourceWithCache(
 
   try {
     const res = await fetch(s.url, {
-      headers: { "User-Agent": "Mintdesk/1.0 (personal dashboard; metadata-only)" },
+      headers: { "User-Agent": "AbelionOS/1.0 (personal dashboard; metadata-only)" },
       signal: AbortSignal.timeout(8000),
       redirect: "follow",
     });

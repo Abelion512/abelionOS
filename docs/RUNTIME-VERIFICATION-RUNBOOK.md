@@ -1,6 +1,6 @@
-# Mintdesk Runtime Verification Runbook
+# AbelionOS Runtime Verification Runbook
 
-> **Tujuan.** Verifikasi Mintdesk pada ponsel, Linux laptop, dan Linux server tanpa memberi browser akses ke secret perangkat atau 9router. Bridge observasi tetap read-only. Companion Bun hybrid hanya mengubah teks menjadi **proposal**; perubahan Google selalu berasal dari backend setelah konfirmasi pengguna.
+> **Tujuan.** Verifikasi AbelionOS pada ponsel, Linux laptop, dan Linux server tanpa memberi browser akses ke secret perangkat atau 9router. Bridge observasi tetap read-only. Companion Bun hybrid hanya mengubah teks menjadi **proposal**; perubahan Google selalu berasal dari backend setelah konfirmasi pengguna.
 
 ## Status Operasional
 
@@ -14,9 +14,9 @@
 
 ## 1. Akses dari Ponsel
 
-Gunakan domain production Mintdesk dari browser ponsel. Ponsel tidak menyimpan `MINTDESK_9ROUTER_TOKEN`, `MINTDESK_DEVICE_SECRET`, atau token bridge. Dari Daily Focus, ponsel hanya mengirim teks ke backend untuk dibuat sebagai job terenkripsi. Laptop atau server yang terdaftar dan online akan memproses job dengan 9router lokal, lalu backend menampilkan preview.
+Gunakan domain production AbelionOS dari browser ponsel. Ponsel tidak menyimpan `MINTDESK_9ROUTER_TOKEN`, `MINTDESK_DEVICE_SECRET`, atau token bridge. Dari Daily Focus, ponsel hanya mengirim teks ke backend untuk dibuat sebagai job terenkripsi. Laptop atau server yang terdaftar dan online akan memproses job dengan 9router lokal, lalu backend menampilkan preview.
 
-> Jika semua companion offline, Mintdesk tidak membuat fallback AI. Job tetap `queued` atau panel menyatakan unavailable. Anda masih dapat membaca evidence Calendar dan Gmail metadata.
+> Jika semua companion offline, AbelionOS tidak membuat fallback AI. Job tetap `queued` atau panel menyatakan unavailable. Anda masih dapat membaca evidence Calendar dan Gmail metadata.
 
 ## 2. Bridge Observasi Linux Lama
 
@@ -76,7 +76,7 @@ Untuk server tanpa sesi login, aktifkan lingering untuk user service yang menjal
 sudo loginctl enable-linger "$USER"
 ```
 
-Companion melakukan polling HTTPS keluar menuju Mintdesk. Ia tidak membuka port publik, tidak memegang refresh token Google, dan tidak pernah memanggil Google API.
+Companion melakukan polling HTTPS keluar menuju AbelionOS. Ia tidak membuka port publik, tidak memegang refresh token Google, dan tidak pernah memanggil Google API.
 
 ## 4. Daily Focus Action Contract
 

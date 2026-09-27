@@ -1,4 +1,4 @@
-// Helper lintas modul Mintdesk: identitas user-scoped.
+// Helper lintas modul AbelionOS: identitas user-scoped.
 // ponytail: satu modul kecil, reuse di semua router domain. Audit memakai
 // internal.mintdeskInternals.auditFromAction (satu penulis hash chain) —
 // jangan menulis ke auditEvents dari tempat lain.

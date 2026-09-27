@@ -31,7 +31,7 @@ export function BackendStatusNotice() {
     >
       <ServerOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <span>
-        Backend Mintdesk belum tersambung, jadi data dan sesi tidak dapat dimuat. Pada deployment
+        Backend AbelionOS belum tersambung, jadi data dan sesi tidak dapat dimuat. Pada deployment
         produksi ini berarti <span className="font-mono text-xs">VITE_CONVEX_URL</span> belum diisi.
         <Link href="/status" className="mt-1 block font-semibold text-mint-strong underline">
           Lihat status backend

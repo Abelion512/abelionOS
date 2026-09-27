@@ -2,7 +2,7 @@
 
 ## Product
 
-**Mintdesk** adalah dashboard operasional dan Morning Briefing on-demand untuk pengguna Linux yang ingin melihat kondisi laptop, mengelola proses milik user, mengakses file, serta melihat metadata Google Workspace dari satu antarmuka yang terasa seperti desktop Linux. Produk ini bukan pengganti desktop environment, bukan remote shell, dan bukan service manager dengan hak root.
+**AbelionOS** adalah dashboard operasional dan Morning Briefing on-demand untuk pengguna Linux yang ingin melihat kondisi laptop, mengelola proses milik user, mengakses file, serta melihat metadata Google Workspace dari satu antarmuka yang terasa seperti desktop Linux. Produk ini bukan pengganti desktop environment, bukan remote shell, dan bukan service manager dengan hak root.
 
 ## Problem
 

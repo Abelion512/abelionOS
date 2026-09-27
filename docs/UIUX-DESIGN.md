@@ -2,7 +2,7 @@
 
 ## Design Direction
 
-Mintdesk memakai **Mint Atelier**: shell desktop Linux yang tenang, material, dan editorial. Visual membantu scanning status, tetapi tidak boleh menciptakan klaim operasional. Green berarti data terhubung atau action aman, bukan sekadar dekorasi.
+AbelionOS memakai **Mint Atelier**: shell desktop Linux yang tenang, material, dan editorial. Visual membantu scanning status, tetapi tidak boleh menciptakan klaim operasional. Green berarti data terhubung atau action aman, bukan sekadar dekorasi.
 
 ## Page Inventory
 

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "dashboard-os-linux-mint",
+      "name": "abelionos",
       "dependencies": {
         "@auth/core": "^0.41.3",
         "@convex-dev/auth": "^0.0.95",

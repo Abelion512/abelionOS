@@ -2,7 +2,7 @@
 
 ## 1. Design Position
 
-Mintdesk memakai arsitektur hybrid. Web application mengelola identity, metadata, S3 references, OAuth state, audit, dan UI. Linux companion berjalan lokal untuk metrics dan process control. Tidak ada komponen yang diberi hak root dari dashboard.
+AbelionOS memakai arsitektur hybrid. Web application mengelola identity, metadata, S3 references, OAuth state, audit, dan UI. Linux companion berjalan lokal untuk metrics dan process control. Tidak ada komponen yang diberi hak root dari dashboard.
 
 ## 2. Architecture
 

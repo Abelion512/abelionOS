@@ -47,7 +47,7 @@ export const sendTestPush = action({
     const userId = await requireUserId(ctx);
     const result = await ctx.runAction(internal.push.pushSendInternal, {
       userId,
-      title: "Mintdesk push aktif",
+      title: "AbelionOS push aktif",
       body: "Notifikasi uji berhasil dikirim ke perangkat ini.",
       url: "/settings",
       tag: "test",
@@ -83,12 +83,12 @@ export const pushSendInternal = internalAction({
     if (subs.length === 0) return { sent: 0, removed: 0 };
     const cfg = vapidConfig();
     const webpush = await loadWebPush();
-    webpush.setVapidDetails("mailto:owner@mintdesk.local", cfg.publicKey, cfg.privateKey);
+    webpush.setVapidDetails("mailto:owner@abelionos.local", cfg.publicKey, cfg.privateKey);
     const payload = JSON.stringify({
       title,
       body: body ?? "",
       url: url ?? "/dashboard",
-      tag: tag ?? "mintdesk",
+      tag: tag ?? "abelionos",
     });
     let sent = 0;
     let removed = 0;

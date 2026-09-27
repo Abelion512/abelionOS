@@ -1,6 +1,6 @@
-# Sinkronisasi Mintdesk ke Clone Linux Lokal
+# Sinkronisasi AbelionOS ke Clone Linux Lokal
 
-Panduan ini digunakan setelah sebuah checkpoint Mintdesk tersedia di GitHub dan Anda ingin meninjau atau melanjutkan perubahan dari Linux Mint. Ia **tidak** memindahkan database produksi (Convex cloud), token Google, device secret, atau secret environment deployment ke repository lokal.
+Panduan ini digunakan setelah sebuah checkpoint AbelionOS tersedia di GitHub dan Anda ingin meninjau atau melanjutkan perubahan dari Linux Mint. Ia **tidak** memindahkan database produksi (Convex cloud), token Google, device secret, atau secret environment deployment ke repository lokal.
 
 > Jalankan web application dengan **Bun** (`bun.lock` tracked). Convex adalah backend + database; tidak ada MySQL/Drizzle lagi dari era sebelumnya.
 
@@ -27,7 +27,7 @@ git remote -v
 
 Jika `git status` menampilkan perubahan yang belum siap disimpan, commit atau stash terlebih dahulu. Jangan menjalankan `git reset --hard` karena perubahan lokal akan hilang dan sulit dibandingkan dengan checkpoint.
 
-## 2. Tarik perubahan Mintdesk dengan fast-forward saja
+## 2. Tarik perubahan AbelionOS dengan fast-forward saja
 
 ```bash
 git fetch origin --prune
@@ -84,7 +84,7 @@ Jangan mengubah `hybrid-companion.env`, device secret, atau token 9router untuk 
 
 ## 6. Siklus kerja yang direkomendasikan
 
-1. Perbaikan diprototipe dan diverifikasi pada Mintdesk (Freebuff workspace) terlebih dahulu.
+1. Perbaikan diprototipe dan diverifikasi pada AbelionOS (Freebuff workspace) terlebih dahulu.
 2. Setelah checkpoint tersedia, tarik dengan `git pull --ff-only` ke clone Linux.
 3. Jalankan test, typecheck, build, dan screenshot pada viewport desktop serta 375px.
 4. Commit perubahan lokal dengan pesan yang menyebut intent dan risiko.

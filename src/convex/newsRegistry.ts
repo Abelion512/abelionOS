@@ -1,4 +1,4 @@
-// Registry sumber berita Mintdesk — modular dan pluggable.
+// Registry sumber berita AbelionOS — modular dan pluggable.
 // ponytail: satu kontrak feed, tambah sumber = tambah satu objek; tanpa
 // dependency parser XML, tanpa cron, tanpa persistence artikel. Ceiling:
 // kurasi manual di file ini; jalur upgrade: pindah registry ke tabel bila

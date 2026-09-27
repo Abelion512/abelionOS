@@ -1,10 +1,10 @@
-# Mintdesk Anti-Slop Guardrails
+# AbelionOS Anti-Slop Guardrails
 
 ## Status dan Scope
 
-Taste Skill `design-taste-frontend` telah dipasang untuk lingkungan proyek melalui `npx skills add Leonxlnx/taste-skill`. Skill tersebut secara eksplisit menyatakan bahwa ia terutama ditujukan untuk landing page, portfolio, dan redesign, **bukan dashboard atau product UI multi-langkah**. Karena itu Mintdesk memakai prinsip audit-first dan anti-defaultnya, bukan aturan landing-page secara literal.[1]
+Taste Skill `design-taste-frontend` telah dipasang untuk lingkungan proyek melalui `npx skills add Leonxlnx/taste-skill`. Skill tersebut secara eksplisit menyatakan bahwa ia terutama ditujukan untuk landing page, portfolio, dan redesign, **bukan dashboard atau product UI multi-langkah**. Karena itu AbelionOS memakai prinsip audit-first dan anti-defaultnya, bukan aturan landing-page secara literal.[1]
 
-> **Design read Mintdesk:** personal operational dashboard untuk satu pemilik Linux Mint, dengan bahasa visual Mint Atelier yang tenang, editorial, evidence-first, dan berdisiplin HIG; design variance 5, motion intensity 2, visual density 5.
+> **Design read AbelionOS:** personal operational dashboard untuk satu pemilik Linux Mint, dengan bahasa visual Mint Atelier yang tenang, editorial, evidence-first, dan berdisiplin HIG; design variance 5, motion intensity 2, visual density 5.
 
 ## Sumber dan Hierarki Keputusan
 
@@ -14,7 +14,7 @@ Taste Skill `design-taste-frontend` telah dipasang untuk lingkungan proyek melal
 | `design.md` dari pengguna | Clarity, deference, depth, grid 8pt, batas radius, shadow ambient, restraint warna, serta checklist pre-publish | Larangan asimetri secara mutlak dan kewajiban system font yang akan menghapus identitas Mint Atelier |
 | Mint Atelier V1 | Warm parchment, botanical Dashboard hero, DM Sans + Source Sans 3, mint primary accent, evidence-first structure | Kartu utilitas seragam, decorative UI, dan placeholder sistem |
 
-## Aturan Wajib Mintdesk
+## Aturan Wajib AbelionOS
 
 | Area | Guardrail |
 |---|---|

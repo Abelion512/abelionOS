@@ -1,5 +1,5 @@
 "use node";
-// News watcher — SATU-SATUNYA pekerjaan berkala di Mintdesk, dengan
+// News watcher — SATU-SATUNYA pekerjaan berkala di AbelionOS, dengan
 // persetujuan eksplisit pemilik (todo.md, 2026-09-25): "auto update ketika
 // ada berita baru tanpa menunggu rentang waktu". Fetch on-demand tetap ada;
 // watcher hanya menambah lapisan pemberitahuan metadata-only.

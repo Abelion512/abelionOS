@@ -1,9 +1,11 @@
-// Mintdesk service worker — push handler + offline shell minimum.
+// AbelionOS service worker — push handler + offline shell minimum.
 // ponytail: tanpa Workbox; shell untuk installability + offline, data selalu
 // live dari jaringan (bukan SWR app), dan aset ber-hash di-cache untuk
 // kunjungan ulang. Naikkan versi cache saat ingin mengosongkannya.
-const SHELL_CACHE = "mintdesk-shell-v1";
-const ASSET_CACHE = "mintdesk-assets-v1";
+// Rename produk 2026-09-26: naikkan versi cache agar cache lama bertema
+// "mintdesk-*" dihapus otomatis di handler activate di bawah.
+const SHELL_CACHE = "abelionos-shell-v2";
+const ASSET_CACHE = "abelionos-assets-v2";
 const KEEP_CACHES = [SHELL_CACHE, ASSET_CACHE];
 const SHELL_URLS = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
@@ -69,12 +71,12 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "Mintdesk", body: "Notifikasi baru." };
+    data = { title: "AbelionOS", body: "Notifikasi baru." };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || "Mintdesk", {
+    self.registration.showNotification(data.title || "AbelionOS", {
       body: data.body || "",
-      tag: data.tag || "mintdesk",
+      tag: data.tag || "abelionos",
       data: { url: data.url || "/dashboard" },
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",

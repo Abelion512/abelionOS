@@ -1,4 +1,4 @@
-// Konfigurasi OAuth Google Mintdesk.
+// Konfigurasi OAuth Google AbelionOS.
 // ponytail: scope allowlist persis sesuai AGENTS.md + openid/email untuk
 // identifikasi akun multi-account. Jangan menambah scope tanpa amendment.
 export const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";

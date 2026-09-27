@@ -14,7 +14,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         const email = typeof params.email === "string" ? params.email : undefined;
         if (!owner) throw new Error("Pendaftaran ditutup: AUTH_OWNER_EMAIL belum diisi");
         if (!email || email.toLowerCase() !== owner.toLowerCase()) {
-          throw new Error("Pendaftaran hanya untuk pemilik Mintdesk");
+          throw new Error("Pendaftaran hanya untuk pemilik AbelionOS");
         }
         return { email };
       },

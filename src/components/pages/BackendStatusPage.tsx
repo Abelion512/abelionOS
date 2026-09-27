@@ -78,7 +78,7 @@ export default function BackendStatusPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Leaf className="w-5 h-5 text-mint-strong" aria-hidden />
-            <span className="font-display font-bold text-lg text-ink-strong">Mintdesk</span>
+            <span className="font-display font-bold text-lg text-ink-strong">AbelionOS</span>
           </div>
           <Link
             href={isAuthenticated ? "/dashboard" : "/auth"}
@@ -127,7 +127,7 @@ export default function BackendStatusPage() {
               <Row label="Origin browser ini">
                 <code className="font-mono break-all text-ink">{view.origin ?? "—"}</code>
               </Row>
-              <Row label="Sesi Mintdesk">
+              <Row label="Sesi AbelionOS">
                 {isLoading ? (
                   <Chip tone="plain">memeriksa…</Chip>
                 ) : isAuthenticated ? (
@@ -219,7 +219,7 @@ export default function BackendStatusPage() {
           <ul className="mt-2 list-disc list-inside space-y-1">
             <li>
               <span className="font-mono">Client URL</span> harus menunjuk deployment Convex yang
-              aktif (cloud di produksi); WebSocket mintdesk berjalan di alamat ini.
+              aktif (cloud di produksi); WebSocket AbelionOS berjalan di alamat ini.
             </li>
             <li>
               <span className="font-mono">Site URL</span> melayani HTTP action: Convex Auth dan

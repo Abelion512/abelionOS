@@ -1,4 +1,4 @@
-// Hook push setup Mintdesk — izin diminta HANYA dari klik eksplisit pengguna
+// Hook push setup AbelionOS — izin diminta HANYA dari klik eksplisit pengguna
 // (kontrak AGENTS.md), urutan: permission → registrasi SW → subscribe → save.
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";

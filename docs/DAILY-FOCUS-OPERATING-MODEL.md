@@ -1,8 +1,8 @@
 # Model Operasional Daily Focus
 
-Daily Focus adalah **asisten pembaca bukti**, bukan agent pengendali. Ketika halaman dibuka, Mintdesk meminta Morning Briefing secara on-demand dari Google Calendar read-only, Gmail metadata, dan audit aplikasi yang terikat pengguna. Halaman selalu menampilkan bukti yang tersedia lebih dahulu. Jika satu sumber gagal, halaman menjelaskan bahwa sumber tersebut tidak tersedia dan tidak menggantikannya dengan asumsi, riwayat AI, atau data contoh.
+Daily Focus adalah **asisten pembaca bukti**, bukan agent pengendali. Ketika halaman dibuka, AbelionOS meminta Morning Briefing secara on-demand dari Google Calendar read-only, Gmail metadata, dan audit aplikasi yang terikat pengguna. Halaman selalu menampilkan bukti yang tersedia lebih dahulu. Jika satu sumber gagal, halaman menjelaskan bahwa sumber tersebut tidak tersedia dan tidak menggantikannya dengan asumsi, riwayat AI, atau data contoh.
 
-Refinement dilakukan hanya ketika pengguna memilih **Refine priorities**. Browser mengirim evidence yang telah disaring ke Linux companion lokal, lalu companion meneruskannya ke 9router pada loopback. Model harus mengembalikan JSON tervalidasi, dengan setiap prioritas mengacu pada `evidenceRefs` yang benar-benar ada. Respons model tidak ditampilkan mentah. Bila companion atau 9router tidak tersedia, Mintdesk mempertahankan evidence dan menyatakan reasoning unavailable.
+Refinement dilakukan hanya ketika pengguna memilih **Refine priorities**. Browser mengirim evidence yang telah disaring ke Linux companion lokal, lalu companion meneruskannya ke 9router pada loopback. Model harus mengembalikan JSON tervalidasi, dengan setiap prioritas mengacu pada `evidenceRefs` yang benar-benar ada. Respons model tidak ditampilkan mentah. Bila companion atau 9router tidak tersedia, AbelionOS mempertahankan evidence dan menyatakan reasoning unavailable.
 
 | Aspek | Kebijakan yang diterapkan |
 |---|---|

@@ -48,7 +48,7 @@ export default function StoragePage() {
           )}
           <p className="mt-4 text-xs text-ink-faint flex items-center gap-1">
             <TriangleAlert className="w-3.5 h-3.5" />
-            Metadata saja — Mintdesk tidak membuka, mengunggah, atau mengubah file dari browser.
+            Metadata saja — AbelionOS tidak membuka, mengunggah, atau mengubah file dari browser.
           </p>
         </section>
       </div>

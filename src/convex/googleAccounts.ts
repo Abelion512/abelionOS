@@ -33,7 +33,7 @@ export const disconnectAccount = mutation({
     if (!row || row.userId !== userId) throw new Error("Tidak ditemukan");
     await ctx.db.delete(accountId);
     // Revoke best-effort di provider; credential lokal sudah terhapus sehingga
-    // kegagalan revoke tidak meninggalkan kredensial aktif di Mintdesk.
+    // kegagalan revoke tidak meninggalkan kredensial aktif di AbelionOS.
     await ctx.scheduler.runAfter(0, internal.googleRevoke.revokeAccountToken, {
       userId,
       tokenCipher: row.tokenCipher,

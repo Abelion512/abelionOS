@@ -1,6 +1,6 @@
-# Mintdesk
+# AbelionOS
 
-**Mintdesk** adalah dashboard operasional personal untuk Linux Mint. Aplikasi ini menyatukan kondisi runtime companion lokal, workdir yang dipantau, koneksi Google Workspace, serta *Daily Focus* berbasis bukti. Mintdesk bukan desktop environment, remote shell, atau agent otonom. Ia adalah lapisan kontrol yang membantu pengguna meninjau konteks, menyiapkan tindakan terbatas, dan mengonfirmasi setiap perubahan berisiko.
+**AbelionOS** adalah dashboard operasional personal untuk Linux Mint. Aplikasi ini menyatukan kondisi runtime companion lokal, workdir yang dipantau, koneksi Google Workspace, serta *Daily Focus* berbasis bukti. Sebagai posisi produk, AbelionOS juga menjadi satu tempat koneksi Google Workspace pemilik: daripada setiap produk mengelola OAuth Google sendiri, koneksi dipusatkan di sini dan produk klien menerima metadata/hasil dengan konfirmasi manusia untuk setiap write (lapisan koneksi produk sedang didesain, lihat todo.md). AbelionOS bukan desktop environment, remote shell, atau agent otonom. Ia adalah lapisan kontrol yang membantu pengguna meninjau konteks, menyiapkan tindakan terbatas, dan mengonfirmasi setiap perubahan berisiko.
 
 > Prinsip operasional: **data deterministik dahulu, rekomendasi lokal hanya atas permintaan, dan manusia selalu memberi konfirmasi sebelum write ke Google Workspace.**
 
@@ -19,13 +19,13 @@
 
 ## Arsitektur
 
-Mintdesk berjalan di Freebuff dengan React 19, TypeScript, Tailwind CSS 4, Wouter, Vite, dan **Convex** sebagai backend/database (Bun sebagai package manager). Companion tetap **Bun** di Linux dan sengaja dipisahkan agar akses ke 9router loopback serta filesystem tidak ikut berpindah ke deployment web.
+AbelionOS berjalan di Freebuff dengan React 19, TypeScript, Tailwind CSS 4, Wouter, Vite, dan **Convex** sebagai backend/database (Bun sebagai package manager). Companion tetap **Bun** di Linux dan sengaja dipisahkan agar akses ke 9router loopback serta filesystem tidak ikut berpindah ke deployment web.
 
 ```text
 Browser (desktop atau mobile)
         │ Convex Auth (session) + reactive queries
         ▼
-Mintdesk web app (Vite + React)
+AbelionOS web app (Vite + React)
         │
         ├─ Convex: googleAccounts (multi-account, token AES-256-GCM)
         ├─ Convex: googleActions (proposal preview + confirm)
@@ -42,7 +42,7 @@ Browser tidak perlu dapat menjangkau Linux secara langsung. Companion (rebuild b
 
 ## Daily Focus dan Google Workspace
 
-Saat halaman Daily Focus dibuka, Mintdesk menampilkan status akun Google yang terhubung (evidence siap diambil), **Today Checklist** dari Google Tasks yang diambil on-demand per akun (read-only, metadata task, tanpa persistensi), serta proposal action yang menunggu keputusan. Jika pengguna meminta refinement, companion lokal dapat meneruskan payload yang sudah disanitasi ke 9router dan hanya menerima JSON terstruktur kembali — setelah companion terpasang. Hasil penalaran bukan instruksi yang dieksekusi otomatis.
+Saat halaman Daily Focus dibuka, AbelionOS menampilkan status akun Google yang terhubung (evidence siap diambil), **Today Checklist** dari Google Tasks yang diambil on-demand per akun (read-only, metadata task, tanpa persistensi), serta proposal action yang menunggu keputusan. Jika pengguna meminta refinement, companion lokal dapat meneruskan payload yang sudah disanitasi ke 9router dan hanya menerima JSON terstruktur kembali — setelah companion terpasang. Hasil penalaran bukan instruksi yang dieksekusi otomatis.
 
 | Provider | Scope OAuth | Kapabilitas yang digunakan |
 |---|---|---|
@@ -62,20 +62,20 @@ Jika tombol sempat menampilkan “Memproses…”, tunggu sampai pesan muncul. B
 
 ### Menghubungkan Google Workspace
 
-Pengguna harus sudah sign in ke Mintdesk. Dari **Connections** pada menu profil, mulai koneksi Google dan selesaikan consent screen. Jika Google menampilkan `redirect_uri_mismatch`, pastikan redirect URI yang terdaftar di Google Cloud sama persis dengan callback deployment Mintdesk:
+Pengguna harus sudah sign in ke AbelionOS. Dari **Connections** pada menu profil, mulai koneksi Google dan selesaikan consent screen. Jika Google menampilkan `redirect_uri_mismatch`, pastikan redirect URI yang terdaftar di Google Cloud sama persis dengan callback deployment AbelionOS:
 
 ```text
 https://abelionos.freebuff.app/api/google/callback
 ```
 
-Setelah kembali ke Mintdesk, Dashboard dan Daily Focus akan menampilkan status koneksi serta scopes yang benar-benar diberikan. Putuskan koneksi dari menu yang sama apabila akses tidak lagi diperlukan.
+Setelah kembali ke AbelionOS, Dashboard dan Daily Focus akan menampilkan status koneksi serta scopes yang benar-benar diberikan. Putuskan koneksi dari menu yang sama apabila akses tidak lagi diperlukan.
 
 ### Memberi web akses ke Linux: deploy vs self-host + tunnel
 
 | Pendekatan | Cara kerja | Cocok untuk |
 |---|---|---|
 | **Deploy (dianjurkan, arsitektur saat ini)** | Web di Freebuff + Convex cloud; companion Bun di Linux melakukan **polling outbound** ke Convex (device secret hashed server-side, capability allowlist). Tidak ada inbound port, tidak ada tunnel. 9router/reasoning lokal tetap dipanggil companion dari loopback. | Dashboard selalu online, push berita berjalan dari cloud, akses dari HP jalan kapan pun, blast radius kecil (companion hanya observasi ber-allowlist). |
-| **Self-host + tunnel** | Seluruh Mintdesk dijalankan di laptop Linux lalu diekspos via Cloudflare Tunnel/Tailscale Funnel. Data penuh di rumah dan backend bisa memanggil 9router loopback langsung. | Kalau laptop harus 24/7 menyala, Anda siap merawat TLS/uptime/update sendiri, dan tidak ingin metadata apa pun di cloud. |
+| **Self-host + tunnel** | Seluruh AbelionOS dijalankan di laptop Linux lalu diekspos via Cloudflare Tunnel/Tailscale Funnel. Data penuh di rumah dan backend bisa memanggil 9router loopback langsung. | Kalau laptop harus 24/7 menyala, Anda siap merawat TLS/uptime/update sendiri, dan tidak ingin metadata apa pun di cloud. |
 
 Rekomendasi: pertahankan **deploy + companion polling outbound** — tunnel tidak diperlukan untuk arsitektur yang didokumentasikan di sini, karena satu-satunya data Linux yang diangkat (metrics, workdir metadata, audit) dikirim companion ke Convex secara outbound dan ter-filter allowlist. Tunnel hanya relevan bila Anda ingin dashboard-nya sendiri di-serve dari rumah.
 
@@ -95,15 +95,15 @@ Daily Focus dapat digunakan dari desktop maupun ponsel. Checklist, evidence, dan
 
 ## Pengembangan lokal
 
-Panduan sinkronisasi yang aman dari checkpoint Mintdesk ke clone Linux lokal tersedia di [docs/LOCAL-LINUX-SYNC.md](./docs/LOCAL-LINUX-SYNC.md). Panduan tersebut membedakan pekerjaan UI lokal dari environment production serta companion Bun yang tetap berjalan terpisah.
+Panduan sinkronisasi yang aman dari checkpoint AbelionOS ke clone Linux lokal tersedia di [docs/LOCAL-LINUX-SYNC.md](./docs/LOCAL-LINUX-SYNC.md). Panduan tersebut membedakan pekerjaan UI lokal dari environment production serta companion Bun yang tetap berjalan terpisah.
 
 ## Notifikasi kustom
 
-Mintdesk menyediakan **inbox notifikasi user-scoped** yang dapat dibuka dari kontrol bell di shell aplikasi. Inbox hanya mencatat event operasional nyata dan tidak diisi dengan data contoh. Event saat ini berasal dari proposal Daily Focus yang siap atau gagal, action Daily Focus yang selesai setelah konfirmasi, companion Linux yang kembali online atau terobservasi offline, koneksi atau disconnect Google Workspace, serta **berita baru dari news watcher**.
+AbelionOS menyediakan **inbox notifikasi user-scoped** yang dapat dibuka dari kontrol bell di shell aplikasi. Inbox hanya mencatat event operasional nyata dan tidak diisi dengan data contoh. Event saat ini berasal dari proposal Daily Focus yang siap atau gagal, action Daily Focus yang selesai setelah konfirmasi, companion Linux yang kembali online atau terobservasi offline, koneksi atau disconnect Google Workspace, serta **berita baru dari news watcher**.
 
 **Web Push (VAPID)** tersedia sebagai lapisan kedua: izin browser diminta hanya dari klik eksplisit di **Settings → Push notifications**, service worker baru diregistrasi setelah izin granted, dan subscription disimpan user-scoped (endpoint = bearer secret, tidak pernah masuk log/audit). Notifikasi berjalan ketika tab tertutup dan payloadnya metadata-only: judul, provenance sumber, dan tautan — tanpa body email, token, atau payload provider. Tombol **Kirim notifikasi uji** di Settings mengirim notifikasi end-to-end untuk memverifikasi rantai lengkap.
 
-**News watcher** adalah satu-satunya pekerjaan berkala di Mintdesk (cron Convex 5 menit) yang disetujui eksplisit pemilik dan tercatat di todo.md: mengambil registry berita metadata-only, dedupe per-URL (`newsSeen`), lalu mengirim inbox + push hanya untuk artikel yang benar-benar baru — dengan baseline run pertama tanpa push dan batas 12 push per run agar tidak spam. Tidak ada AI terjadwal dan tidak ada write Google dari watcher.
+**News watcher** adalah satu-satunya pekerjaan berkala di AbelionOS (cron Convex 5 menit) yang disetujui eksplisit pemilik dan tercatat di todo.md: mengambil registry berita metadata-only, dedupe per-URL (`newsSeen`), lalu mengirim inbox + push hanya untuk artikel yang benar-benar baru — dengan baseline run pertama tanpa push dan batas 12 push per run agar tidak spam. Tidak ada AI terjadwal dan tidak ada write Google dari watcher.
 
 Pengaturan berada di **Settings**. Pengguna dapat mematikan push per perangkat; tanpa push, inbox in-app tetap menjadi fallback utama.
 
@@ -126,7 +126,7 @@ Menandai item sebagai read hanya mengubah state inbox milik pengguna yang sedang
 
 ```bash
 git clone <repository-url>
-cd mintdesk
+cd abelionos
 bun install
 bun convex dev --once   # codegen functions
 bun run test            # Vitest (bukan `bun test`, yang memakai runner bawaan Bun)
@@ -196,8 +196,8 @@ Rilis mengikuti **semantic versioning otomatis**: merge ke `main` memicu workflo
 
 ## Guardrail keamanan
 
-Mintdesk dirancang untuk mengurangi blast radius, bukan memberikan otomasi tanpa batas. Ia tidak boleh menjalankan agent-to-agent workflow di luar Daily Focus, melakukan Google write tanpa konfirmasi manusia, mengakses filesystem browser secara arbitrer, menampilkan token, atau mengirim body Gmail ke database. Detail implementasi dan aturan kontribusi wajib ada di [AGENTS.md](./AGENTS.md).
+AbelionOS dirancang untuk mengurangi blast radius, bukan memberikan otomasi tanpa batas. Ia tidak boleh menjalankan agent-to-agent workflow di luar Daily Focus, melakukan Google write tanpa konfirmasi manusia, mengakses filesystem browser secara arbitrer, menampilkan token, atau mengirim body Gmail ke database. Detail implementasi dan aturan kontribusi wajib ada di [AGENTS.md](./AGENTS.md).
 
 ## Referensi desain
 
-UI Mintdesk mengikuti prinsip minimising chrome dan disclosure bertahap: navigasi inti di sidebar, konten halaman ringkas dengan state eksplisit untuk data yang tidak tersedia. Rujukan desain utamanya adalah [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) dan pola komponen [shadcn/ui](https://ui.shadcn.com/). Taste Skill dipasang sebagai helper audit anti-template, tetapi diterapkan secara kontekstual karena Mintdesk adalah dashboard operasional, bukan landing page. Guardrail lengkap tersedia di [docs/ANTI-SLOP-GUARDRAILS.md](./docs/ANTI-SLOP-GUARDRAILS.md).
+UI AbelionOS mengikuti prinsip minimising chrome dan disclosure bertahap: navigasi inti di sidebar, konten halaman ringkas dengan state eksplisit untuk data yang tidak tersedia. Rujukan desain utamanya adalah [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) dan pola komponen [shadcn/ui](https://ui.shadcn.com/). Taste Skill dipasang sebagai helper audit anti-template, tetapi diterapkan secara kontekstual karena AbelionOS adalah dashboard operasional, bukan landing page. Guardrail lengkap tersedia di [docs/ANTI-SLOP-GUARDRAILS.md](./docs/ANTI-SLOP-GUARDRAILS.md).

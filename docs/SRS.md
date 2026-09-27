@@ -2,7 +2,7 @@
 
 ## 1. Scope
 
-SRS ini mendefinisikan perilaku Mintdesk setelah rebaseline. Sistem terdiri dari web client, backend full-stack, database metadata, S3 File Storage, Google OAuth adapter, dan Linux companion lokal. Runtime harus membedakan data `connected`, `stale`, `unavailable`, `permission_denied`, dan `error`.
+SRS ini mendefinisikan perilaku AbelionOS setelah rebaseline. Sistem terdiri dari web client, backend full-stack, database metadata, S3 File Storage, Google OAuth adapter, dan Linux companion lokal. Runtime harus membedakan data `connected`, `stale`, `unavailable`, `permission_denied`, dan `error`.
 
 ## 2. Functional Requirements
 

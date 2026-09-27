@@ -1,10 +1,10 @@
 # AGENTS.md
 
-Dokumen ini adalah kontrak implementasi untuk setiap agent atau kontributor yang memodifikasi Mintdesk. Jika instruksi ad hoc bertentangan dengan guardrail di bawah, hentikan dan minta klarifikasi sebelum memperluas capability.
+Dokumen ini adalah kontrak implementasi untuk setiap agent atau kontributor yang memodifikasi AbelionOS. Jika instruksi ad hoc bertentangan dengan guardrail di bawah, hentikan dan minta klarifikasi sebelum memperluas capability.
 
 ## Tujuan dan batas produk
 
-Mintdesk adalah **Daily Focus Assistant** dan dashboard operasional Linux Mint. Aplikasi membantu pengguna melihat evidence Calendar, Gmail, companion runtime, proses terkontrol, Storage workdir, serta audit. Ia tidak boleh berubah menjadi remote shell, file browser umum, sistem monitoring yang memanen seluruh data perangkat, atau agent otonom lintas layanan.
+AbelionOS adalah **Daily Focus Assistant**, dashboard operasional Linux Mint, dan hub koneksi Google Workspace pemilik: produk lain milik pemilik menyambung ke Google Workspace melalui AbelionOS, bukan mengelola koneksi Google sendiri-sendiri (keputusan pemilik 2026-09-26, tercatat di todo.md). Aplikasi membantu pengguna melihat evidence Calendar, Gmail, companion runtime, proses terkontrol, Storage workdir, serta audit. Kredensial Google tidak pernah keluar dari backend; produk klien hanya menerima metadata/hasil sesuai allowlist capability per produk, dan semua Google write dari klien mana pun tetap membutuhkan preview + konfirmasi manusia. Ia tidak boleh berubah menjadi remote shell, file browser umum, sistem monitoring yang memanen seluruh data perangkat, agent otonom lintas layanan, atau broker yang menyerahkan token Google ke klien.
 
 | Prinsip | Aturan yang dapat diverifikasi |
 |---|---|
@@ -15,6 +15,7 @@ Mintdesk adalah **Daily Focus Assistant** dan dashboard operasional Linux Mint. 
 | Minimum data retention | Jangan persist body Gmail, bearer token, device secret, atau raw prompt AI dalam database atau audit event |
 | Capability allowlist | Companion hanya boleh menjalankan health, metrics, process observation, audit, terminate yang telah di-allowlist, workdir observation, dan Daily Focus reasoning |
 | No scheduled AI | Jangan menambahkan cron, background AI, atau notification scheduler tanpa persetujuan eksplisit dan workflow periodik yang sesuai. Pengecualian tercatat: news watcher cron Convex 5 menit (metadata-only, tanpa AI, tanpa write Google) disetujui pemilik 2026-09-25 di todo.md |
+| Hub tunggal Google Workspace | Produk klien terdaftar dengan secret hashed server-side + allowlist per produk; kredensial Google tidak pernah dikirim ke klien; write dari klien tetap proposal + confirm; tiap permintaan klien masuk audit |
 
 ## Arsitektur dan package manager
 
@@ -40,11 +41,11 @@ Justifikasi scope tambahan `userinfo.email` (multi-account): capability mengiden
 
 Kebijakan multi-account Google Workspace: satu user boleh menghubungkan lebih dari satu akun Google. Setiap koneksi disimpan terenkripsi dan terpisah per akun (email sebagai identifier), memiliki status, scope, dan disconnect/revoke sendiri. Evidence briefing, proposal, dan audit event wajib melabeli akun sumbernya; kegagalan satu akun tidak boleh memblokir akun lain. Isi Gmail dari akun mana pun tetap tidak boleh dipersistenkan.
 
-Kebijakan berita: Mintdesk hanya merangkum poin 5W1H (what/when/who/where/why/how) dari metadata artikel, dengan tautan ke artikel asli sebagai satu-satunya cara membaca konten. Tidak ada rehost, tidak ada full-text, dan tidak menampilkan isi berita di dashboard. Personalisasi terbatas pada pemilihan topik/sumber.
+Kebijakan berita: AbelionOS hanya merangkum poin 5W1H (what/when/who/where/why/how) dari metadata artikel, dengan tautan ke artikel asli sebagai satu-satunya cara membaca konten. Tidak ada rehost, tidak ada full-text, dan tidak menampilkan isi berita di dashboard. Personalisasi terbatas pada pemilihan topik/sumber.
 
 Kebijakan checklist: Today Checklist membaca Google Tasks (read-only, on-demand, metadata task) sebagai evidence checklist, tanpa persistensi konten task. Scope baru hanya boleh ditambah setelah justifikasi capability/proporsionalitas/retention/dampak human confirmation tersimpan di todo.md.
 
-Kebijakan kriptografi: integritas riwayat audit dijaga dengan hash chain sha256 (tiap event menyimpan prevHash; verify menyusun ulang rantai). Blockchain penuh (jaringan P2P, konsensus, token) tidak digunakan karena Mintdesk single-user dan tidak ada manfaatnya dibanding hash chain lokal.
+Kebijakan kriptografi: integritas riwayat audit dijaga dengan hash chain sha256 (tiap event menyimpan prevHash; verify menyusun ulang rantai). Blockchain penuh (jaringan P2P, konsensus, token) tidak digunakan karena AbelionOS single-user dan tidak ada manfaatnya dibanding hash chain lokal.
 
 | Operasi | Diperbolehkan | Guard wajib |
 |---|---:|---|
@@ -61,7 +62,7 @@ Google refresh token dienkripsi AES-256-GCM. OAuth memakai PKCE dan signed, shor
 
 ## Companion policy
 
-Companion berkomunikasi melalui polling outbound dan otentikasi device secret yang di-hash server-side. Pairing browser-ke-loopback hanya boleh menerima origin Mintdesk dan berjalan di `127.0.0.1:20129`. Jangan membuka endpoint pairing ke LAN, jangan menerima host selain loopback, dan jangan memindahkan device secret ke localStorage atau URL.
+Companion berkomunikasi melalui polling outbound dan otentikasi device secret yang di-hash server-side. Pairing browser-ke-loopback hanya boleh menerima origin AbelionOS dan berjalan di `127.0.0.1:20129`. Jangan membuka endpoint pairing ke LAN, jangan menerima host selain loopback, dan jangan memindahkan device secret ke localStorage atau URL.
 
 Workdir canonical adalah:
 
@@ -73,7 +74,7 @@ Satu device aktif per tipe device. Heartbeat credential valid mengarsipkan crede
 
 ## Kebijakan single-user
 
-Mintdesk adalah aplikasi personal satu pemilik: satu user Mintdesk, satu device type aktif per tipe. Pendaftaran akun baru dikunci fail-closed via `AUTH_OWNER_EMAIL`: bila env tidak terisi, tidak ada yang bisa mendaftar; bila terisi, hanya email tersebut yang diterima. Jangan menghapus guard ini untuk membuat multi-user.
+AbelionOS adalah aplikasi personal satu pemilik: satu user AbelionOS, satu device type aktif per tipe. Pendaftaran akun baru dikunci fail-closed via `AUTH_OWNER_EMAIL`: bila env tidak terisi, tidak ada yang bisa mendaftar; bila terisi, hanya email tersebut yang diterima. Jangan menghapus guard ini untuk membuat multi-user.
 
 ## Notifikasi kustom
 

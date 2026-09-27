@@ -2,7 +2,7 @@
 
 ## Stack web application
 
-Mintdesk web berjalan di Freebuff dengan **Bun** sebagai satu-satunya package
+AbelionOS web berjalan di Freebuff dengan **Bun** sebagai satu-satunya package
 manager: React 19, TypeScript, Tailwind CSS 4, Wouter, Vite, dan **Convex**
 sebagai backend/database (`bun.lock` tracked, `bun install --frozen-lockfile`
 di CI). Stack Express + MySQL + Drizzle dari era sebelumnya sudah tidak ada —
@@ -45,8 +45,8 @@ after explicit approval.
 
 Gmail content previews use the already-granted `gmail.modify` scope because
 Google does not provide a narrower scope that both reads message bodies and
-moves messages to Trash. The OAuth grant is therefore broader than Mintdesk's
-application allowlist. Mintdesk does not expose Draft, send, permanent-delete,
+moves messages to Trash. The OAuth grant is therefore broader than AbelionOS's
+application allowlist. AbelionOS does not expose Draft, send, permanent-delete,
 filter, or settings endpoints. Bounded previews are fetched on open, never
 persisted, and are sent to local reasoning only after the user explicitly
 requests refinement.

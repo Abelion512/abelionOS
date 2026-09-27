@@ -2,14 +2,14 @@
 
 ## Keputusan
 
-Mintdesk menggunakan satu aplikasi hosted yang dapat dibuka dari ponsel, laptop, atau desktop. Dua companion yang sama dapat didaftarkan: satu pada Linux laptop dan satu pada Linux server. Keduanya memakai Bun dan systemd, tetapi tidak membuka port publik atau mengirim token 9router ke browser.
+AbelionOS menggunakan satu aplikasi hosted yang dapat dibuka dari ponsel, laptop, atau desktop. Dua companion yang sama dapat didaftarkan: satu pada Linux laptop dan satu pada Linux server. Keduanya memakai Bun dan systemd, tetapi tidak membuka port publik atau mengirim token 9router ke browser.
 
 ## Alur kerja
 
 | Komponen | Tanggung jawab | Tidak diizinkan |
 | --- | --- | --- |
 | Daily Focus di ponsel | Menampilkan evidence, menerima teks bebas, menampilkan proposal dan confirmation | Menyimpan token companion atau memanggil 9router langsung |
-| Backend Mintdesk | Menyimpan device registry, action proposal, confirmation record, audit, dan token OAuth Google terenkripsi | Menjalankan 9router atau mengeksekusi action tanpa confirmation |
+| Backend AbelionOS | Menyimpan device registry, action proposal, confirmation record, audit, dan token OAuth Google terenkripsi | Menjalankan 9router atau mengeksekusi action tanpa confirmation |
 | Bun companion pada laptop/server | Mengambil pekerjaan yang ditujukan kepadanya, memanggil 9router lokal, mengembalikan proposal JSON tervalidasi | Menulis Gmail, Tasks, atau Calendar; membaca data di luar payload allowlist |
 | Google provider | Menjalankan aksi hanya sesudah proposal dikonfirmasi | Menghapus Gmail permanen atau event kalender yang tidak dimiliki pengguna |
 
