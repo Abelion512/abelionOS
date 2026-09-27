@@ -13,8 +13,10 @@ export const auditFromAction = internalMutation({
     action: v.string(),
     status: v.union(v.literal("accepted"), v.literal("rejected"), v.literal("error")),
     detail: v.optional(v.string()),
+    // sumber aksi; default "system" menjaga pemanggil lama tetap valid
+    actor: v.optional(v.union(v.literal("user"), v.literal("system"), v.literal("companion"), v.literal("product"))),
   },
-  handler: async (ctx, { userId, action, status, detail }) => {
+  handler: async (ctx, { userId, action, status, detail, actor }) => {
     if (detail && SENSITIVE.test(detail)) detail = "(redacted)";
     if (detail && detail.length > 300) detail = detail.slice(0, 300);
     // Hash chain: satu penulis (mutation ini) agar rantai per-user tetap linier.
@@ -28,7 +30,7 @@ export const auditFromAction = internalMutation({
     const hash = await computeChainHash(prevHash, chainTime, userId, action, status, detail);
     await ctx.db.insert("auditEvents", {
       userId,
-      actor: "system",
+      actor: actor ?? "system",
       action,
       status,
       detail,
