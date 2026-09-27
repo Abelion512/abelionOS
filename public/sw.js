@@ -86,14 +86,25 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/dashboard";
+  const raw = (event.notification.data && event.notification.data.url) || "/dashboard";
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        const target = new URL(client.url);
-        if (target.pathname === url && "focus" in client) return client.focus();
-      }
-      return self.clients.openWindow(url);
-    })
+    (async () => {
+      // Payload url bisa relatif (internal, mis. /settings) atau absolut
+      // (tautan artikel sumber asli) — normalisasi ke absolut sebelum banding.
+      const target = new URL(raw, self.location.origin);
+      const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      // Fokus tab yang sudah membuka URL target persis — jangan buka tab baru
+      // untuk konten yang sama (bug: pembanding pathname vs URL absolut dulu
+      // tidak pernah cocok sehingga tiap klik selalu openWindow).
+      const same = clients.find((c) => {
+        try {
+          return new URL(c.url).href === target.href;
+        } catch {
+          return false;
+        }
+      });
+      if (same && "focus" in same) return same.focus();
+      return self.clients.openWindow(target.href);
+    })()
   );
 });
