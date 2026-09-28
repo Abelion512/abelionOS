@@ -26,6 +26,12 @@ file), dan jumlah event audit lokal. Tidak ada kontrol eksekusi dari web.
    Ed25519, menandatangani code, dan menerima `deviceSecret` **sekali** —
    disimpan di `~/.config/mintdesk/companion.env` (chmod 600).
 
+   Jalur `companion/pair.ts` bersifat relatif — perintah di atas harus
+   dijalankan dari **akar repo abelionOS yang di-clone** di laptop (dari
+   `~` atau folder lain muncul `error: Module not found "companion/pair.ts"`).
+   Tidak ingin clone repo? Kedua skrip zero-dependency: lihat
+   [Pasang tanpa clone repo](#pasang-tanpa-clone-repo) di bawah.
+
 3. **Heartbeat** — jalankan terus di laptop:
 
    ```bash
@@ -40,10 +46,42 @@ perintah laptop (Langkah 2). Nama di perintah harus sama dengan nama yang
 didaftarkan; dialog Settings menyediakan tombol **Salin perintah** supaya
 perintah tersalin utuh.
 
+## Pasang tanpa clone repo
+
+Kedua skrip hanya memakai modul bawaan (`node:crypto`, `node:fs`, `node:os`,
+`node:path`) — tidak perlu `bun install` maupun clone penuh.
+
+**Opsi A — unduh 2 file (dianjurkan):** file terlihat dan bisa dibaca dulu
+sebelum dieksekusi — untuk skrip yang menulis kredensial ini sedikit lebih
+disiplin.
+
+```bash
+mkdir -p ~/mintdesk-companion && cd ~/mintdesk-companion
+curl -fsSL -o pair.ts      https://raw.githubusercontent.com/Abelion512/abelionOS/main/companion/pair.ts
+curl -fsSL -o heartbeat.ts https://raw.githubusercontent.com/Abelion512/abelionOS/main/companion/heartbeat.ts
+bun pair.ts \
+  --endpoint https://charming-firefly-655.convex.site \
+  --code ABCD2345 --name "Laptop Kantor" --type laptop
+bun heartbeat.ts   # setelah claim sukses — polling tiap 20 detik
+```
+
+**Opsi B — langsung dari URL, tanpa file:**
+
+```bash
+bun run https://raw.githubusercontent.com/Abelion512/abelionOS/main/companion/pair.ts \
+  --endpoint https://charming-firefly-655.convex.site \
+  --code ABCD2345 --name "Laptop Kantor" --type laptop
+```
+
+Kedua opsi selalu mengambil versi terakhir di `main`. Kredensial ditulis ke
+`~/.config/mintdesk/` terlepas dari lokasi skrip — clone repo penuh kemudian
+langsung bisa menjalankan `bun run companion/heartbeat.ts` tanpa pair ulang.
+
 ## Diagnosa cepat (error CLI)
 
 | Gejala di terminal | Penyebab | Tindakan |
 |---|---|---|
+| `error: Module not found "companion/pair.ts"` | skrip dijalankan dari luar akar repo (mis. dari `~`) — jalur relatif CWD | `cd` ke akar repo yang di-clone, atau pakai seksi **Pasang tanpa clone repo** |
 | `Argumen --code wajib` lalu `--code: command not found` | perintah tersalin terpotong (baris continuation hilang) | salin ulang lewat tombol **Salin perintah** di dialog, tempel sebagai satu blok |
 | `Claim gagal: HTTP 401 invalid_code` | pairing code sudah lewat 10 menit atau sudah dipakai (single-use) | buat code baru di Settings → Companion, ulangi Langkah 1–2 |
 | `Claim gagal: HTTP 404 no_pending_device` | Langkah 1 (daftar device) belum dijalankan, atau `--type` berbeda dari yang didaftarkan | daftarkan dulu di dialog Settings dengan tipe yang sama |
